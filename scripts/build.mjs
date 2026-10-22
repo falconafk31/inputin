@@ -8,12 +8,14 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const template = fs.readFileSync(path.join(root, "app/template.html"), "utf8");
 const vue = fs.readFileSync(path.join(root, "app/vendor/vue.global.prod.js"), "utf8");
 const app = fs.readFileSync(path.join(root, "app/app.js"), "utf8");
+const fonts = fs.readFileSync(path.join(root, "app/fonts.css"), "utf8");
 
 const html = template
+  .replace("/*__FONT_FACE__*/", () => fonts)
   .replace("/*__VUE__*/", () => vue)
   .replace("/*__APP__*/", () => app);
 
-if (html.includes("/*__VUE__*/") || html.includes("/*__APP__*/")) {
+if (html.includes("/*__VUE__*/") || html.includes("/*__APP__*/") || html.includes("/*__FONT_FACE__*/")) {
   throw new Error("Marker template tidak terganti semua");
 }
 fs.mkdirSync(path.join(root, "public"), { recursive: true });

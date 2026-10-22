@@ -81,9 +81,10 @@ async function currentUser(request, db) {
   return row;
 }
 
-function guardTeam(user, requestedTeamId) {
-  // Staff selalu terkunci ke team sendiri; Admin bebas memilih.
+function guardTeam(user, requestedTeamId, allowAll = false) {
+  // Staff selalu terkunci ke team sendiri; Admin bebas memilih, termasuk "all" untuk rekap satu perusahaan.
   if (user.role === "staff") return user.team_id;
+  if (allowAll && requestedTeamId === "all") return "ALL";
   const t = parseInt(requestedTeamId, 10);
   return Number.isFinite(t) ? t : null;
 }
@@ -171,7 +172,7 @@ async function handleApi(request, env, url) {
 
   // ---- Entri hasil shift ----
   if (path === "/api/entries" && method === "GET") {
-    const teamId = guardTeam(user, url.searchParams.get("team_id"));
+    const teamId = guardTeam(user, url.searchParams.get("team_id"), true);
     if (!teamId) return err("Team tidak valid.", 400);
     const from = url.searchParams.get("from"), to = url.searchParams.get("to");
     if (!validTanggal(from) || !validTanggal(to)) return err("Rentang tanggal tidak valid.", 400);
@@ -179,12 +180,15 @@ async function handleApi(request, env, url) {
     const q = (url.searchParams.get("q") || "").toLowerCase();
     const perHari = Math.min(30, Math.max(1, parseInt(url.searchParams.get("per") || "10", 10)));
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
-    const { results: heads } = await db.prepare(
-      `SELECT r.*, u2.nama AS updated_by_nama, u1.nama AS created_by_nama, t.nama AS team_nama
+    const allTeams = teamId === "ALL";
+    const headsQuery = `SELECT r.*, u2.nama AS updated_by_nama, u1.nama AS created_by_nama, t.nama AS team_nama
        FROM shift_results r JOIN teams t ON t.id = r.team_id
        LEFT JOIN users u1 ON u1.id = r.created_by LEFT JOIN users u2 ON u2.id = r.updated_by
-       WHERE r.team_id = ? AND r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL
-       ORDER BY r.tanggal DESC, r.shift ASC`).bind(teamId, from, to).all();
+       WHERE ${allTeams ? "" : "r.team_id = ? AND "}r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL
+       ORDER BY r.tanggal DESC, r.shift ASC`;
+    const { results: heads } = allTeams
+      ? await db.prepare(headsQuery).bind(from, to).all()
+      : await db.prepare(headsQuery).bind(teamId, from, to).all();
     const ids = (heads || []).map((h) => h.id);
     const rowsByResult = {};
     if (ids.length) {
@@ -297,12 +301,13 @@ async function handleApi(request, env, url) {
 
   // ---- Laporan ----
   if (path === "/api/report" && method === "GET") {
-    const teamId = guardTeam(user, url.searchParams.get("team_id"));
+    const teamId = guardTeam(user, url.searchParams.get("team_id"), true);
     const from = url.searchParams.get("from"), to = url.searchParams.get("to");
     if (!teamId || !validTanggal(from) || !validTanggal(to)) return err("Parameter laporan tidak valid.", 400);
-    const { results: heads } = await db.prepare(
-      "SELECT * FROM shift_results WHERE team_id = ? AND tanggal BETWEEN ? AND ? AND deleted_at IS NULL ORDER BY tanggal ASC, shift ASC"
-    ).bind(teamId, from, to).all();
+    const allTeams = teamId === "ALL";
+    const { results: heads } = allTeams
+      ? await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(from, to).all()
+      : await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.team_id = ? AND r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(teamId, from, to).all();
     const ids = (heads || []).map((h) => h.id);
     const rowsByResult = {};
     if (ids.length) {
@@ -314,21 +319,32 @@ async function handleApi(request, env, url) {
     }
     const dayMap = new Map();
     const perKelompokMap = new Map();
+    const perTeamMap = new Map();
     let totHasil = 0, totTerbagi = 0, shiftCount = 0;
     for (const h of heads || []) {
       const rows = rowsByResult[h.id] || [];
       const terbagi = round3(rows.reduce((a, r) => a + r.total_gram, 0));
       if (!dayMap.has(h.tanggal)) dayMap.set(h.tanggal, { tanggal: h.tanggal, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, catatan: [] });
       const d = dayMap.get(h.tanggal);
-      const cell = { hasil: h.hasil_gram, terbagi, tanpa_hasil: !!h.tanpa_hasil, id: h.id };
-      if (h.shift === 1) d.s1 = cell; else d.s2 = cell;
+      const key = h.shift === 1 ? "s1" : "s2";
+      if (!d[key]) d[key] = { hasil: 0, terbagi: 0, tanpa_hasil: false, id: h.id };
+      d[key].hasil = round3(d[key].hasil + h.hasil_gram); d[key].terbagi = round3(d[key].terbagi + terbagi);
+      if (h.tanpa_hasil) d[key].tanpa_hasil = true;
       d.total = round3(d.total + h.hasil_gram); d.terbagi = round3(d.terbagi + terbagi); d.sisa = round3(d.total - d.terbagi);
-      if (h.catatan) d.catatan.push({ shift: h.shift, teks: h.catatan });
+      if (h.catatan) d.catatan.push({ shift: h.shift, teks: h.catatan, team_nama: h.team_nama });
       totHasil = round3(totHasil + h.hasil_gram); totTerbagi = round3(totTerbagi + terbagi); shiftCount++;
       for (const r of rows) perKelompokMap.set(r.nama, round3((perKelompokMap.get(r.nama) || 0) + r.total_gram));
+      if (allTeams) {
+        if (!perTeamMap.has(h.team_id)) perTeamMap.set(h.team_id, { team_id: h.team_id, team_nama: h.team_nama, hasil: 0, terbagi: 0, sisa: 0, tanggal_set: new Set(), shift_tercatat: 0 });
+        const pt = perTeamMap.get(h.team_id);
+        pt.hasil = round3(pt.hasil + h.hasil_gram); pt.terbagi = round3(pt.terbagi + terbagi); pt.sisa = round3(pt.hasil - pt.terbagi);
+        pt.tanggal_set.add(h.tanggal); pt.shift_tercatat++;
+      }
     }
     const days = [...dayMap.values()];
-    return json({ ok: true, days, totals: { hasil: totHasil, terbagi: totTerbagi, sisa: round3(totHasil - totTerbagi), hari_aktif: days.length, shift_tercatat: shiftCount }, per_kelompok: [...perKelompokMap.entries()].map(([nama, total]) => ({ nama, total })) });
+    const resp = { ok: true, days, totals: { hasil: totHasil, terbagi: totTerbagi, sisa: round3(totHasil - totTerbagi), hari_aktif: days.length, shift_tercatat: shiftCount }, per_kelompok: [...perKelompokMap.entries()].map(([nama, total]) => ({ nama, total })) };
+    if (allTeams) resp.per_team = [...perTeamMap.values()].map((pt) => ({ team_id: pt.team_id, team_nama: pt.team_nama, hasil: pt.hasil, terbagi: pt.terbagi, sisa: pt.sisa, hari_aktif: pt.tanggal_set.size, shift_tercatat: pt.shift_tercatat }));
+    return json(resp);
   }
 
   // ---- Template pembagian ----

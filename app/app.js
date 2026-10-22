@@ -38,9 +38,16 @@ createApp({
     const settings = reactive({ nama_perusahaan: "", nama_pimpinan: "", zona_waktu: "Asia/Jakarta", zona_label: "WIB" });
     const teams = ref([]);
     const today = ref("");
+    const SVG_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+    const ICONS = {
+      input: SVG_OPEN + '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>',
+      riwayat: SVG_OPEN + '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+      laporan: SVG_OPEN + '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+      admin: SVG_OPEN + '<line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><line x1="14" y1="2" x2="14" y2="6"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="22"/></svg>',
+    };
     const tabs = computed(() => {
-      const t = [{ id: "input", label: "Input", icon: "Tulis" }, { id: "riwayat", label: "Riwayat", icon: "Daftar" }, { id: "laporan", label: "Laporan", icon: "Grafik" }];
-      if (user.value && user.value.role === "admin") t.push({ id: "admin", label: "Admin", icon: "Atur" });
+      const t = [{ id: "input", label: "Input", icon: ICONS.input }, { id: "riwayat", label: "Riwayat", icon: ICONS.riwayat }, { id: "laporan", label: "Laporan", icon: ICONS.laporan }];
+      if (user.value && user.value.role === "admin") t.push({ id: "admin", label: "Admin", icon: ICONS.admin });
       return t;
     });
     function setFlash(text, type = "ok") { flash.value = { text, type }; setTimeout(() => { if (flash.value && flash.value.text === text) flash.value = null; }, 4500); }
@@ -181,7 +188,7 @@ createApp({
       return blok;
     });
     const rataHari = computed(() => { if (!lap.report) return 0; const jumlahHari = lapDays.value.length || 1; return Math.round(lap.report.totals.hasil / jumlahHari * 1000) / 1000; });
-    function catatanGabung(d) { if (!d.catatan || !d.catatan.length) return ""; return d.catatan.map((c) => "S" + c.shift + ": " + c.teks).join(" | "); }
+    function catatanGabung(d) { if (!d.catatan || !d.catatan.length) return ""; return d.catatan.map((c) => (lap.team_id === "all" && c.team_nama ? c.team_nama + " " : "") + "S" + c.shift + ": " + c.teks).join(" | "); }
     const cetak = ref(null); const cetakMode = ref("rentang");
     const timestampCetak = computed(() => {
       const parts = {};
@@ -190,7 +197,7 @@ createApp({
     });
     async function cetakLaporan(harian) {
       if (!lap.report) return;
-      const teamNama = (teams.value.find((t) => t.id === lap.team_id) || {}).nama || "";
+      const teamNama = lap.team_id === "all" ? "Semua Team - Satu Perusahaan" : ((teams.value.find((t) => t.id === lap.team_id) || {}).nama || "");
       if (harian) {
         cetakMode.value = "harian";
         const det = await api(`/api/entries?team_id=${lap.team_id}&from=${lap.from}&to=${lap.to}&per=1&page=1`);
@@ -247,8 +254,8 @@ createApp({
       teams.value = b.teams; today.value = b.today;
       const defaultTeam = user.value.role === "staff" ? user.value.team_id : (teams.value[0] ? teams.value[0].id : null);
       if (!form.team_id) form.team_id = defaultTeam;
-      if (!riw.team_id) riw.team_id = defaultTeam;
-      if (!lap.team_id) lap.team_id = defaultTeam;
+      if (!riw.team_id) riw.team_id = user.value.role === "admin" ? "all" : defaultTeam;
+      if (!lap.team_id) lap.team_id = user.value.role === "admin" ? "all" : defaultTeam;
       if (!userBaru.team_id) userBaru.team_id = defaultTeam;
       if (resetTanggal) {
         form.tanggal = b.today;
