@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CatatEmas v3 - Shift, Pagination, Responsif</title>
+<style>
+:root{
+  --primary:#1E40AF; --primary2:#2563EB; --dark:#172554; --accent:#D97706; --accent2:#F59E0B;
+  --bg:#EEF2F7; --card:#fff; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0;
+  --ok:#15803D; --okbg:#DCFCE7; --danger:#DC2626; --dangerbg:#FEE2E2; --goldbg:#FEF3C7;
+  --r:20px; --shadow:0 10px 30px rgba(23,37,84,.10), 0 2px 6px rgba(23,37,84,.06);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+input,textarea,select{font-family:inherit;font-size:1rem;color:var(--ink)}
+:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
+[v-cloak]{display:none}
+.shell{max-width:520px;margin:0 auto}
+.wrap{padding:0 16px 150px}
+.hero{background:linear-gradient(135deg,var(--dark),var(--primary) 58%,var(--primary2));color:#fff;border-radius:0 0 28px 28px;padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.45),transparent 68%);right:-70px;top:-80px}
+.hero .row{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1;gap:10px}
+.hero h1{margin:0;font-size:1.3rem}
+.hero .sub{opacity:.82;font-size:.88rem;margin-top:2px}
+.pill{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:8px 13px;font-weight:700;font-size:.85rem;white-space:nowrap}
+.hero .big{position:relative;z-index:1;margin-top:16px}
+.hero .big .cap{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;opacity:.8;font-weight:700}
+.hero .big .val{font-size:2.25rem;font-weight:800;line-height:1.1}
+.hero .big .val em{font-style:normal;color:var(--accent2);font-size:1.1rem}
+.hero .mini{display:flex;gap:10px;margin-top:13px;position:relative;z-index:1}
+.hero .mini div{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 12px;min-width:0}
+.hero .mini b{display:block;font-size:.98rem}
+.hero .mini span{font-size:.74rem;opacity:.82}
+.shiftstat{display:flex;gap:10px;margin-top:13px;position:relative;z-index:1}
+.shiftstat div{flex:1;border-radius:14px;padding:10px 12px;font-weight:700;font-size:.9rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18)}
+.shiftstat .done{background:rgba(21,128,61,.35);border-color:rgba(134,239,172,.5)}
+.demo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 16px 0}
+.demo b{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.demo button{min-height:44px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700;padding:8px 14px}
+.demo button.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin-top:16px;border:1px solid rgba(226,232,240,.7)}
+.lbl{display:block;font-weight:800;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
+input[type="date"],input[type="text"].search,select{width:100%;min-height:52px;border:2px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff;font-weight:600}
+.goldbox{display:flex;align-items:baseline;gap:8px;border:2px solid var(--primary);border-radius:14px;padding:8px 14px;background:linear-gradient(180deg,#fff,#EFF6FF)}
+.goldbox input{flex:1;border:0;outline:none;background:transparent;font-size:2rem;font-weight:800;min-width:0}
+.goldbox span{font-size:1.2rem;font-weight:800;color:var(--accent)}
+.hint{font-size:.85rem;color:var(--muted);margin-top:7px;line-height:1.45}
+.btn{min-height:52px;border-radius:14px;border:0;font-weight:800;font-size:1rem;padding:12px 16px}
+.btn:active{transform:scale(.985)}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;width:100%;box-shadow:0 10px 22px rgba(37,99,235,.30)}
+.btn-primary:disabled{background:#94A3B8;box-shadow:none;cursor:not-allowed}
+.btn-gold{background:var(--goldbg);color:#92400E;width:100%}
+.btn-dash{background:#EFF6FF;color:var(--primary);border:2px dashed var(--primary2);width:100%}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-plain{background:#F1F5F9;color:var(--ink)}
+.seg{display:flex;background:#E8EEF7;border-radius:14px;padding:5px;gap:5px}
+.seg button{flex:1;min-height:50px;border:0;border-radius:10px;background:transparent;font-weight:800;font-size:1rem;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--primary);box-shadow:0 3px 10px rgba(23,37,84,.15)}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px}
+.switch{position:relative;width:60px;height:36px;flex:none}
+.switch input{opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:1}
+.switch i{position:absolute;inset:0;background:#CBD5E1;border-radius:999px;transition:.2s}
+.switch i:after{content:"";position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;top:4px;left:4px;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.switch input:checked + i{background:var(--accent)}
+.switch input:checked + i:after{left:28px}
+.dist{border:2px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;background:#fff}
+.dist-head{display:flex;gap:8px;margin-bottom:10px}
+.dist-head input{flex:1;min-height:48px;border:2px solid var(--line);border-radius:12px;padding:8px 12px;font-weight:700;min-width:0}
+.iconbtn{width:48px;height:48px;flex:none;border-radius:12px;border:0;background:var(--dangerbg);color:var(--danger);font-weight:800}
+.pctline{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pctbox{display:flex;align-items:center;gap:3px;border:2px solid var(--primary);border-radius:12px;padding:3px 10px;background:#EFF6FF}
+.pctbox input{width:58px;border:0;outline:none;background:transparent;font-size:1.3rem;font-weight:800;text-align:right}
+.chip{min-height:44px;padding:8px 12px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700;color:var(--primary)}
+.chip.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.stepper{display:flex;align-items:center;gap:10px;margin-top:12px}
+.stepper button{width:52px;height:52px;border-radius:14px;border:0;background:var(--primary);color:#fff;font-size:1.5rem;font-weight:800}
+.stepper button.minus{background:#EFF6FF;color:var(--primary);border:2px solid var(--primary)}
+.stepper .count{font-size:1.5rem;font-weight:800;min-width:42px;text-align:center}
+.stepper .cap{color:var(--muted);font-weight:600}
+.dist-res{margin-top:12px;background:#F8FAFC;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.97rem}
+.progress{height:20px;border-radius:999px;background:var(--goldbg);overflow:hidden;margin-top:14px}
+.progress .used{background:linear-gradient(90deg,#16A34A,var(--ok));height:100%;transition:width .3s}
+.progress.over .used{background:var(--danger)}
+.progress-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:700;font-size:.92rem;margin-top:9px}
+.progress-meta .sisa{color:#92400E}
+.err{color:var(--danger);font-weight:700;font-size:.92rem;margin-top:6px}
+textarea{width:100%;min-height:96px;border:2px solid var(--line);border-radius:14px;padding:12px;resize:vertical;line-height:1.55}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.summary{background:linear-gradient(135deg,var(--dark),var(--primary));color:#fff;border-radius:var(--r);padding:18px;margin-top:16px;box-shadow:var(--shadow)}
+.summary h3{margin:0 0 10px;font-size:1rem}
+.summary table{width:100%;border-collapse:collapse;font-size:.95rem}
+.summary td{padding:5px 0}.summary td:last-child{text-align:right;font-weight:800}
+.summary .grand{border-top:1px solid rgba(255,255,255,.35)}
+.modebar{display:flex;align-items:center;gap:10px;background:#FFFBEB;border:2px solid var(--accent2);color:#92400E;border-radius:14px;padding:12px 14px;margin-top:16px;font-weight:700}
+.modebar button{margin-left:auto;min-height:44px;border-radius:10px;background:#fff;color:var(--danger);font-weight:800;padding:8px 12px;border:2px solid var(--dangerbg)}
+/* riwayat + pagination */
+.filters{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+.entry{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px;border:1px solid rgba(226,232,240,.7)}
+.entry .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.entry .tgl{font-weight:800}
+.entry .hasil{font-size:1.35rem;font-weight:800;color:var(--dark);white-space:nowrap}
+.entry .hasil em{font-style:normal;color:var(--accent);font-size:.9rem}
+.badge{display:inline-block;border-radius:999px;padding:4px 11px;font-size:.76rem;font-weight:800;margin-top:4px}
+.b-ok{background:var(--okbg);color:var(--ok)} .b-zero{background:var(--goldbg);color:#92400E} .b-shift{background:#DBEAFE;color:var(--primary)}
+.entry .rowsline{color:var(--muted);font-size:.92rem;margin-top:6px;line-height:1.5}
+.entry .note{margin-top:9px;background:#F8FAFC;border-radius:12px;padding:10px 12px;font-size:.92rem;color:#334155}
+.entry .acts{display:flex;gap:8px;margin-top:13px}
+.entry .acts button{flex:1;min-height:48px;border-radius:12px;border:0;font-weight:800;font-size:.93rem}
+.act-detail{background:#F1F5F9}.act-edit{background:var(--primary);color:#fff}.act-del{background:var(--dangerbg);color:var(--danger)}
+.entries-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
+.empty{background:#fff;border:2px dashed var(--line);border-radius:var(--r);padding:26px;text-align:center;color:var(--muted);margin-top:16px;font-weight:600}
+.pager{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:16px}
+.pager button{min-width:48px;min-height:48px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;padding:8px 12px}
+.pager button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pager button:disabled{opacity:.45;cursor:not-allowed}
+.pager .info{font-weight:700;color:var(--muted);margin-right:auto}
+.pager select{width:auto;min-height:48px}
+.pc-table{display:none}
+/* laporan */
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.sheet{background:#fff;border-radius:10px;box-shadow:var(--shadow);padding:30px 26px;margin-top:16px}
+.sheet h2{text-align:center;margin:2px 0;font-size:1.22rem}
+.sheet .usaha{text-align:center;font-weight:800}
+.sheet .meta{text-align:center;color:var(--muted);margin-bottom:10px}
+.sheet hr{border:0;border-top:3px double var(--ink);margin:10px 0 16px}
+.sheet table{width:100%;border-collapse:collapse;font-size:.9rem;margin-bottom:14px}
+.sheet th,.sheet td{border:1px solid #94A3B8;padding:7px 9px}
+.sheet th{background:#F1F5F9;text-align:left}
+.sheet td.r,.sheet th.r{text-align:right}
+.sheet .tot td{font-weight:800;background:#FFFBEB}
+.notebox{border:1px solid #94A3B8;padding:12px 14px;margin-bottom:12px}
+.notebox ul{margin:6px 0 0;padding-left:18px;line-height:1.55}
+.sign{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:26px;text-align:center}
+.sign .space{height:56px}.sign .nm{border-top:1px solid var(--ink);padding-top:6px;font-weight:700}
+.sticky{position:fixed;left:0;right:0;bottom:66px;z-index:40;padding:10px 16px;background:rgba(238,242,247,.94);backdrop-filter:blur(8px)}
+.sticky div{max-width:520px;margin:0 auto}
+.sticky .btn{min-height:56px;font-size:1.06rem}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:41;background:rgba(255,255,255,.97);border-top:1px solid var(--line)}
+.bottomnav div{max-width:520px;margin:0 auto;display:flex}
+.bottomnav button{flex:1;min-height:66px;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:.74rem;font-weight:800;padding:6px 2px calc(6px + env(safe-area-inset-bottom))}
+.bottomnav button.on{color:var(--primary)}
+.bottomnav svg{width:24px;height:24px}
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#fff;width:100%;max-width:520px;border-radius:24px 24px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom))}
+.modal h3{margin:0 0 8px}.modal .acts{display:flex;gap:10px;margin-top:16px}.modal .acts button{flex:1}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:70;background:var(--ok);color:#fff;font-weight:800;border-radius:999px;padding:13px 20px;box-shadow:var(--shadow);max-width:92vw;text-align:center}
+.fade-enter-active,.fade-leave-active{transition:opacity .18s,transform .18s}
+.fade-enter-from,.fade-leave-to{opacity:0;transform:translateY(8px)}
+.audit li{margin-bottom:7px;color:#334155;font-size:.93rem;line-height:1.5}
+
+/* ===== TABLET 641-1024 ===== */
+@media (min-width:641px){
+  .shell{max-width:860px}
+  .wrap{padding:0 22px 150px}
+  .entries-grid{grid-template-columns:1fr 1fr}
+  .filters{grid-template-columns:1fr 200px 170px}
+  .hero .big .val{font-size:2.7rem}
+  .sticky div{max-width:860px}
+  .bottomnav div{max-width:860px}
+}
+/* ===== PC >=1025 ===== */
+@media (min-width:1025px){
+  .shell{max-width:1180px}
+  .wrap{padding:0 26px 60px}
+  .entries-grid{grid-template-columns:1fr}
+  .cards-only{display:none}
+  .pc-table{display:block;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:8px 18px 14px;margin-top:14px;overflow-x:auto}
+  .pc-table table{width:100%;border-collapse:collapse;font-size:.94rem}
+  .pc-table th{text-align:left;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;padding:12px 8px;border-bottom:2px solid var(--line)}
+  .pc-table td{padding:11px 8px;border-bottom:1px solid #EEF2F7;vertical-align:top}
+  .pc-table .mini-btn{min-height:44px;border-radius:10px;border:0;font-weight:800;padding:8px 12px;margin-right:6px}
+  .form-grid{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:0 18px;align-items:start}
+  .form-grid .summary{position:sticky;top:18px}
+  .bottomnav{position:static;border-top:0;background:transparent}
+  .bottomnav div{gap:8px;padding:10px 26px;max-width:1180px}
+  .bottomnav button{border-radius:12px;min-height:52px}
+  .bottomnav button.on{background:#DBEAFE}
+  .sticky{bottom:0}
+  .hero{border-radius:0 0 32px 32px}
+}
+@media print{.hero,.demo,.bottomnav,.sticky,.no-print,.pager,.filters{display:none!important}body{background:#fff}.shell,.wrap{max-width:none;padding:0}}
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+<div class="shell">
+
+  <div class="hero">
+    <div class="row">
+      <div><h1>CatatEmas</h1><div class="sub">Pencatatan Hasil Tambang - v3 Shift + Pagination</div></div>
+      <span class="pill">{{ team }}</span>
+    </div>
+    <div class="big">
+      <div class="cap">Hari Ini ({{ tglSingkat(HARI_INI) }}) - Gabungan 2 Shift</div>
+      <div class="val mono">{{ fmt(totalHariIni) }} <em>gr</em></div>
+      <div class="shiftstat">
+        <div v-for="s in [1,2]" :key="s" :class="{done: shiftAda(s)}">{{ shiftAda(s) ? 'Shift '+s+' sudah input - '+fmt(hasilShift(s))+' gr' : 'Shift '+s+' belum input' }}</div>
+      </div>
+      <div class="mini">
+        <div><b class="mono">{{ fmt(totalBulanIni) }} gr</b><span>Total bulan ini</span></div>
+        <div><b class="mono">{{ fmt(totalSisaBulanIni) }} gr</b><span>Pendapatan Usaha</span></div>
+        <div><b>{{ entriesTeam.length }} catatan</b><span>Per shift tercatat</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo no-print">
+    <b>Demo Staff</b>
+    <button :class="{active: team==='Team 1'}" @click="gantiTeam('Team 1')">Staff Team 1</button>
+    <button :class="{active: team==='Team 2'}" @click="gantiTeam('Team 2')">Staff Team 2</button>
+  </div>
+
+  <transition name="fade" mode="out-in">
+
+  <!-- DASHBOARD -->
+  <div class="wrap" v-if="view==='dashboard'" key="dash">
+    <div class="card">
+      <span class="lbl">Aksi Cepat</span>
+      <div class="seg" style="margin-bottom:12px">
+        <button :class="{on: cepatShift===1}" @click="cepatShift=1">Input Shift 1</button>
+        <button :class="{on: cepatShift===2}" @click="cepatShift=2">Input Shift 2</button>
+      </div>
+      <button class="btn btn-primary" @click="baru(cepatShift)">+ Input Hasil - Shift {{ cepatShift }}</button>
+      <div class="hint">Satu hari bisa 2 catatan: Shift 1 dan Shift 2. Setiap shift punya hasil, jumlah operator dan pekerja, dan catatan sendiri.</div>
+    </div>
+    <h3 style="margin:22px 0 0">Catatan Terakhir</h3>
+    <div class="entries-grid">
+      <article class="entry" v-for="e in entriesTeam.slice(0,4)" :key="e.id">
+        <div class="top"><div><div class="tgl">{{ tglPanjang(e.tanggal) }}</div><span class="badge b-shift">Shift {{ e.shift }}</span> <span class="badge" :class="e.hasil===0?'b-zero':'b-ok'">{{ e.hasil===0 ? 'Tanpa Hasil' : 'Sudah Input' }}</span></div><div class="hasil mono">{{ fmt(e.hasil) }} <em>gr</em></div></div>
+        <div class="rowsline">{{ ringkas(e) }}</div>
+        <div class="note" v-if="e.catatan">Catatan: {{ e.catatan }}</div>
+        <div class="acts"><button class="act-detail" @click="bukaLaporanHarian(e)">Detail</button><button class="act-edit" :data-edit="e.id" @click="edit(e)">Edit</button><button class="act-del" :data-del="e.id" @click="tanyaHapus(e)">Hapus</button></div>
+      </article>
+    </div>
+  </div>
+
+  <!-- INPUT / EDIT -->
+  <div class="wrap" v-else-if="view==='input'" key="input">
+    <div class="modebar" v-if="editingId"><span>MODE EDIT - {{ tglPanjang(form.tanggal) }} - Shift {{ form.shift }}</span><button @click="batalEdit()">Batal Edit</button></div>
+    <div class="form-grid">
+      <div>
+        <div class="card">
+          <label class="lbl">Shift</label>
+          <div class="seg" id="segShift">
+            <button :class="{on: form.shift===1}" @click="form.shift=1">Shift 1</button>
+            <button :class="{on: form.shift===2}" @click="form.shift=2">Shift 2</button>
+          </div>
+          <div class="hint" id="shiftInfo">{{ infoShift }}</div>
+          <label class="lbl" for="f-tgl" style="margin-top:14px">Tanggal</label>
+          <input type="date" id="f-tgl" v-model="form.tanggal">
+        </div>
+        <div class="card">
+          <label class="lbl" for="f-hasil">Hasil Emas Shift Ini</label>
+          <div class="goldbox"><input id="f-hasil" class="mono" inputmode="decimal" v-model="form.hasilStr" @input="form.tanpaHasil=false"><span>gr</span></div>
+          <div class="hint">Desimal resmi pakai koma: 12,5 gr. Titik juga diterima: 12.5 terbaca 12,5 dan 1.250,5 terbaca 1250,5. Tampilan hasil selalu format Indonesia (1.250,500 gr).</div>
+          <div class="toggle-row"><div><b>Hari Tanpa Hasil (shift ini)</b><div class="hint" style="margin-top:2px">Libur, alat rusak, atau hasil 0 gr pada shift ini.</div></div><label class="switch"><input type="checkbox" v-model="form.tanpaHasil"><i></i></label></div>
+        </div>
+        <div class="card">
+          <span class="lbl">Pembagian Shift Ini - jumlah orang fleksibel per shift</span>
+          <button class="btn btn-gold" style="margin-bottom:12px" @click="salinPembagianLain()">Salin Pembagian Shift / Hari Lain</button>
+          <div class="dist" v-for="(r,i) in form.rows" :key="r.key">
+            <div class="dist-head"><input type="text" v-model="r.nama" :aria-label="'Nama kelompok '+(i+1)"><button class="iconbtn" :aria-label="'Hapus '+r.nama" @click="form.rows.splice(i,1)">x</button></div>
+            <div class="pctline">
+              <div class="pctbox"><input class="mono pct-in" inputmode="decimal" v-model="r.persenStr" aria-label="Persentase"><b>%</b></div>
+              <button class="chip" v-for="c in [2,3,4,5,6,10]" :key="c" :class="{on: parsePct(r.persenStr)===c}" @click="r.persenStr=String(c)">{{ c }}%</button>
+            </div>
+            <div class="stepper"><button class="minus" aria-label="Kurangi orang" @click="r.orang=Math.max(1,r.orang-1)">-</button><span class="count mono orang-val">{{ r.orang }}</span><button aria-label="Tambah orang" @click="r.orang++">+</button><span class="cap">orang</span></div>
+            <div class="dist-res"><span>Total: <b class="mono tot-val">{{ fmt(rowTotal(r)) }} gr</b></span><span>Per orang: <b class="mono per-val">{{ fmt(rowPer(r)) }} gr</b></span></div>
+          </div>
+          <button class="btn btn-dash" @click="tambahBaris()">+ Tambah Kelompok</button>
+          <div class="progress" :class="{over: totalPct>100}"><div class="used" :style="{width: Math.min(Math.max(totalPct,0),100)+'%'}"></div></div>
+          <div class="progress-meta"><span>Terbagi {{ numStr(totalPct) }}% = {{ fmt(hasil*totalPct/100) }} gr</span><span class="sisa">Pendapatan Usaha {{ numStr(Math.max(100-totalPct,0)) }}% = {{ fmt(Math.max(sisaGr,0)) }} gr</span></div>
+          <div class="err" v-if="totalPct>100">Total persen lewat 100%. Kurangi dulu sebelum simpan.</div>
+        </div>
+        <div class="card">
+          <label class="lbl" for="f-cat">Catatan / Keterangan Shift Ini</label>
+          <textarea id="f-cat" v-model="form.catatan" placeholder="Contoh: Hujan deras, galian pindah titik, alat rusak."></textarea>
+          <div class="quick"><button class="chip" v-for="q in quickNotes" :key="q" @click="form.catatan=(form.catatan+' '+q).trim()">+ {{ q.replace('.','') }}</button></div>
+          <div class="hint">Catatan per shift tampil di laporan harian dan daftar catatan di laporan rentang.</div>
+        </div>
+      </div>
+      <div class="summary">
+        <h3>{{ editingId ? 'Ringkasan Perubahan' : 'Ringkasan Shift Ini' }}</h3>
+        <table>
+          <tr><td>Shift</td><td class="mono">Shift {{ form.shift }}</td></tr>
+          <tr v-for="r in form.rows" :key="'s'+r.key"><td>{{ r.nama }} ({{ numStr(parsePct(r.persenStr)) }}%, {{ r.orang }} orang)</td><td class="mono">{{ fmt(rowTotal(r)) }} gr</td></tr>
+          <tr class="grand"><td>Pendapatan Usaha</td><td class="mono">{{ fmt(Math.max(sisaGr,0)) }} gr</td></tr>
+          <tr class="grand"><td>Total Hasil Shift</td><td class="mono">{{ fmt(hasil) }} gr</td></tr>
+          <tr class="grand"><td>Total Hari Ini (semua shift)</td><td class="mono">{{ fmt(totalHariForm) }} gr</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIWAYAT + PAGINATION -->
+  <div class="wrap" v-else-if="view==='riwayat'" key="riw">
+    <h3 style="margin:20px 0 0">Riwayat Transaksi - {{ team }}</h3>
+    <div class="filters no-print">
+      <input type="text" class="search" id="q" v-model="query" placeholder="Cari catatan, kelompok, tanggal..." aria-label="Cari riwayat">
+      <select id="fShift" v-model="filterShift" aria-label="Filter shift"><option value="0">Semua Shift</option><option value="1">Shift 1 saja</option><option value="2">Shift 2 saja</option></select>
+      <select id="perPage" v-model.number="perPage" aria-label="Jumlah per halaman"><option :value="5">5 / halaman</option><option :value="10">10 / halaman</option><option :value="20">20 / halaman</option></select>
+    </div>
+
+    <div v-if="!filtered.length" class="empty" id="emptyState">Tidak ada catatan yang cocok dengan filter ini.</div>
+
+    <div class="entries-grid cards-only" v-if="filtered.length">
+      <article class="entry" v-for="e in pageItems" :key="e.id">
+        <div class="top"><div><div class="tgl">{{ tglPanjang(e.tanggal) }}</div><span class="badge b-shift">Shift {{ e.shift }}</span> <span class="badge" :class="e.hasil===0?'b-zero':'b-ok'">{{ e.hasil===0 ? 'Tanpa Hasil' : 'Sudah Input' }}</span></div><div class="hasil mono">{{ fmt(e.hasil) }} <em>gr</em></div></div>
+        <div class="rowsline">{{ ringkas(e) }}<br>Pendapatan Usaha: <b class="mono">{{ fmt(sisaEntry(e)) }} gr</b></div>
+        <div class="note" v-if="e.catatan">Catatan: {{ e.catatan }}</div>
+        <div class="note" style="background:#FFFBEB" v-if="e.diubah">Terakhir diubah: {{ e.diubah }}</div>
+        <div class="acts"><button class="act-detail" @click="bukaLaporanHarian(e)">Detail / PDF</button><button class="act-edit" :data-edit="e.id" @click="edit(e)">Edit</button><button class="act-del" :data-del="e.id" @click="tanyaHapus(e)">Hapus</button></div>
+      </article>
+    </div>
+
+    <div class="pc-table" v-if="filtered.length">
+      <table>
+        <thead><tr><th>Tanggal</th><th>Shift</th><th>Hasil</th><th>Pembagian</th><th>Pendapatan Usaha</th><th>Catatan</th><th>Aksi</th></tr></thead>
+        <tbody>
+          <tr v-for="e in pageItems" :key="'t'+e.id">
+            <td style="white-space:nowrap">{{ tglSingkat(e.tanggal) }}</td>
+            <td><span class="badge b-shift">Shift {{ e.shift }}</span></td>
+            <td class="mono"><b>{{ fmt(e.hasil) }} gr</b></td>
+            <td>{{ ringkas(e) }}</td>
+            <td class="mono">{{ fmt(sisaEntry(e)) }} gr</td>
+            <td>{{ e.catatan || '-' }}</td>
+            <td style="white-space:nowrap"><button class="mini-btn act-detail" @click="bukaLaporanHarian(e)">Detail</button><button class="mini-btn act-edit" :data-edit="e.id" @click="edit(e)">Edit</button><button class="mini-btn act-del" :data-del="e.id" @click="tanyaHapus(e)">Hapus</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager no-print" v-if="filtered.length" id="pager">
+      <span class="info" id="pageInfo">Menampilkan {{ pageStart }}-{{ pageEnd }} dari {{ filtered.length }} catatan</span>
+      <button id="btnPrev" :disabled="page<=1" @click="page--">Sebelumnya</button>
+      <button v-for="p in totalPages" :key="p" :class="{on: p===page}" :data-page="p" @click="page=p">{{ p }}</button>
+      <button id="btnNext" :disabled="page>=totalPages" @click="page++">Berikutnya</button>
+    </div>
+
+    <div class="card audit" v-if="audit.length"><span class="lbl">Riwayat Perubahan (jejak audit)</span><ul style="margin:0;padding-left:18px"><li v-for="(a,i) in audit" :key="i">{{ a }}</li></ul></div>
+  </div>
+
+  <!-- LAPORAN -->
+  <div class="wrap" v-else key="lap" style="max-width:none">
+    <div class="card no-print">
+      <span class="lbl">Rentang Laporan - {{ team }}</span>
+      <div class="presets" id="presets">
+        <button class="chip" :class="{on: preset==='1'}" data-preset="1" @click="setPreset('1')">1 Hari</button>
+        <button class="chip" :class="{on: preset==='7'}" data-preset="7" @click="setPreset('7')">7 Hari</button>
+        <button class="chip" :class="{on: preset==='30'}" data-preset="30" @click="setPreset('30')">30 Hari</button>
+        <button class="chip" :class="{on: preset==='bulan'}" data-preset="bulan" @click="setPreset('bulan')">Bulan Ini</button>
+        <button class="chip" :class="{on: preset==='custom'}" data-preset="custom" @click="preset='custom'">Custom</button>
+      </div>
+      <div v-if="preset==='custom'" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <div><label class="lbl" for="c-dari">Dari</label><input type="date" id="c-dari" v-model="customDari"></div>
+        <div><label class="lbl" for="c-sampai">Sampai</label><input type="date" id="c-sampai" v-model="customSampai"></div>
+      </div>
+      <div v-if="preset==='1'" style="margin-top:12px"><label class="lbl" for="lap-tgl">Tanggal</label><input type="date" id="lap-tgl" v-model="laporanTanggal"></div>
+      <div class="hint">Jawaban untuk staff: laporan UTAMA staff adalah Harian (per hari, rinci per shift). Preset 7 / 30 hari dan custom bulan tinggal dipilih, isi PDF menyesuaikan rentangnya otomatis.</div>
+      <button class="btn btn-primary" style="margin-top:12px" @click="cetak()">Unduh PDF Rentang Ini</button>
+    </div>
+
+    <div class="sheet" id="sheet">
+      <div class="usaha">USAHA TAMBANG EMAS</div>
+      <h2>{{ judulLaporan }}</h2>
+      <div class="meta">{{ team }} - {{ labelRentang }}</div>
+      <hr>
+      <table>
+        <tr><th style="width:38%">Total Hasil (semua shift)</th><td class="r mono" id="lapTotal">{{ fmt(laporanTotal) }} gr</td></tr>
+        <tr><th>Total Pendapatan Usaha</th><td class="r mono" id="lapSisa">{{ fmt(laporanSisa) }} gr</td></tr>
+        <tr><th>Jumlah Catatan Shift</th><td class="r mono" id="lapJumlah">{{ laporanEntries.length }} shift</td></tr>
+      </table>
+
+      <table v-if="preset==='1'">
+        <thead><tr><th>Shift</th><th>Kelompok</th><th class="r">Persen</th><th class="r">Orang</th><th class="r">Total Kelompok</th><th class="r">Per Orang</th></tr></thead>
+        <tbody>
+          <template v-for="e in laporanEntries" :key="'d'+e.id">
+            <tr v-for="(r,i) in e.rows" :key="e.id+'-'+i"><td>Shift {{ e.shift }} ({{ fmt(e.hasil) }} gr)</td><td>{{ r.nama }}</td><td class="r mono">{{ numStr(r.persen) }}%</td><td class="r mono">{{ r.orang }}</td><td class="r mono">{{ fmt(e.hasil*r.persen/100) }} gr</td><td class="r mono">{{ fmt(e.hasil*r.persen/100/r.orang) }} gr</td></tr>
+          </template>
+          <tr class="tot"><td colspan="4">Total Hari Ini</td><td class="r mono">{{ fmt(laporanTotal) }} gr</td><td class="r mono">Sisa {{ fmt(laporanSisa) }} gr</td></tr>
+        </tbody>
+      </table>
+
+      <table v-else>
+        <thead><tr><th>Tanggal</th><th class="r">Shift 1</th><th class="r">Shift 2</th><th class="r">Total Hari</th><th class="r">Pendapatan Usaha</th></tr></thead>
+        <tbody>
+          <tr v-for="d in laporanPerHari" :key="d.tanggal"><td>{{ tglSingkat(d.tanggal) }}</td><td class="r mono">{{ d.s1!==null ? fmt(d.s1)+' gr' : '-' }}</td><td class="r mono">{{ d.s2!==null ? fmt(d.s2)+' gr' : '-' }}</td><td class="r mono"><b>{{ fmt(d.total) }} gr</b></td><td class="r mono">{{ fmt(d.sisa) }} gr</td></tr>
+          <tr class="tot"><td>Total Rentang</td><td class="r mono" colspan="2"></td><td class="r mono">{{ fmt(laporanTotal) }} gr</td><td class="r mono">{{ fmt(laporanSisa) }} gr</td></tr>
+        </tbody>
+      </table>
+
+      <table v-if="preset!=='1' && laporanPerKelompok.length">
+        <thead><tr><th>Total Per Kelompok Selama Rentang</th><th class="r">Total Diterima</th></tr></thead>
+        <tbody>
+          <tr v-for="k in laporanPerKelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
+          <tr class="tot"><td>Pendapatan Usaha</td><td class="r mono">{{ fmt(laporanSisa) }} gr</td></tr>
+        </tbody>
+      </table>
+
+      <div class="notebox">
+        <b>{{ preset==='1' ? 'Catatan / Keterangan Per Shift' : 'Daftar Catatan Harian Per Shift' }}</b>
+        <ul>
+          <li v-for="e in laporanEntries.filter(x=>x.catatan)" :key="'n'+e.id"><b>{{ tglSingkat(e.tanggal) }} - Shift {{ e.shift }}:</b> {{ e.catatan }}</li>
+          <li v-if="!laporanEntries.some(x=>x.catatan)">Tidak ada catatan pada rentang ini.</li>
+        </ul>
+      </div>
+      <div class="sign">
+        <div><div>Diinput oleh,</div><div class="space"></div><div class="nm">Staff {{ team }}</div></div>
+        <div><div>Mengetahui,</div><div class="space"></div><div class="nm">Admin / Pimpinan</div></div>
+      </div>
+    </div>
+  </div>
+  </transition>
+
+  <div class="sticky no-print" v-if="view==='input'"><div><button class="btn btn-primary" id="btnSimpan" :disabled="totalPct>100" @click="simpan()">{{ editingId ? 'Simpan Perubahan' : 'Simpan Hasil Shift Ini' }}</button></div></div>
+
+  <nav class="bottomnav no-print"><div>
+    <button :class="{on: view==='dashboard'}" @click="view='dashboard'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h5V14h4v6h5V10"/></svg>Dashboard</button>
+    <button :class="{on: view==='input'}" @click="baru(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Input</button>
+    <button :class="{on: view==='riwayat'}" @click="view='riwayat'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Riwayat</button>
+    <button :class="{on: view==='laporan'}" @click="view='laporan'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13H7zM14 3v5h5"/></svg>Laporan</button>
+  </div></nav>
+
+  <div class="modal-bg" v-if="hapusTarget">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h3>Hapus catatan shift ini?</h3>
+      <div>{{ tglPanjang(hapusTarget.tanggal) }} - Shift {{ hapusTarget.shift }} - <b class="mono">{{ fmt(hapusTarget.hasil) }} gr</b></div>
+      <div class="hint">Shift lain di tanggal yang sama tidak ikut terhapus. Tindakan ini tercatat di Riwayat Perubahan.</div>
+      <div class="acts"><button class="btn btn-plain" @click="hapusTarget=null">Batal</button><button class="btn btn-danger" id="btnKonfirmasiHapus" @click="hapus()">Ya, Hapus</button></div>
+    </div>
+  </div>
+
+  <div class="toast" v-if="toast" id="toast">{{ toast }}</div>
+</div>
+</div>
+
+<script src="vendor/vue.global.prod.js"></script>
+<script>
+const { createApp, ref, reactive, computed, watch } = Vue;
+const HARI_INI = '2026-10-22';
+let seq = 1000;
+function E(id, team, tanggal, shift, hasil, catatan, rows){ return {id:id, team:team, tanggal:tanggal, shift:shift, hasil:hasil, catatan:catatan, rows:rows.map(r=>({nama:r[0],persen:r[1],orang:r[2]})), diubah:''}; }
+function seed(){
+  const OP6 = [['Operator',6,6],['Helper',4,5]];
+  return [
+    E(1,'Team 1','2026-10-22',1,60,'Galian titik B, tanah keras.',OP6),
+    E(2,'Team 1','2026-10-22',2,40,'Hujan deras jam 14.00, berhenti 2 jam.',[['Operator',6,4],['Helper',4,3]]),
+    E(3,'Team 1','2026-10-21',1,0,'Alat rusak, perbaikan seharian.',OP6),
+    E(4,'Team 1','2026-10-21',2,55,'',OP6),
+    E(5,'Team 1','2026-10-20',1,50,'Galian titik A selesai.',[['Operator',6,5],['Kas Team',3,1]]),
+    E(6,'Team 1','2026-10-20',2,42.5,'',OP6),
+    E(7,'Team 1','2026-10-19',1,50,'',OP6),
+    E(8,'Team 1','2026-10-19',2,30,'',OP6),
+    E(9,'Team 1','2026-10-18',1,48,'',OP6),
+    E(10,'Team 1','2026-10-18',2,37,'',OP6),
+    E(11,'Team 1','2026-10-17',1,61,'',OP6),
+    E(12,'Team 1','2026-10-17',2,44,'',OP6),
+    E(13,'Team 1','2026-10-16',1,39,'',OP6),
+    E(14,'Team 1','2026-10-16',2,51,'',OP6),
+    E(15,'Team 1','2026-09-30',1,45,'',OP6),
+    E(16,'Team 1','2026-09-30',2,35,'',OP6),
+    E(17,'Team 1','2026-09-10',1,70,'Catatan lama bulan September.',OP6),
+    E(21,'Team 2','2026-10-22',1,85.5,'', [['Operator',6,4]]),
+    E(22,'Team 2','2026-10-21',2,92.25,'', [['Operator',6,4]])
+  ];
+}
+createApp({
+  setup(){
+    const view = ref('dashboard');
+    const team = ref('Team 1');
+    const entries = ref(seed());
+    try{ const raw=localStorage.getItem('catatemas-v3'); if(raw) entries.value=JSON.parse(raw); }catch(e){}
+    const audit = ref([]);
+    try{ const raw=localStorage.getItem('catatemas-v3-audit'); if(raw) audit.value=JSON.parse(raw); }catch(e){}
+    const toast = ref('');
+    const editingId = ref(null);
+    const hapusTarget = ref(null);
+    const cepatShift = ref(1);
+    const quickNotes = ['Hujan.','Alat rusak.','BBM habis.','Pekerja izin.'];
+    const form = reactive({tanggal:HARI_INI, shift:1, hasilStr:'', tanpaHasil:false, catatan:'', rows:[]});
+    let keySeq = 0;
+    function rowBaru(nama,persen,orang){ return {key:++keySeq, nama:nama, persenStr:String(persen), orang:orang}; }
+    form.rows = [rowBaru('Operator',6,6), rowBaru('Helper',4,5)];
+
+    // pagination + filter
+    const query = ref(''); const filterShift = ref('0'); const perPage = ref(5); const page = ref(1);
+    watch([query, filterShift, perPage, team], ()=>{ page.value=1; });
+
+    // laporan
+    const preset = ref('1'); const laporanTanggal = ref(HARI_INI);
+    const customDari = ref('2026-09-23'); const customSampai = ref(HARI_INI);
+
+    function fmt(n){ return (Number(n)||0).toLocaleString('id-ID',{minimumFractionDigits:3, maximumFractionDigits:3}); }
+    function numStr(n){ return String(Math.round(n*100)/100).replace('.',','); }
+    function parseID(v){
+      v=String(v||'').trim().replace(/\s/g,''); if(!v) return 0;
+      const hasDot=v.includes('.'), hasComma=v.includes(',');
+      if(hasDot && hasComma){ v=v.replace(/\./g,'').replace(',','.'); }
+      else if(hasComma){ v=v.replace(',','.'); }
+      else if(hasDot){
+        const parts=v.split('.');
+        if(parts.length>2){ v=v.replace(/\./g,''); }
+        else if(parts[1].length===3 && parts[0]!=='0' && parts[0]!==''){ v=v.replace('.',''); }
+      }
+      const n=parseFloat(v); return isNaN(n)?0:n;
+    }
+    function parseGramStr(v){ return parseID(v); }
+    function parsePct(v){ return parseID(v); }
+    function tglPanjang(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long', day:'numeric', month:'long', year:'numeric'}); }catch(e){ return iso; } }
+    function tglSingkat(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric', month:'short', year:'numeric'}); }catch(e){ return iso; } }
+    function tambahHari(iso, d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); return t.toISOString().slice(0,10); }
+
+    const entriesTeam = computed(()=> entries.value.filter(e=>e.team===team.value).slice().sort((a,b)=> b.tanggal.localeCompare(a.tanggal) || b.shift-a.shift));
+    function sisaEntry(e){ const p=e.rows.reduce((s,r)=>s+r.persen,0); return e.hasil*(100-p)/100; }
+    function ringkas(e){ return e.rows.map(r=> r.nama+' '+numStr(r.persen)+'% x '+r.orang+' orang ('+fmt(e.hasil*r.persen/100/r.orang)+' gr/orang)').join(' - '); }
+
+    const totalHariIni = computed(()=> entriesTeam.value.filter(e=>e.tanggal===HARI_INI).reduce((s,e)=>s+e.hasil,0));
+    const totalBulanIni = computed(()=> entriesTeam.value.filter(e=>e.tanggal.slice(0,7)===HARI_INI.slice(0,7)).reduce((s,e)=>s+e.hasil,0));
+    const totalSisaBulanIni = computed(()=> entriesTeam.value.filter(e=>e.tanggal.slice(0,7)===HARI_INI.slice(0,7)).reduce((s,e)=>s+sisaEntry(e),0));
+    function shiftAda(s){ return entriesTeam.value.some(e=>e.tanggal===HARI_INI && e.shift===s); }
+    function hasilShift(s){ const e=entriesTeam.value.find(x=>x.tanggal===HARI_INI && x.shift===s); return e? e.hasil:0; }
+
+    // form
+    const hasil = computed(()=> form.tanpaHasil ? 0 : parseGramStr(form.hasilStr));
+    watch(()=>form.tanpaHasil, v=>{ if(v) form.hasilStr='0'; });
+    function rowTotal(r){ return hasil.value * parsePct(r.persenStr)/100; }
+    function rowPer(r){ return r.orang>0 ? rowTotal(r)/r.orang : 0; }
+    const totalPct = computed(()=> form.rows.reduce((s,r)=>s+parsePct(r.persenStr),0));
+    const sisaGr = computed(()=> hasil.value*(100-totalPct.value)/100);
+    const infoShift = computed(()=> {
+      const ada = entriesTeam.value.find(e=>e.tanggal===form.tanggal && e.shift===form.shift && e.id!==editingId.value);
+      return ada ? 'Shift ini di tanggal ini SUDAH ada ('+fmt(ada.hasil)+' gr). Kalau disimpan, kamu masuk Mode Edit data itu.' : 'Shift ini di tanggal ini belum ada catatan. Silakan input baru.';
+    });
+    const totalHariForm = computed(()=> {
+      const lain = entriesTeam.value.filter(e=>e.tanggal===form.tanggal && e.shift!==form.shift && e.id!==editingId.value).reduce((s,e)=>s+e.hasil,0);
+      return lain + hasil.value;
+    });
+
+    function simpanPersist(){ try{ localStorage.setItem('catatemas-v3', JSON.stringify(entries.value)); localStorage.setItem('catatemas-v3-audit', JSON.stringify(audit.value)); }catch(e){} }
+    function tunjukToast(m){ toast.value=m; setTimeout(()=> toast.value='', 3800); }
+    function catatAudit(m){ audit.value.unshift(new Date().toLocaleString('id-ID')+' - '+team.value+' - '+m); simpanPersist(); }
+    function gantiTeam(t){ team.value=t; view.value='dashboard'; }
+    function baru(shift){
+      editingId.value=null; form.tanggal=HARI_INI; form.shift=shift||1; form.tanpaHasil=false; form.catatan=''; form.hasilStr='';
+      if(!form.rows.length) form.rows=[rowBaru('Operator',6,1)];
+      view.value='input';
+    }
+    function salinPembagianLain(){
+      const sumber = entriesTeam.value.find(e=>!(e.tanggal===form.tanggal && e.shift===form.shift)) || entriesTeam.value[0];
+      if(sumber) form.rows = sumber.rows.map(r=>rowBaru(r.nama, r.persen, r.orang));
+      tunjukToast('Pembagian disalin dari '+ (sumber? tglSingkat(sumber.tanggal)+' Shift '+sumber.shift : '-') +'. Sesuaikan jumlah orang shift ini.');
+    }
+    function tambahBaris(){ form.rows.push(rowBaru('Kelompok Baru',0,1)); }
+    function edit(e){
+      editingId.value=e.id; form.tanggal=e.tanggal; form.shift=e.shift; form.tanpaHasil=e.hasil===0;
+      form.hasilStr=String(e.hasil).replace('.',','); form.catatan=e.catatan||'';
+      form.rows=e.rows.map(r=>rowBaru(r.nama, r.persen, r.orang)); view.value='input';
+    }
+    function batalEdit(){ editingId.value=null; view.value='riwayat'; }
+    function simpan(){
+      const rows = form.rows.map(r=>({nama:r.nama||'Kelompok', persen:parsePct(r.persenStr), orang:Math.max(1,r.orang)}));
+      if(editingId.value){
+        const e=entries.value.find(x=>x.id===editingId.value);
+        const lama=fmt(e.hasil)+' gr Shift '+e.shift+', '+e.rows.map(r=>r.nama+' '+r.persen+'% x '+r.orang).join(', ');
+        e.tanggal=form.tanggal; e.shift=form.shift; e.hasil=hasil.value; e.catatan=form.catatan; e.rows=rows; e.diubah=new Date().toLocaleString('id-ID');
+        catatAudit('EDIT '+tglSingkat(e.tanggal)+' Shift '+e.shift+': dari ['+lama+'] menjadi ['+fmt(e.hasil)+' gr, '+rows.map(r=>r.nama+' '+r.persen+'% x '+r.orang).join(', ')+']');
+        editingId.value=null; tunjukToast('Perubahan shift tersimpan dan tercatat.');
+      } else {
+        const duplikat = entries.value.find(x=>x.team===team.value && x.tanggal===form.tanggal && x.shift===form.shift);
+        if(duplikat){ edit(duplikat); tunjukToast('Tanggal + shift ini sudah ada. Kamu masuk Mode Edit, bukan duplikat.'); return; }
+        const id = ++seq + Date.now()%10000;
+        entries.value.push({id:id, team:team.value, tanggal:form.tanggal, shift:form.shift, hasil:hasil.value, catatan:form.catatan, rows:rows, diubah:''});
+        catatAudit('INPUT BARU '+tglSingkat(form.tanggal)+' Shift '+form.shift+': '+fmt(hasil.value)+' gr');
+        tunjukToast('Shift '+form.shift+' tersimpan. Total hari ini sekarang '+fmt(totalHariIni.value)+' gr.');
+      }
+      simpanPersist(); view.value='riwayat';
+    }
+    function tanyaHapus(e){ hapusTarget.value=e; }
+    function hapus(){
+      const e=hapusTarget.value; if(!e) return;
+      entries.value=entries.value.filter(x=>x.id!==e.id);
+      catatAudit('HAPUS '+tglSingkat(e.tanggal)+' Shift '+e.shift+': '+fmt(e.hasil)+' gr');
+      hapusTarget.value=null; simpanPersist(); tunjukToast('Catatan shift dihapus. Shift lain di tanggal sama tetap aman.');
+    }
+
+    // pagination
+    const filtered = computed(()=> {
+      const q = query.value.trim().toLowerCase();
+      return entriesTeam.value.filter(e=>{
+        if(filterShift.value!=='0' && e.shift!==Number(filterShift.value)) return false;
+        if(!q) return true;
+        const hay = (e.tanggal+' shift '+e.shift+' '+e.catatan+' '+e.rows.map(r=>r.nama).join(' ')).toLowerCase();
+        return hay.includes(q);
+      });
+    });
+    const totalPages = computed(()=> Math.max(1, Math.ceil(filtered.value.length / perPage.value)));
+    watch(totalPages, v=>{ if(page.value>v) page.value=v; });
+    const pageItems = computed(()=> filtered.value.slice((page.value-1)*perPage.value, page.value*perPage.value));
+    const pageStart = computed(()=> filtered.value.length ? (page.value-1)*perPage.value+1 : 0);
+    const pageEnd = computed(()=> Math.min(page.value*perPage.value, filtered.value.length));
+
+    // laporan rentang
+    function setPreset(p){
+      preset.value=p;
+      if(p==='custom'){ customDari.value=tambahHari(HARI_INI,-29); customSampai.value=HARI_INI; }
+    }
+    const rentang = computed(()=> {
+      if(preset.value==='1') return {dari:laporanTanggal.value, sampai:laporanTanggal.value};
+      if(preset.value==='7') return {dari:tambahHari(HARI_INI,-6), sampai:HARI_INI};
+      if(preset.value==='30') return {dari:tambahHari(HARI_INI,-29), sampai:HARI_INI};
+      if(preset.value==='bulan') return {dari:HARI_INI.slice(0,8)+'01', sampai:HARI_INI};
+      return {dari:customDari.value, sampai:customSampai.value};
+    });
+    const laporanEntries = computed(()=> entriesTeam.value.filter(e=>e.tanggal>=rentang.value.dari && e.tanggal<=rentang.value.sampai).slice().sort((a,b)=> a.tanggal.localeCompare(b.tanggal) || a.shift-b.shift));
+    const laporanTotal = computed(()=> laporanEntries.value.reduce((s,e)=>s+e.hasil,0));
+    const laporanSisa = computed(()=> laporanEntries.value.reduce((s,e)=>s+sisaEntry(e),0));
+    const laporanPerHari = computed(()=> {
+      const map = {};
+      laporanEntries.value.forEach(e=>{ if(!map[e.tanggal]) map[e.tanggal]={tanggal:e.tanggal, s1:null, s2:null, total:0, sisa:0}; map[e.tanggal]['s'+e.shift]=e.hasil; map[e.tanggal].total+=e.hasil; map[e.tanggal].sisa+=sisaEntry(e); });
+      return Object.values(map).sort((a,b)=> a.tanggal.localeCompare(b.tanggal));
+    });
+    const laporanPerKelompok = computed(()=> {
+      const map = {};
+      laporanEntries.value.forEach(e=> e.rows.forEach(r=>{ map[r.nama]=(map[r.nama]||0)+ e.hasil*r.persen/100; }));
+      return Object.entries(map).map(([nama,total])=>({nama,total})).sort((a,b)=>b.total-a.total);
+    });
+    const judulLaporan = computed(()=> preset.value==='1' ? 'Laporan Hasil Harian' : preset.value==='bulan' ? 'Laporan Hasil Bulanan' : 'Laporan Hasil Rentang Waktu');
+    const labelRentang = computed(()=> preset.value==='1' ? tglPanjang(rentang.value.dari) : tglSingkat(rentang.value.dari)+' sampai '+tglSingkat(rentang.value.sampai)+' ('+laporanPerHari.value.length+' hari, '+laporanEntries.value.length+' shift)');
+    function bukaLaporanHarian(e){ preset.value='1'; laporanTanggal.value=e.tanggal; view.value='laporan'; }
+    function cetak(){ window.print(); }
+
+    return {HARI_INI, view, team, entriesTeam, audit, toast, editingId, hapusTarget, cepatShift, quickNotes, form,
+      fmt, numStr, parsePct, tglPanjang, tglSingkat, hasil, rowTotal, rowPer, totalPct, sisaGr, infoShift, totalHariForm,
+      totalHariIni, totalBulanIni, totalSisaBulanIni, shiftAda, hasilShift, sisaEntry, ringkas,
+      gantiTeam, baru, salinPembagianLain, tambahBaris, edit, batalEdit, simpan, tanyaHapus, hapus,
+      query, filterShift, perPage, page, filtered, totalPages, pageItems, pageStart, pageEnd,
+      preset, setPreset, laporanTanggal, customDari, customSampai, laporanEntries, laporanTotal, laporanSisa, laporanPerHari, laporanPerKelompok, judulLaporan, labelRentang, bukaLaporanHarian, cetak};
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

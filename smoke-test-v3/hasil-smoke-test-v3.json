@@ -1,0 +1,151 @@
+{
+  "pass": 29,
+  "total": 29,
+  "results": [
+    {
+      "name": "SHIFT: Total hari ini gabungan Shift 1 (60) + Shift 2 (40) = 100 gr",
+      "ok": true,
+      "detail": "100,000 gr"
+    },
+    {
+      "name": "SHIFT: Status kedua shift hari ini sudah input",
+      "ok": true,
+      "detail": "Shift 1 sudah input - 60,000 gr / Shift 2 sudah input - 40,000 gr"
+    },
+    {
+      "name": "PAGINATION: Halaman 1 menampilkan 5 dari 17",
+      "ok": true,
+      "detail": "{\"cards\":5,\"info\":\"Menampilkan 1-5 dari 17 catatan\",\"pages\":4,\"nextDisabled\":false}"
+    },
+    {
+      "name": "PAGINATION: Total 4 halaman untuk 17 catatan @5",
+      "ok": true,
+      "detail": "pages=4"
+    },
+    {
+      "name": "PAGINATION: Berikutnya pindah ke 6-10",
+      "ok": true,
+      "detail": "{\"cards\":5,\"info\":\"Menampilkan 6-10 dari 17 catatan\"}"
+    },
+    {
+      "name": "PAGINATION: Halaman terakhir berisi sisa 2 dan Berikutnya mati",
+      "ok": true,
+      "detail": "{\"cards\":2,\"info\":\"Menampilkan 16-17 dari 17 catatan\",\"nextDisabled\":true}"
+    },
+    {
+      "name": "PAGINATION: Ubah ke 10 per halaman menjadi 2 halaman",
+      "ok": true,
+      "detail": "{\"cards\":10,\"info\":\"Menampilkan 1-10 dari 17 catatan\",\"pages\":2}"
+    },
+    {
+      "name": "FILTER: Shift 1 saja menyisakan 9 catatan dan reset ke halaman 1",
+      "ok": true,
+      "detail": "{\"info\":\"Menampilkan 1-5 dari 9 catatan\",\"semuaShift1\":true}"
+    },
+    {
+      "name": "FILTER: Pencarian \"alat rusak\" menemukan 1 catatan",
+      "ok": true,
+      "detail": "{\"cards\":1,\"info\":\"Menampilkan 1-1 dari 1 catatan\"}"
+    },
+    {
+      "name": "SHIFT: Tanggal + shift yang belum ada dinyatakan belum ada catatan",
+      "ok": true,
+      "detail": "Shift ini di tanggal ini belum ada catatan. Silakan input baru."
+    },
+    {
+      "name": "CREATE SHIFT: Shift 2 tanggal baru tersimpan (total 18)",
+      "ok": true,
+      "detail": "{\"info\":\"Menampilkan 1-18 dari 18 catatan\",\"has25\":true}"
+    },
+    {
+      "name": "SHIFT: Info memperingatkan Shift 1 tanggal ini sudah ada",
+      "ok": true,
+      "detail": "Shift ini di tanggal ini SUDAH ada (60,000 gr). Kalau disimpan, kamu masuk Mode Edit data itu."
+    },
+    {
+      "name": "DUPLIKAT SHIFT dicegah: masuk Mode Edit, bukan duplikat baru",
+      "ok": true,
+      "detail": "{\"modeEdit\":true,\"toast\":\"Tanggal + shift ini sudah ada. Kamu masuk Mode Edit, bukan duplikat.\"}"
+    },
+    {
+      "name": "DUPLIKAT SHIFT: jumlah catatan tetap 18 setelah dicegah",
+      "ok": true,
+      "detail": "{\"info\":\"Menampilkan 1-5 dari 18 catatan\"}"
+    },
+    {
+      "name": "DELETE SHIFT: Catatan uji terhapus, total kembali 17",
+      "ok": true,
+      "detail": "Menampilkan 1-17 dari 17 catatan"
+    },
+    {
+      "name": "LAPORAN 1 HARI: Judul harian dan total 100 gr",
+      "ok": true,
+      "detail": "Laporan Hasil Harian / 100,000 gr"
+    },
+    {
+      "name": "LAPORAN 1 HARI: Rincian Shift 1 dan Shift 2 tampil",
+      "ok": true,
+      "detail": "2 shift"
+    },
+    {
+      "name": "LAPORAN 1 HARI: Catatan per shift tampil",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "LAPORAN 7 HARI: Total 607,500 gr dari 14 shift",
+      "ok": true,
+      "detail": "607,500 gr / 14 shift"
+    },
+    {
+      "name": "LAPORAN 7 HARI: Ada total per kelompok dan daftar catatan",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "LAPORAN 30 HARI: Total 687,500 gr dari 16 shift (10 Sep tidak ikut)",
+      "ok": true,
+      "detail": "687,500 gr / 16 shift"
+    },
+    {
+      "name": "LAPORAN BULANAN: Oktober total 607,500 gr",
+      "ok": true,
+      "detail": "Laporan Hasil Bulanan / 607,500 gr"
+    },
+    {
+      "name": "LAPORAN CUSTOM: September total 150,000 gr dari 3 shift",
+      "ok": true,
+      "detail": "150,000 gr / 3 shift"
+    },
+    {
+      "name": "PDF rentang ter-generate",
+      "ok": true,
+      "detail": "160326 bytes"
+    },
+    {
+      "name": "TABLET 768: Riwayat grid 2 kolom, tanpa scroll horizontal",
+      "ok": true,
+      "detail": "{\"sw\":768,\"cw\":768,\"cols\":2}"
+    },
+    {
+      "name": "PC 1280: Riwayat tampil sebagai tabel data (5 baris halaman 1)",
+      "ok": true,
+      "detail": "{\"sw\":1280,\"cw\":1280,\"tbl\":\"block\",\"cards\":\"none\",\"rows\":5}"
+    },
+    {
+      "name": "PC 1280: Tanpa scroll horizontal body",
+      "ok": true,
+      "detail": "sw=1280"
+    },
+    {
+      "name": "PC 1280: Form input 2 kolom dengan ringkasan di kanan",
+      "ok": true,
+      "detail": "{\"cols\":2}"
+    },
+    {
+      "name": "Tidak ada error JavaScript",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

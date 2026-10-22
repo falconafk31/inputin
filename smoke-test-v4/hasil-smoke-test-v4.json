@@ -1,0 +1,126 @@
+{
+  "pass": 24,
+  "total": 24,
+  "results": [
+    {
+      "name": "TX: Halaman 1 berisi 10 grup hari dan 20 baris shift",
+      "ok": true,
+      "detail": "{\"heads\":10,\"rows\":20,\"info\":\"Menampilkan 10 hari (20 shift) dari 30 hari\",\"firstHead\":\"Kamis, 22 Oktober 2026 2 shift tercatat Total hari: 100,000 gr Pendapatan Usaha: 90,000 gr\"}"
+    },
+    {
+      "name": "TX: Pita hari pertama = 22 Okt, total 100 gr, PU 90 gr",
+      "ok": true,
+      "detail": "Kamis, 22 Oktober 2026 2 shift tercatat Total hari: 100,000 gr Pendapatan Usaha: 90,000 gr"
+    },
+    {
+      "name": "TX: Pagination per hari pindah halaman 2 (10 hari lagi)",
+      "ok": true,
+      "detail": "{\"heads\":10,\"info\":\"Menampilkan 10 hari (20 shift) dari 30 hari\"}"
+    },
+    {
+      "name": "TX: Halaman 3 berisi 10 hari terakhir dan Berikutnya mati",
+      "ok": true,
+      "detail": "{\"heads\":10,\"nextDis\":true}"
+    },
+    {
+      "name": "TX: Baris detail terbuka saat tombol rincian diklik",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "TX: Detail Operator 6% x 6 = total 3,600, per orang 0,600",
+      "ok": true,
+      "detail": "Operator\t6%\t6\t3,600 gr\t0,600 gr"
+    },
+    {
+      "name": "TX: Detail memuat baris Pendapatan Usaha dan catatan shift",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "TX di tablet: body tidak bocor, tabel scroll di dalam kartunya",
+      "ok": true,
+      "detail": "{\"bodyOK\":true,\"cardScroll\":true}"
+    },
+    {
+      "name": "PDF: Tabel utama tepat 30 baris hari",
+      "ok": true,
+      "detail": "days=30"
+    },
+    {
+      "name": "PDF: Subtotal mingguan ada 5 (7+7+7+7+2)",
+      "ok": true,
+      "detail": "weeks=5"
+    },
+    {
+      "name": "PDF: Grand total = jumlah kolom Total Hari",
+      "ok": true,
+      "detail": "grand=2.560,500 gr sum=2560.5"
+    },
+    {
+      "name": "PDF: KPI total sama dengan grand total tabel",
+      "ok": true,
+      "detail": "2.560,500 gr vs 2.560,500 gr"
+    },
+    {
+      "name": "PDF: Subtotal minggu pertama = jumlah 7 hari pertamanya",
+      "ok": true,
+      "detail": "week=581,000 gr chunk=581"
+    },
+    {
+      "name": "PDF: 22 Okt total 100 dan 21 Okt memuat catatan alat rusak",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "PDF: Rata-rata per hari konsisten (total/30 = 85,350)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "PDF: Header kolom terakhir bernama Catatan (bukan Keterangan)",
+      "ok": true,
+      "detail": "header terakhir = Catatan"
+    },
+    {
+      "name": "PDF: Tidak ada seksi Catatan Penting duplikat di bawah tabel",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "PDF: Setiap catatan tampil tepat 1 kali (di kolom Catatan saja)",
+      "ok": true,
+      "detail": "{\"last\":\"Catatan\",\"hasPenting\":false,\"cHujan\":1,\"cGalian\":1,\"cAlat\":1}"
+    },
+    {
+      "name": "PDF landscape ter-generate dan tidak kosong",
+      "ok": true,
+      "detail": "155598 bytes, halaman terdeteksi ~3"
+    },
+    {
+      "name": "SETTING: Nama perusahaan custom tampil di kop PDF",
+      "ok": true,
+      "detail": "PT TAMBANG SEJAHTERA"
+    },
+    {
+      "name": "SETTING: Nama staff dan pimpinan custom tampil di tanda tangan",
+      "ok": true,
+      "detail": "Andi - Staff Team 1 / Budi Santoso"
+    },
+    {
+      "name": "FOOTER: Timestamp format Indonesia lengkap dengan WIB",
+      "ok": true,
+      "detail": "Dicetak pada 22 Oktober 2026 - pukul 19.40.24 WIB"
+    },
+    {
+      "name": "FOOTER: Ganti zona ke WIT mengubah label dan jam (+2 dari WIB)",
+      "ok": true,
+      "detail": "Dicetak pada 22 Oktober 2026 - pukul 21.40.25 WIT (sebelumnya Dicetak pada 22 Oktober 2026 - pukul 19.40.24 WIB)"
+    },
+    {
+      "name": "Tidak ada error JavaScript",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

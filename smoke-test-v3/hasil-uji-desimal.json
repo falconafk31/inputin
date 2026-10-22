@@ -1,0 +1,30 @@
+{
+  "pass": 6,
+  "total": 6,
+  "results": [
+    {
+      "name": "DESIMAL: \"12,5\" terbaca 12,500 gr",
+      "ok": true
+    },
+    {
+      "name": "DESIMAL: \"12.5\" (titik) terbaca sama 12,500 gr",
+      "ok": true
+    },
+    {
+      "name": "DESIMAL: \"1.250,5\" terbaca 1.250,500 gr",
+      "ok": true
+    },
+    {
+      "name": "DESIMAL: \"0,015\" terbaca 0,015 gr (bukan 15)",
+      "ok": true
+    },
+    {
+      "name": "DESIMAL: \"1.500\" terbaca ribuan = 1.500,000 gr",
+      "ok": true
+    },
+    {
+      "name": "PERSEN: \"2.5\" terbaca 2,5% dan totalnya 2,500 gr",
+      "ok": true
+    }
+  ]
+}

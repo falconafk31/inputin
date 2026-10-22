@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CatatEmas v4 - Design Ulang Tabel</title>
+<style>
+:root{
+  --primary:#1E40AF; --primary2:#2563EB; --dark:#172554; --accent:#D97706; --accent2:#F59E0B;
+  --bg:#EEF2F7; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0;
+  --ok:#15803D; --okbg:#DCFCE7; --danger:#DC2626; --dangerbg:#FEE2E2; --goldbg:#FEF3C7;
+  --shadow:0 10px 30px rgba(23,37,84,.10), 0 2px 6px rgba(23,37,84,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:1rem;color:var(--ink)}
+[v-cloak]{display:none}
+.topbar{position:sticky;top:0;z-index:50;background:var(--dark);color:#fff;display:flex;gap:8px;align-items:center;padding:12px 18px;flex-wrap:wrap}
+.topbar b{margin-right:6px}
+.topbar button{min-height:44px;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-weight:700}
+.topbar button.active{background:#fff;color:var(--dark)}
+.page{max-width:1180px;margin:0 auto;padding:20px 18px 70px}
+.page h1{font-size:1.35rem;margin:4px 0 4px}
+.page .sub{color:var(--muted);margin-bottom:16px;line-height:1.5;max-width:860px}
+
+/* ===== TABEL RINCIAN TRANSAKSI (APP) ===== */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input[type="text"]{flex:1;min-width:220px;min-height:50px;border:2px solid var(--line);border-radius:12px;padding:9px 13px;background:#fff}
+.toolbar select{min-height:50px;border:2px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff;font-weight:600}
+.tbl-card{background:#fff;border-radius:18px;box-shadow:var(--shadow);overflow:auto;border:1px solid rgba(226,232,240,.8)}
+table.tx{width:100%;border-collapse:separate;border-spacing:0;min-width:820px}
+table.tx thead th{position:sticky;top:0;background:#F8FAFC;z-index:2;text-align:left;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.tx thead th.r, table.tx td.r{text-align:right}
+table.tx td{padding:12px 14px;border-bottom:1px solid #EEF2F7;vertical-align:middle}
+tr.shift-row:nth-child(even of .shift-row){background:#FBFDFF}
+tr.shift-row:hover{background:#EFF6FF}
+tr.day-head td{background:linear-gradient(90deg,#172554,#1E40AF);color:#fff;padding:11px 14px;border-bottom:0}
+tr.day-head .d-tgl{font-weight:800;font-size:1rem}
+tr.day-head .d-meta{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.day-flex{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pill{display:inline-block;border-radius:999px;padding:4px 11px;font-size:.78rem;font-weight:800;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff}
+.pill.gold{background:var(--accent);border-color:var(--accent)}
+.badge{display:inline-block;border-radius:999px;padding:4px 11px;font-size:.78rem;font-weight:800}
+.b-shift{background:#DBEAFE;color:var(--primary)} .b-ok{background:var(--okbg);color:var(--ok)} .b-zero{background:var(--goldbg);color:#92400E}
+.hasil{font-size:1.12rem;font-weight:800;color:var(--dark);white-space:nowrap}
+.hasil em{font-style:normal;color:var(--accent);font-size:.82rem}
+.ringkas{color:#334155;font-size:.92rem;line-height:1.5;min-width:230px}
+.catatan-cell{color:var(--muted);font-size:.92rem;max-width:240px;line-height:1.45}
+.chev{width:46px;height:46px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;color:var(--primary);font-size:1.05rem}
+tr.detail-row td{background:#FFFBEB;padding:0}
+.detail-box{padding:16px 18px 18px 74px}
+.detail-box h4{margin:0 0 10px;font-size:.92rem;color:#92400E}
+table.mini{border-collapse:collapse;font-size:.92rem;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(23,37,84,.08)}
+table.mini th, table.mini td{border:1px solid var(--line);padding:8px 12px}
+table.mini th{background:#F8FAFC;text-align:left}
+table.mini td.r, table.mini th.r{text-align:right}
+.detail-note{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:.93rem;line-height:1.55;max-width:720px}
+.pager{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:16px}
+.pager button{min-width:48px;min-height:48px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;padding:8px 12px}
+.pager button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pager button:disabled{opacity:.45}
+.pager .info{font-weight:700;color:var(--muted);margin-right:auto}
+.empty{background:#fff;border:2px dashed var(--line);border-radius:16px;padding:26px;text-align:center;color:var(--muted);font-weight:600}
+
+/* ===== PDF 30 HARI (LANDSCAPE) ===== */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{border:1.5px solid #94A3B8;border-radius:10px;padding:10px 13px;background:#F8FAFC}
+.kpi .cap{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}
+.kpi .val{font-size:1.32rem;font-weight:800;margin-top:2px}
+.kpi .val em{font-style:normal;color:var(--accent);font-size:.9rem}
+.sheet{background:#fff;box-shadow:var(--shadow);padding:30px 32px;border-radius:6px}
+.sheet .usaha{text-align:center;font-weight:800;letter-spacing:.03em}
+.sheet h2{text-align:center;margin:2px 0;font-size:1.3rem}
+.sheet .meta{text-align:center;color:var(--muted);margin-bottom:8px}
+.sheet hr{border:0;border-top:3px double var(--ink);margin:10px 0 14px}
+table.pdf{width:100%;border-collapse:collapse;font-size:.86rem}
+table.pdf th, table.pdf td{border:1px solid #94A3B8;padding:6px 8px}
+table.pdf thead th{background:#172554;color:#fff;text-align:left;font-size:.8rem}
+table.pdf td.r, table.pdf th.r{text-align:right}
+table.pdf tbody tr.day:nth-child(even){background:#F8FAFC}
+table.pdf tr.week td{background:#FEF3C7;font-weight:800}
+table.pdf tr.grand td{background:#DBEAFE;font-weight:800;font-size:.95rem;border-top:3px double #172554}
+.ket{color:#334155;font-size:.8rem;line-height:1.4}
+.two-col{display:grid;grid-template-columns:1fr 1.4fr;gap:16px;margin-top:14px}
+.box{border:1px solid #94A3B8;padding:12px 14px}
+.box h4{margin:0 0 8px;font-size:.95rem}
+.box table{width:100%;border-collapse:collapse;font-size:.88rem}
+.box td{padding:5px 4px;border-bottom:1px solid #E2E8F0}
+.box td.r{text-align:right;font-weight:700}
+.box ul{margin:4px 0 0;padding-left:18px;line-height:1.55;font-size:.88rem}
+.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px;text-align:center}
+.sign .space{height:54px}.sign .nm{border-top:1px solid var(--ink);padding-top:6px;font-weight:700}
+.foot{color:var(--muted);font-size:.78rem;margin-top:14px;display:flex;justify-content:space-between}
+.print-btn{min-height:52px;border-radius:14px;border:0;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-weight:800;padding:12px 22px;font-size:1rem;margin-bottom:14px}
+
+@page{size:A4 landscape;margin:11mm}
+@media print{
+  .topbar,.toolbar,.pager,.print-btn,.no-print{display:none!important}
+  body{background:#fff}
+  .page{max-width:none;padding:0}
+  .view{display:none!important}
+  .view.print-target{display:block!important}
+  .sheet{box-shadow:none;padding:0}
+  table.pdf{font-size:.8rem}
+}
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+  <div class="topbar">
+    <b>CATATEMAS v4 - FOKUS TABEL</b>
+    <button :class="{active: view==='tx'}" @click="view='tx'">Tabel Rincian Transaksi</button>
+    <button :class="{active: view==='pdf'}" @click="view='pdf'">Tabel PDF 30 Hari</button>
+    <span style="opacity:.85">Team 1 - Shift tetap: Shift 1 / Shift 2 (bukan jam)</span>
+  </div>
+
+  <!-- ===== RINCIAN TRANSAKSI ===== -->
+  <div class="page view" :class="{'print-target': view==='tx'}" v-show="view==='tx'">
+    <h1>Tabel Rincian Transaksi - Design Ulang</h1>
+    <div class="sub">Baru di design ini: transaksi dikelompokkan per tanggal dengan pita subtotal hari, kolom angka rata kanan memakai font mono, baris zebra, header tabel menempel saat scroll, dan setiap baris shift bisa dibuka untuk melihat rincian pembagian per kelompok tanpa pindah halaman. Pagination dihitung per hari (10 hari per halaman) agar kelompok tanggal tidak terpotong.</div>
+
+    <div class="toolbar no-print">
+      <input type="text" v-model="query" placeholder="Cari catatan, kelompok, tanggal..." aria-label="Cari">
+      <select v-model="filterShift" aria-label="Filter shift"><option value="0">Semua Shift</option><option value="1">Shift 1</option><option value="2">Shift 2</option></select>
+      <select v-model.number="perPageDays" aria-label="Hari per halaman"><option :value="5">5 hari / halaman</option><option :value="10">10 hari / halaman</option><option :value="30">30 hari / halaman</option></select>
+    </div>
+
+    <div class="tbl-card" v-if="pageDays.length">
+      <table class="tx">
+        <thead><tr><th style="width:56px"></th><th>Shift</th><th class="r">Hasil</th><th class="r">Terbagi</th><th class="r">Pendapatan Usaha</th><th>Rincian Pembagian</th><th>Catatan</th></tr></thead>
+        <tbody>
+          <template v-for="d in pageDays" :key="d.tanggal">
+            <tr class="day-head"><td colspan="7"><div class="day-flex"><span class="d-tgl">{{ tglPanjang(d.tanggal) }}</span><span class="d-meta"><span class="pill">{{ d.entries.length }} shift tercatat</span><span class="pill gold">Total hari: {{ fmt(d.total) }} gr</span><span class="pill">Pendapatan Usaha: {{ fmt(d.sisa) }} gr</span></span></div></td></tr>
+            <template v-for="e in d.entries" :key="e.id">
+              <tr class="shift-row">
+                <td><button class="chev" :data-expand="e.id" :aria-label="'Buka rincian shift '+e.shift" @click="toggle(e.id)">{{ expanded===e.id ? 'v' : '>' }}</button></td>
+                <td><span class="badge b-shift">Shift {{ e.shift }}</span><br><span class="badge" :class="e.hasil===0?'b-zero':'b-ok'" style="margin-top:5px">{{ e.hasil===0 ? 'Tanpa Hasil' : 'Sudah Input' }}</span></td>
+                <td class="r"><span class="hasil mono">{{ fmt(e.hasil) }} <em>gr</em></span></td>
+                <td class="r mono">{{ fmt(terbagi(e)) }} gr</td>
+                <td class="r mono"><b>{{ fmt(sisaEntry(e)) }} gr</b></td>
+                <td class="ringkas">{{ ringkas(e) }}</td>
+                <td class="catatan-cell">{{ e.catatan || '-' }}</td>
+              </tr>
+              <tr class="detail-row" v-if="expanded===e.id">
+                <td colspan="7"><div class="detail-box">
+                  <h4>RINCIAN PEMBAGIAN - {{ tglSingkat(e.tanggal) }} - SHIFT {{ e.shift }}</h4>
+                  <table class="mini">
+                    <thead><tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Jumlah Orang</th><th class="r">Total Kelompok</th><th class="r">Per Orang</th></tr></thead>
+                    <tbody>
+                      <tr v-for="(r,i) in e.rows" :key="i"><td>{{ r.nama }}</td><td class="r mono">{{ numStr(r.persen) }}%</td><td class="r mono">{{ r.orang }}</td><td class="r mono">{{ fmt(e.hasil*r.persen/100) }} gr</td><td class="r mono">{{ fmt(e.hasil*r.persen/100/r.orang) }} gr</td></tr>
+                      <tr><td colspan="3"><b>Pendapatan Usaha (sisa)</b></td><td class="r mono"><b>{{ fmt(sisaEntry(e)) }} gr</b></td><td class="r mono">-</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="detail-note"><b>Catatan shift ini:</b> {{ e.catatan || 'Tidak ada catatan.' }}<span v-if="e.diubah"><br><b>Terakhir diubah:</b> {{ e.diubah }}</span></div>
+                </div></td>
+              </tr>
+            </template>
+          </template>
+        </tbody>
+      </table>
+    </div>
+    <div class="empty" v-else>Tidak ada transaksi yang cocok dengan filter.</div>
+
+    <div class="pager no-print" v-if="filteredDays.length" id="pager">
+      <span class="info" id="pageInfo">Menampilkan {{ pageDays.length }} hari ({{ pageShiftCount }} shift) dari {{ filteredDays.length }} hari</span>
+      <button id="btnPrev" :disabled="page<=1" @click="page--">Sebelumnya</button>
+      <button v-for="p in totalPages" :key="p" :class="{on:p===page}" :data-page="p" @click="page=p">{{ p }}</button>
+      <button id="btnNext" :disabled="page>=totalPages" @click="page++">Berikutnya</button>
+    </div>
+  </div>
+
+  <!-- ===== PDF 30 HARI ===== -->
+  <div class="page view" :class="{'print-target': view==='pdf'}" v-show="view==='pdf'" style="max-width:1240px">
+    <h1 class="no-print">Tabel PDF 30 Hari - Design Ulang</h1>
+    <div class="sub no-print">Baru di design ini: format A4 LANDSCAPE agar 30 hari muat lega, strip KPI di bawah kop, subtotal tiap 7 hari langsung di dalam tabel (bukan hanya total akhir), kolom terakhir bernama Catatan (isi catatan per shift, tidak diulang lagi di bawah tabel), lalu total per kelompok setelah tabel utama. Ambil contoh periode 23 September - 22 Oktober 2026, Team 1.</div>
+    <button class="print-btn no-print" @click="cetak()">Unduh PDF 30 Hari</button>
+
+    <div class="no-print" style="background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px">
+      <div style="font-weight:800;margin-bottom:4px">Pengaturan Admin (simulasi database - tersimpan di tabel settings dan users)</div>
+      <div style="color:var(--muted);font-size:.9rem;margin-bottom:12px">Nama perusahaan tampil di kop PDF. Nama pimpinan tampil di tanda tangan kanan. Nama staff tampil di tanda tangan kiri dan mengikuti akun yang menginput. Zona waktu menentukan jam server tampilan dan label WIB / WITA / WIT di footer cetak. Ubah isinya, PDF di bawah langsung berubah.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px">
+        <label>Nama Perusahaan<input type="text" id="set-usaha" v-model="settings.perusahaan" style="width:100%;min-height:48px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:5px"></label>
+        <label>Nama Pimpinan (TTD)<input type="text" id="set-pimpinan" v-model="settings.pimpinan" style="width:100%;min-height:48px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:5px"></label>
+        <label>Nama Staff (TTD)<input type="text" id="set-staff" v-model="settings.staff" style="width:100%;min-height:48px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:5px"></label>
+        <label>Zona Waktu Usaha<select id="set-zona" v-model="settings.zona" style="width:100%;min-height:48px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:5px;background:#fff"><option value="Asia/Jakarta">WIB - Asia/Jakarta</option><option value="Asia/Makassar">WITA - Asia/Makassar</option><option value="Asia/Jayapura">WIT - Asia/Jayapura</option></select></label>
+      </div>
+    </div>
+
+    <div class="sheet" id="sheet">
+      <div class="usaha" id="kopUsaha">{{ settings.perusahaan.toUpperCase() }}</div>
+      <h2>Laporan Hasil 30 Hari</h2>
+      <div class="meta">Team 1 - 23 September 2026 sampai 22 Oktober 2026 - Shift 1 dan Shift 2</div>
+      <hr>
+      <div class="kpis">
+        <div class="kpi"><div class="cap">Total Hasil 30 Hari</div><div class="val mono" id="kpiTotal">{{ fmt(totalSemua) }} <em>gr</em></div></div>
+        <div class="kpi"><div class="cap">Pendapatan Usaha</div><div class="val mono" id="kpiSisa">{{ fmt(sisaSemua) }} <em>gr</em></div></div>
+        <div class="kpi"><div class="cap">Rata-rata Per Hari</div><div class="val mono">{{ fmt(totalSemua/30) }} <em>gr</em></div></div>
+        <div class="kpi"><div class="cap">Hari Aktif / Shift Tercatat</div><div class="val mono">{{ hariAktif }} hari / {{ jumlahShift }} shift</div></div>
+      </div>
+      <table class="pdf" id="pdfTable">
+        <thead><tr><th style="width:38px">No</th><th>Tanggal</th><th class="r">Shift 1</th><th class="r">Shift 2</th><th class="r">Total Hari</th><th class="r">Terbagi</th><th class="r">Pendapatan Usaha</th><th style="width:30%">Catatan</th></tr></thead>
+        <tbody>
+          <template v-for="(w,wi) in minggu" :key="wi">
+            <tr class="day" v-for="(d,i) in w" :key="d.tanggal">
+              <td class="mono">{{ wi*7+i+1 }}</td>
+              <td style="white-space:nowrap">{{ tglSingkat(d.tanggal) }}</td>
+              <td class="r mono">{{ d.s1!==null ? fmt(d.s1)+' gr' : '-' }}</td>
+              <td class="r mono">{{ d.s2!==null ? fmt(d.s2)+' gr' : '-' }}</td>
+              <td class="r mono"><b>{{ fmt(d.total) }} gr</b></td>
+              <td class="r mono">{{ fmt(d.terbagi) }} gr</td>
+              <td class="r mono">{{ fmt(d.sisa) }} gr</td>
+              <td class="ket">{{ d.ket || '-' }}</td>
+            </tr>
+            <tr class="week"><td colspan="4">Subtotal Hari {{ wi*7+1 }}-{{ wi*7+w.length }} ({{ tglSingkat(w[0].tanggal) }} - {{ tglSingkat(w[w.length-1].tanggal) }})</td><td class="r mono">{{ fmt(w.reduce((s,d)=>s+d.total,0)) }} gr</td><td class="r mono">{{ fmt(w.reduce((s,d)=>s+d.terbagi,0)) }} gr</td><td class="r mono">{{ fmt(w.reduce((s,d)=>s+d.sisa,0)) }} gr</td><td></td></tr>
+          </template>
+          <tr class="grand"><td colspan="4">TOTAL 30 HARI</td><td class="r mono" id="grandTotal">{{ fmt(totalSemua) }} gr</td><td class="r mono">{{ fmt(terbagiSemua) }} gr</td><td class="r mono">{{ fmt(sisaSemua) }} gr</td><td></td></tr>
+        </tbody>
+      </table>
+
+      <div class="box" style="margin-top:14px">
+        <h4>Total Per Kelompok - 30 Hari</h4>
+        <table>
+          <tr v-for="k in perKelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
+          <tr><td><b>Pendapatan Usaha</b></td><td class="r mono">{{ fmt(sisaSemua) }} gr</td></tr>
+        </table>
+        <div style="color:var(--muted);font-size:.84rem;margin-top:8px">Catatan harian tidak diulang di bagian ini karena sudah tampil di kolom Catatan pada tabel utama di atas.</div>
+      </div>
+
+      <div class="sign">
+        <div><div>Diinput oleh,</div><div class="space"></div><div class="nm" id="ttdStaff">{{ settings.staff }}</div></div>
+        <div><div>Mengetahui,</div><div class="space"></div><div class="nm" id="ttdPimpinan">{{ settings.pimpinan }}</div></div>
+      </div>
+      <div class="foot"><span id="footCetak">Dicetak pada {{ timestampCetak }}</span><span>Format A4 Landscape - Tabel utama 30 hari + subtotal mingguan</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/vue.global.prod.js"></script>
+<script>
+const { createApp, ref, reactive, computed, watch } = Vue;
+function R(nama,persen,orang){ return {nama:nama, persen:persen, orang:orang}; }
+function E(id, tanggal, shift, hasil, catatan, rows){ return {id:id, team:'Team 1', tanggal:tanggal, shift:shift, hasil:hasil, catatan:catatan||'', rows:rows, diubah:''}; }
+function genData(){
+  const out = []; let id = 1;
+  const curated = {
+    '2026-10-16':[39,51,'',''], '2026-10-17':[61,44,'',''], '2026-10-18':[48,37,'',''],
+    '2026-10-19':[50,30,'',''], '2026-10-20':[50,42.5,'Galian titik A selesai.',''],
+    '2026-10-21':[0,55,'Alat rusak, perbaikan seharian.',''], '2026-10-22':[60,40,'Galian titik B, tanah keras.','Hujan deras jam 14.00, berhenti 2 jam.']
+  };
+  const t0 = new Date('2026-09-23T00:00:00');
+  function isoLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  for(let i=0;i<30;i++){
+    const d = new Date(t0); d.setDate(d.getDate()+i);
+    const iso = isoLocal(d);
+    let s1, s2, n1='', n2='';
+    if(curated[iso]){ [s1,s2,n1,n2] = curated[iso]; }
+    else {
+      s1 = 34 + ((i*13)%27); s2 = 28 + ((i*17)%23);
+      if(i===5){ s1 = 0; n1 = 'Alat rusak, perbaikan.'; }
+      if(i===11){ n2 = 'Hujan deras, berhenti 3 jam.'; }
+      if(i===17){ n1 = 'Galian pindah titik C.'; }
+    }
+    let rows1 = [R('Operator',6,5+(i%3)), R('Helper',4,5)];
+    let rows2 = [R('Operator',6,4+(i%2)), R('Helper',4,3)];
+    if(curated[iso]){
+      rows1 = [R('Operator',6,6), R('Helper',4,5)];
+      rows2 = [R('Operator',6,6), R('Helper',4,5)];
+      if(iso==='2026-10-22') rows2 = [R('Operator',6,4), R('Helper',4,3)];
+      if(iso==='2026-10-20') rows1 = [R('Operator',6,5), R('Kas Team',3,1)];
+    }
+    out.push(E(id++, iso, 1, s1, n1, rows1));
+    out.push(E(id++, iso, 2, s2, n2, rows2));
+  }
+  return out;
+}
+createApp({
+  setup(){
+    const view = ref('tx');
+    const entries = ref(genData());
+    const query = ref(''); const filterShift = ref('0');
+    const perPageDays = ref(10); const page = ref(1);
+    const expanded = ref(null);
+    watch([query, filterShift, perPageDays], ()=>{ page.value=1; });
+
+    function fmt(n){ return (Number(n)||0).toLocaleString('id-ID',{minimumFractionDigits:3, maximumFractionDigits:3}); }
+    function numStr(n){ return String(Math.round(n*100)/100).replace('.',','); }
+    function tglPanjang(iso){ return new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long', day:'numeric', month:'long', year:'numeric'}); }
+    function tglSingkat(iso){ return new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric', month:'short', year:'numeric'}); }
+    function sisaEntry(e){ const p=e.rows.reduce((s,r)=>s+r.persen,0); return e.hasil*(100-p)/100; }
+    function terbagi(e){ return e.hasil - sisaEntry(e); }
+    function ringkas(e){ return e.rows.map(r=> r.nama+' '+numStr(r.persen)+'% x '+r.orang+' ('+fmt(e.hasil*r.persen/100/r.orang)+' gr/orang)').join(' - '); }
+    function toggle(idv){ expanded.value = expanded.value===idv ? null : idv; }
+
+    const daysDesc = computed(()=> {
+      const map = {};
+      entries.value.forEach(e=>{ if(!map[e.tanggal]) map[e.tanggal]={tanggal:e.tanggal, entries:[], total:0, sisa:0}; map[e.tanggal].entries.push(e); });
+      return Object.values(map).map(d=>{ d.entries.sort((a,b)=>a.shift-b.shift); d.total=d.entries.reduce((s,e)=>s+e.hasil,0); d.sisa=d.entries.reduce((s,e)=>s+sisaEntry(e),0); return d; })
+        .sort((a,b)=> b.tanggal.localeCompare(a.tanggal));
+    });
+    const filteredDays = computed(()=> {
+      const q = query.value.trim().toLowerCase();
+      return daysDesc.value.map(d=> {
+        let es = d.entries;
+        if(filterShift.value!=='0') es = es.filter(e=>e.shift===Number(filterShift.value));
+        if(q) es = es.filter(e=> (e.tanggal+' shift '+e.shift+' '+e.catatan+' '+e.rows.map(r=>r.nama).join(' ')).toLowerCase().includes(q));
+        if(!es.length) return null;
+        return {tanggal:d.tanggal, entries:es, total:es.reduce((s,e)=>s+e.hasil,0), sisa:es.reduce((s,e)=>s+sisaEntry(e),0)};
+      }).filter(Boolean);
+    });
+    const totalPages = computed(()=> Math.max(1, Math.ceil(filteredDays.value.length/perPageDays.value)));
+    watch(totalPages, v=>{ if(page.value>v) page.value=v; });
+    const pageDays = computed(()=> filteredDays.value.slice((page.value-1)*perPageDays.value, page.value*perPageDays.value));
+    const pageShiftCount = computed(()=> pageDays.value.reduce((s,d)=>s+d.entries.length,0));
+
+    // PDF 30 hari (kronologis naik)
+    const daysAsc = computed(()=> {
+      const map = {};
+      entries.value.forEach(e=>{ if(!map[e.tanggal]) map[e.tanggal]={tanggal:e.tanggal, s1:null, s2:null, total:0, terbagi:0, sisa:0, ket:''}; const d=map[e.tanggal]; d['s'+e.shift]=e.hasil; d.total+=e.hasil; d.terbagi+=terbagi(e); d.sisa+=sisaEntry(e); if(e.catatan) d.ket += (d.ket? ' | ':'') + 'S'+e.shift+': '+e.catatan; });
+      return Object.values(map).sort((a,b)=> a.tanggal.localeCompare(b.tanggal));
+    });
+    const minggu = computed(()=> { const out=[]; for(let i=0;i<daysAsc.value.length;i+=7) out.push(daysAsc.value.slice(i,i+7)); return out; });
+    const totalSemua = computed(()=> daysAsc.value.reduce((s,d)=>s+d.total,0));
+    const terbagiSemua = computed(()=> daysAsc.value.reduce((s,d)=>s+d.terbagi,0));
+    const sisaSemua = computed(()=> daysAsc.value.reduce((s,d)=>s+d.sisa,0));
+    const hariAktif = computed(()=> daysAsc.value.filter(d=>d.total>0).length);
+    const jumlahShift = computed(()=> entries.value.length);
+    const perKelompok = computed(()=> { const m={}; entries.value.forEach(e=> e.rows.forEach(r=>{ m[r.nama]=(m[r.nama]||0)+e.hasil*r.persen/100; })); return Object.entries(m).map(([nama,total])=>({nama,total})).sort((a,b)=>b.total-a.total); });
+    const catatanPenting = computed(()=> entries.value.filter(e=>e.catatan).slice().sort((a,b)=>a.tanggal.localeCompare(b.tanggal)).map(e=> tglSingkat(e.tanggal)+' - Shift '+e.shift+': '+e.catatan));
+    function cetak(){ window.print(); }
+
+    // Pengaturan (simulasi tabel settings + users di database)
+    const settings = reactive({perusahaan:'Usaha Tambang Emas', pimpinan:'Nama Pimpinan', staff:'Staff Team 1', zona:'Asia/Jakarta'});
+    const ZONA_LABEL = {'Asia/Jakarta':'WIB', 'Asia/Makassar':'WITA', 'Asia/Jayapura':'WIT'};
+    const sekarang = ref(new Date());
+    setInterval(()=>{ sekarang.value = new Date(); }, 1000);
+    const timestampCetak = computed(()=> {
+      const tz = settings.zona;
+      const parts = {};
+      new Intl.DateTimeFormat('id-ID',{timeZone:tz, day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}).formatToParts(sekarang.value).forEach(p=>{ parts[p.type]=p.value; });
+      return parts.day+' '+parts.month+' '+parts.year+' - pukul '+parts.hour+'.'+parts.minute+'.'+parts.second+' '+(ZONA_LABEL[tz]||'');
+    });
+
+    return {view, query, filterShift, perPageDays, page, expanded, toggle, settings, timestampCetak,
+      fmt, numStr, tglPanjang, tglSingkat, sisaEntry, terbagi, ringkas,
+      filteredDays, totalPages, pageDays, pageShiftCount,
+      minggu, totalSemua, terbagiSemua, sisaSemua, hariAktif, jumlahShift, perKelompok, catatanPenting, cetak};
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
