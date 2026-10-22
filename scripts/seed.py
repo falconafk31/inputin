@@ -60,7 +60,7 @@ def main():
 
     stmts = [
         "INSERT OR IGNORE INTO teams (id, nama, aktif, created_at) VALUES (1, 'Team 1', 1, '%s'), (2, 'Team 2', 1, '%s')" % (now, now),
-        "INSERT OR REPLACE INTO settings (key, value) VALUES ('nama_perusahaan','Usaha Tambang Emas'), ('nama_pimpinan',''), ('zona_waktu','Asia/Jakarta'), ('session_secret','%s')" % secret,
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('nama_perusahaan',''), ('nama_pimpinan',''), ('zona_waktu','Asia/Jakarta'), ('session_secret','%s')" % secret,
         "INSERT OR IGNORE INTO users (nama, username, password_hash, role, team_id, aktif, created_at) VALUES ('Admin','admin','%s','admin',NULL,1,'%s')" % (hash_password(pw_admin), now),
         "INSERT OR IGNORE INTO users (nama, username, password_hash, role, team_id, aktif, created_at) VALUES ('Staff Team 1','staff1','%s','staff',1,1,'%s')" % (hash_password(pw_staff1), now),
         "INSERT OR IGNORE INTO users (nama, username, password_hash, role, team_id, aktif, created_at) VALUES ('Staff Team 2','staff2','%s','staff',2,1,'%s')" % (hash_password(pw_staff2), now),

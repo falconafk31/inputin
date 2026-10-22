@@ -1,4 +1,4 @@
-# Desain App Pencatatan Hasil Tambang Emas
+# Desain App Pencatatan Hasil Usaha
 Versi: Draft 2.1 - 22 Oktober 2026 (hasil diskusi, tambahan aturan Catatan)
 Platform: Cloudflare Workers + D1, PWA Ready
 Status: Masih diskusi, belum build

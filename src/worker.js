@@ -422,7 +422,7 @@ async function handleApi(request, env, url) {
 }
 
 const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#1E40AF"/><path d="M128 336 L224 176 L288 272 L336 208 L384 336 Z" fill="#D97706"/><circle cx="256" cy="384" r="26" fill="#F8FAFC"/></svg>`;
-const MANIFEST = JSON.stringify({ name: "Inputin - Pencatatan Hasil Tambang Emas", short_name: "Inputin", start_url: "/", display: "standalone", background_color: "#F8FAFC", theme_color: "#1E40AF", icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }] });
+const MANIFEST = JSON.stringify({ name: "Inputin - Pencatatan Hasil Usaha", short_name: "Inputin", start_url: "/", display: "standalone", background_color: "#F8FAFC", theme_color: "#1E40AF", icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }] });
 const SW_JS = `const CACHE='inputin-v1';const SHELL=['/','/manifest.webmanifest','/icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(clients.claim())});

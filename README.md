@@ -1,6 +1,6 @@
-# Inputin - App Pencatatan Hasil Tambang Emas
+# Inputin - App Pencatatan Hasil Usaha
 
-App pencatatan hasil tambang emas per team dan per shift, dengan pembagian hasil per kelompok, laporan harian sampai 30 hari, dan PDF teks siap cetak.
+App pencatatan hasil usaha per team dan per shift, dengan pembagian hasil per kelompok, laporan harian sampai 30 hari, dan PDF teks siap cetak.
 
 **Status: LIVE** di https://inputin.hadesxyz.workers.dev (Cloudflare Workers + D1 + Vue 3). Uji end-to-end live 19/19 PASS dan uji UI 7/7 PASS. CI/CD jangka panjang: Cloudflare Workers Builds dari repo ini (push ke main = build + deploy otomatis).
 

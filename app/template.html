@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Inputin - Pencatatan Hasil Tambang Emas</title>
+<title>Inputin - Pencatatan Hasil Usaha</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#1E40AF">
@@ -139,7 +139,7 @@
   <div v-if="!user" class="login-wrap">
     <div class="login-card">
       <h1>Input<span>in</span></h1>
-      <p class="sub">Pencatatan Hasil Tambang Emas. Silakan masuk dengan akunmu.</p>
+      <p class="sub">Pencatatan Hasil Usaha. Silakan masuk dengan akunmu.</p>
       <div v-if="loginError" class="banner err">{{ loginError }}</div>
       <form @submit.prevent="doLogin">
         <label class="fl" for="lg-user">Username</label>
@@ -459,7 +459,7 @@
 
   <!-- LEMBAR CETAK -->
   <div class="sheet" :class="{land: cetakMode==='rentang'}" v-if="cetak">
-    <div class="usaha">{{ settings.nama_perusahaan || 'Usaha Tambang Emas' }}</div>
+    <div class="usaha">{{ settings.nama_perusahaan || 'Pencatatan Usaha' }}</div>
     <h2>{{ cetak.judul }}</h2>
     <div class="meta">{{ cetak.subjudul }}</div>
     <hr>
