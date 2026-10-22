@@ -58,6 +58,7 @@ try {
   await wait(3500);
   const ev2 = async (expr) => { const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description || "eval error"); return r.result?.result?.value; };
   cek("halaman login tampil (redesign)", (await ev2("!!document.querySelector('.login-card')")) === true);
+  cek("tombol Bersihkan Cache ada di layar login", (await ev2("[...document.querySelectorAll('.login-card button')].some(b=>b.innerText.includes('Bersihkan Cache'))")) === true);
   const b64 = Buffer.from(JSON.stringify({ username: "staff1", password: PASS })).toString("base64");
   const loginRes = await ev2(`fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:atob('${b64}')}).then(r=>r.status)`);
   cek("login API dari halaman (untuk masuk sesi uji)", loginRes === 200, "status " + loginRes);
@@ -66,6 +67,7 @@ try {
   cek("login staff masuk form Input", (await ev2("!!document.querySelector('input.big')")) === true);
   const dbg = await ev2("JSON.stringify({topnavBtns:document.querySelectorAll('.topnav button').length, bottomBtns:document.querySelectorAll('.bottomnav button').length, inputs:document.querySelectorAll('input').length, big:!!document.querySelector('input.big'), sections:[...document.querySelectorAll('section')].length, innerW:innerWidth, appLen:document.querySelector('#app').innerHTML.length})");
   console.log('DEBUG', dbg);
+  cek("tombol Bersihkan Cache ada di topbar (semua role)", (await ev2("[...document.querySelectorAll('.topbar .ubtn')].some(b=>b.innerText.includes('Bersihkan Cache'))")) === true);
   const fontCheck = await ev2("Promise.all([document.fonts.load('700 16px \"Plus Jakarta Sans\"'),document.fonts.load('600 16px \"IBM Plex Mono\"')]).then(()=>document.fonts.check('700 16px \"Plus Jakarta Sans\"') + '/' + document.fonts.check('600 16px \"IBM Plex Mono\"'))");
   cek("font asli termuat (document.fonts)", fontCheck === "true/true", fontCheck);
   const fontFam = await ev2("getComputedStyle(document.body).fontFamily");

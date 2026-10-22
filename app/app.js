@@ -247,7 +247,17 @@ createApp({
       catch (e) { loginError.value = e.message; }
       busy.value = false;
     }
-    async function doLogout() { try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {} user.value = null; }
+    async function doLogout() { try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {} user.value = null; location.replace("/"); }
+    async function clearCache() {
+      // Jalan keluar darurat: akhiri sesi semampunya, cabut service worker, hapus semua cache dan penyimpanan lokal, lalu muat ulang bersih.
+      try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {}
+      try {
+        if ("serviceWorker" in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map((r) => r.unregister())); }
+        if ("caches" in window) { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); }
+        localStorage.clear(); sessionStorage.clear();
+      } catch (e) {}
+      location.replace("/?v=" + Date.now());
+    }
     async function muatBootstrap(resetTanggal = true) {
       const b = await api("/api/bootstrap");
       Object.assign(settings, b.settings);
@@ -270,7 +280,7 @@ createApp({
     });
     watch(view, (v) => { if (v === "riwayat") muatRiwayat(); if (v === "laporan") muatLaporan(); if (v === "admin") muatAdmin(); });
 
-    return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, settings, teams, today,
+    return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       form, modeEdit, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, simpanTemplate, simpan, teamLabelAktif,
       presets, setPreset, riw, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
       lap, muatLaporan, blokLaporan, rataHari, catatanGabung, cetak, cetakMode, cetakLaporan, timestampCetak,

@@ -158,6 +158,8 @@
         <input class="txt" id="lg-pass" type="password" v-model="loginForm.password" autocomplete="current-password" required>
         <button class="btn save-btn" :disabled="busy">{{ busy ? 'Memproses...' : 'Masuk' }}</button>
       </form>
+      <button class="btn ghost" style="width:100%;margin-top:12px" @click="clearCache">Bersihkan Cache</button>
+      <div class="hint" style="text-align:center;margin-top:8px">Gunakan bila aplikasi macet, tidak bisa keluar, atau tampilan tidak berubah setelah pembaruan.</div>
     </div>
   </div>
 
@@ -170,6 +172,7 @@
       </nav>
       <div class="sp"></div>
       <div class="meta">{{ user.nama }} - {{ user.role==='admin' ? 'Admin' : 'Staff ' + (user.team_nama||'') }}</div>
+      <button class="ubtn" @click="clearCache"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.36-6.36L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.36 6.36L3 16"/><path d="M3 21v-5h5"/></svg>Bersihkan Cache</button>
       <button class="ubtn" @click="showPw=true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.8 12.2 9.7-9.7"/><path d="m16 6 3 3"/></svg>Ganti Password</button>
       <button class="ubtn" @click="doLogout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Keluar</button>
     </header>
@@ -808,7 +811,17 @@ createApp({
       catch (e) { loginError.value = e.message; }
       busy.value = false;
     }
-    async function doLogout() { try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {} user.value = null; }
+    async function doLogout() { try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {} user.value = null; location.replace("/"); }
+    async function clearCache() {
+      // Jalan keluar darurat: akhiri sesi semampunya, cabut service worker, hapus semua cache dan penyimpanan lokal, lalu muat ulang bersih.
+      try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {}
+      try {
+        if ("serviceWorker" in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map((r) => r.unregister())); }
+        if ("caches" in window) { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); }
+        localStorage.clear(); sessionStorage.clear();
+      } catch (e) {}
+      location.replace("/?v=" + Date.now());
+    }
     async function muatBootstrap(resetTanggal = true) {
       const b = await api("/api/bootstrap");
       Object.assign(settings, b.settings);
@@ -831,7 +844,7 @@ createApp({
     });
     watch(view, (v) => { if (v === "riwayat") muatRiwayat(); if (v === "laporan") muatLaporan(); if (v === "admin") muatAdmin(); });
 
-    return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, settings, teams, today,
+    return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       form, modeEdit, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, simpanTemplate, simpan, teamLabelAktif,
       presets, setPreset, riw, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
       lap, muatLaporan, blokLaporan, rataHari, catatanGabung, cetak, cetakMode, cetakLaporan, timestampCetak,
