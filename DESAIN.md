@@ -178,6 +178,18 @@ Pengaturan custom oleh Admin (tersimpan di database, bukan hardcode): nama perus
 
 PDF adalah TEKS: dibuat dari HTML teks yang dicetak browser / dirender dari teks, bukan gambar atau screenshot. Isi bisa diseleksi dan dicari, tajam di segala zoom, file kecil. Bukti teruji: ekstraksi teks dari PDF contoh mengembalikan persis kop perusahaan custom, total 2.560,500 gr, nama pimpinan, dan footer timestamp sebagai teks.
 
+## 11c. CI/CD dan Pengelolaan Database (dikunci 22 Okt 2026 malam)
+
+CI/CD = Pilihan 2: Cloudflare Workers Builds.
+- Repo GitHub falconafk31/inputin dihubungkan ke Cloudflare (dilakukan Hades sekali di dashboard Cloudflare saat Worker versi asli dibuat). Setiap push ke branch main memicu build dan deploy otomatis oleh Cloudflare. Tidak memakai GitHub Actions dan tidak ada token Cloudflare yang disimpan di GitHub.
+- Kode dan database adalah dua jalur terpisah. Deploy otomatis hanya mengurus KODE (Worker + frontend). Database D1 TIDAK ikut berubah karena push.
+
+Database dikelola Pax dari sini lewat Cloudflare API (token custom.cloudflare, izin D1 Read + Write, pola yang sama dengan D1 dashboard Refleksi Ruang):
+- Pembuatan database D1 pertama kali: dari sini.
+- Pembuatan dan perubahan skema (migrasi tabel): dari sini, dijalankan manual dan diverifikasi, TIDAK otomatis dari push, supaya perubahan struktur tidak pernah merusak data yang sudah masuk.
+- Inject data awal (seed): dari sini - 2 team awal, akun Admin, akun staff awal, template pembagian, dan settings default (nama perusahaan, pimpinan, zona waktu WIB).
+- Seterusnya Pax bisa membaca, mengecek, membackup (export), dan memperbaiki data dari sini kapan pun diminta. Data operasional harian tetap masuk lewat input staff di app, bukan lewat inject.
+
 ## 12. Keputusan Berikutnya untuk Diskusi
 1. Palet warna: A (Navy + Emas, rekomendasi), B (Hijau Tua + Emas), atau C (Arang + Emas)?
 2. Nama app dan alamat web yang diinginkan? Contoh: tambang.hadesxyz.workers.dev atau nama usaha sendiri.
