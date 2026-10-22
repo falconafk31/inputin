@@ -58,6 +58,8 @@ try {
   await wait(3500);
   const ev2 = async (expr) => { const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description || "eval error"); return r.result?.result?.value; };
   cek("halaman login tampil (redesign)", (await ev2("!!document.querySelector('.login-card')")) === true);
+  const shotLogin = await send("Page.captureScreenshot", { format: "png" });
+  fs.writeFileSync(new URL("../smoke-test/ui-v2-login.png", import.meta.url), Buffer.from(shotLogin.result.data, "base64"));
   cek("tombol Bersihkan Cache ada di layar login", (await ev2("[...document.querySelectorAll('.login-card button')].some(b=>b.innerText.includes('Bersihkan Cache'))")) === true);
   const b64 = Buffer.from(JSON.stringify({ username: "staff1", password: PASS })).toString("base64");
   const loginRes = await ev2(`fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:atob('${b64}')}).then(r=>r.status)`);
@@ -80,8 +82,15 @@ try {
   await wait(600);
   const ringkasan = await ev2("document.body.innerText.includes('90,000')");
   cek("ringkasan tetap benar 90,000", ringkasan === true);
+  cek("lencana langkah form v2 tampil (1-2-3)", (await ev2("document.querySelectorAll('.step').length")) >= 3);
+  cek("bilah alokasi persen v2 tampil", (await ev2("!!document.querySelector('.alloc-fill')")) === true);
+  cek("bilah simpan sticky HP v2 tampil", (await ev2("getComputedStyle(document.querySelector('.savebar')).display")) === "flex");
   const shot = await send("Page.captureScreenshot", { format: "png" });
-  fs.writeFileSync(new URL("../smoke-test/ui-redesign-mobile.png", import.meta.url), Buffer.from(shot.result.data, "base64"));
+  fs.writeFileSync(new URL("../smoke-test/ui-v2-form.png", import.meta.url), Buffer.from(shot.result.data, "base64"));
+  await ev2("[...document.querySelectorAll('.bottomnav button')][2].click(); 'ok'");
+  await wait(2200);
+  const shotLap = await send("Page.captureScreenshot", { format: "png" });
+  fs.writeFileSync(new URL("../smoke-test/ui-v2-laporan.png", import.meta.url), Buffer.from(shotLap.result.data, "base64"));
   cek("tanpa error JS relevan", errs.filter((e) => !e.includes("favicon")).length === 0, errs.slice(0, 2).join(" ;; "));
   ws.close();
 } finally { chrome.kill("SIGKILL"); }
