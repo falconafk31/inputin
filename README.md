@@ -2,7 +2,18 @@
 
 App pencatatan hasil tambang emas per team dan per shift, dengan pembagian hasil per kelompok, laporan harian sampai 30 hari, dan PDF teks siap cetak.
 
-**Status saat ini: tahap diskusi dan prototype.** Semua keputusan desain sudah dikunci bersama pemilik usaha dan teruji lewat smoke test otomatis. Versi produksi (Cloudflare Workers + D1 + Vue 3) dibangun mengikuti dokumen desain di repo ini.
+**Status: LIVE** di https://inputin.hadesxyz.workers.dev (Cloudflare Workers + D1 + Vue 3). Uji end-to-end live 19/19 PASS dan uji UI 7/7 PASS. CI/CD jangka panjang: Cloudflare Workers Builds dari repo ini (push ke main = build + deploy otomatis).
+
+## Struktur versi produksi
+
+- `src/worker.js` - Worker API (auth PBKDF2, sesi, CRUD shift, laporan, admin, audit trail) + penyaji frontend
+- `app/` - sumber frontend Vue (`template.html`, `app.js`, `vendor/`)
+- `scripts/build.mjs` - rakit frontend satu file ke `public/index.html` dan `src/frontend.js`
+- `migrations/` - skema database D1 (dijalankan Pax lewat API, bukan oleh deploy)
+- `scripts/seed.py` - seed awal database, `scripts/deploy-api.py` - deploy darurat via API, `scripts/e2e-live.py` + `scripts/ui-live.mjs` - pengujian live
+- `wrangler.toml` - konfigurasi Worker + binding D1 (database_id bukan rahasia)
+
+Workers Builds: build command `npm run build`, deploy command `npx wrangler deploy`.
 
 ## Dokumen utama
 

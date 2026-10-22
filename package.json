@@ -1,0 +1,1 @@
+{"description":"Inputin - App Pencatatan Hasil Tambang Emas (Cloudflare Workers + D1 + Vue 3)","devDependencies":{"wrangler":"^3.0.0"},"name":"inputin","private":true,"scripts":{"build":"node scripts/build.mjs","deploy":"node scripts/build.mjs && wrangler deploy"},"version":"1.0.0"}

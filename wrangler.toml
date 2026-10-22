@@ -1,0 +1,10 @@
+name = "inputin"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+# Database D1 dikelola Pax lewat Cloudflare API (bukan oleh deploy otomatis).
+# database_id bukan rahasia, aman masuk repo.
+[[d1_databases]]
+binding = "DB"
+database_name = "inputin-db"
+database_id = "7dc53776-ebab-417d-be8f-18d5f2942782"

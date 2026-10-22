@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inputin - Pencatatan Hasil Tambang Emas</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#1E40AF">
+<style>
+  :root{ --navy:#1E40AF; --navy-dark:#1E3A8A; --amber:#D97706; --amber-soft:#FEF3C7; --bg:#F8FAFC; --card:#FFFFFF; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0; --green:#15803D; --red:#DC2626; --shadow:0 10px 30px rgba(15,23,42,.09); --radius:18px; }
+  *{box-sizing:border-box} html,body{margin:0;padding:0}
+  body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+  .topbar{position:sticky;top:0;z-index:30;background:linear-gradient(120deg,var(--navy-dark),var(--navy));color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .topbar .logo{font-weight:800;font-size:1.22rem;letter-spacing:.3px}.topbar .logo span{color:#FBBF24}
+  .topbar .meta{color:#DBEAFE;font-size:.9rem}
+  .topbar .sp{flex:1}
+  .topbar .ubtn{background:rgba(255,255,255,.14);color:#fff;border-radius:10px;padding:8px 12px;font-weight:600}
+  .topnav{display:flex;gap:8px;flex-wrap:wrap}
+  .topnav button{padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.14);color:#E0E7FF;font-weight:600}
+  .topnav button.active{background:#fff;color:var(--navy-dark)}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 96px}
+  h1.page{font-size:1.45rem;margin:6px 0 2px} .sub{color:var(--muted);margin:0 0 16px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+  .card h3{margin:0 0 12px;font-size:1.06rem}
+  label.fl{display:block;font-weight:600;margin:0 0 6px}
+  .hint{color:var(--muted);font-size:.9rem;margin-top:6px}
+  .txt{width:100%;min-height:52px;border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#fff}
+  .txt:focus{outline:none;border-color:var(--navy)}
+  textarea.txt{min-height:84px;resize:vertical}
+  .big{font-size:1.5rem;font-weight:700}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .seg button{flex:1;min-height:52px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:700;padding:8px}
+  .seg button.active{border-color:var(--navy);background:#EFF6FF;color:var(--navy-dark)}
+  .seg button.warn.active{border-color:var(--amber);background:var(--amber-soft);color:#92400E}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:.92rem}
+  .chip:hover{border-color:var(--amber);color:#92400E}
+  .dist{border:2px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  .dist .dhead{display:flex;gap:8px;align-items:center}
+  .dist .dhead input{flex:1;min-height:50px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:700}
+  .icon-btn{min-width:48px;min-height:48px;border-radius:12px;background:#FEF2F2;color:var(--red);font-size:1.15rem;font-weight:800}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .grid2 .txt{min-height:50px}
+  .calc{display:flex;justify-content:space-between;gap:10px;margin-top:10px;background:#F8FAFC;border-radius:10px;padding:9px 12px}
+  .add-btn{width:100%;min-height:52px;border:2px dashed var(--navy);color:var(--navy);border-radius:12px;font-weight:700;background:#EFF6FF}
+  .summary{border-radius:14px;overflow:hidden;border:2px solid var(--line)}
+  .summary table{width:100%;border-collapse:collapse}
+  .summary td{padding:9px 12px;border-bottom:1px solid var(--line)}
+  .summary tr td:last-child{text-align:right;font-weight:700}
+  .summary tr.total td{background:var(--navy);color:#fff;font-size:1.05rem}
+  .summary tr.sisa td{background:var(--amber-soft);color:#92400E;font-weight:800}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:10px 20px;border-radius:12px;font-weight:700;background:var(--navy);color:#fff}
+  .btn.amber{background:var(--amber)} .btn.ghost{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+  .btn.red{background:var(--red)} .btn.small{min-height:44px;padding:6px 14px;font-size:.95rem}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .save-btn{width:100%;min-height:56px;font-size:1.05rem;margin-top:14px}
+  .banner{border-radius:12px;padding:12px 14px;margin-bottom:14px;font-weight:600}
+  .banner.edit{background:#FFFBEB;border:2px solid #F59E0B;color:#92400E}
+  .banner.ok{background:#F0FDF4;border:2px solid #22C55E;color:#166534}
+  .banner.err{background:#FEF2F2;border:2px solid #F87171;color:#991B1B}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .day{margin-bottom:16px}
+  .day-head{background:linear-gradient(120deg,var(--navy-dark),var(--navy));color:#fff;border-radius:14px 14px 0 0;padding:11px 16px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700}
+  .day-head .pu{color:#FDE68A}
+  .shiftbox{background:#fff;border:2px solid var(--line);border-top:none;padding:14px 16px}
+  .shiftbox:last-child{border-radius:0 0 14px 14px}
+  .shiftbox .srow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:800;background:#DBEAFE;color:var(--navy-dark)}
+  .badge.amber{background:var(--amber-soft);color:#92400E}
+  table.data{width:100%;border-collapse:collapse;margin-top:10px}
+  table.data th{background:#F1F5F9;text-align:left;padding:8px 10px;font-size:.88rem}
+  table.data td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  table.data td.r, table.data th.r{text-align:right}
+  .note{background:#FFFBEB;border-left:5px solid var(--amber);border-radius:10px;padding:10px 12px;margin-top:10px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .pager{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .pager button{min-width:46px;min-height:46px;border-radius:10px;border:2px solid var(--line);background:#fff;font-weight:700;padding:6px 10px}
+  .pager button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .pager button:disabled{opacity:.4}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .kpi{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px}
+  .kpi .lbl{color:var(--muted);font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .kpi .val{font-size:1.45rem;font-weight:800;margin-top:2px}
+  .rep-table{width:100%;border-collapse:collapse;background:#fff}
+  .rep-table th{background:var(--navy-dark);color:#fff;text-align:left;padding:8px}
+  .rep-table td{padding:8px;border-bottom:1px solid var(--line)}
+  .rep-table td.r,.rep-table th.r{text-align:right}
+  .rep-table tr.sub td{background:#FEF3C7;font-weight:700}
+  .rep-table tr.grand td{background:#DBEAFE;font-weight:800;font-size:1.02rem}
+  .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .status-card{border:2px solid var(--line);border-radius:14px;padding:14px;background:#fff}
+  .ok-t{color:var(--green);font-weight:800}.no-t{color:var(--red);font-weight:800}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(140deg,var(--navy-dark),var(--navy))}
+  .login-card{background:#fff;border-radius:22px;box-shadow:var(--shadow);padding:28px;width:100%;max-width:420px}
+  .login-card h1{margin:0 0 4px;font-size:1.6rem}.login-card h1 span{color:var(--amber)}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
+  .modal{background:#fff;border-radius:18px;padding:22px;max-width:460px;width:100%;box-shadow:var(--shadow)}
+  .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:2px solid var(--line);display:none}
+  .bottomnav button{flex:1;min-height:58px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:.82rem}
+  .bottomnav button.active{color:var(--navy)}
+  /* ===== Lembar cetak ===== */
+  .sheet{display:none}
+  @media print{
+    body{background:#fff} .no-print{display:none !important} .sheet{display:block !important}
+    @page{size:A4 portrait;margin:12mm}
+    @page land{size:A4 landscape;margin:10mm}
+    .sheet.land{page:land}
+  }
+  .sheet{font-size:13px;color:#0F172A}
+  .sheet .usaha{text-align:center;font-weight:800;letter-spacing:1px;font-size:1.02rem;text-transform:uppercase}
+  .sheet h2{text-align:center;margin:2px 0 4px;font-size:1.35rem}
+  .sheet .meta{text-align:center;color:#475569;margin-bottom:10px}
+  .sheet hr{border:none;border-top:3px double #0F172A;margin:8px 0 12px}
+  .sheet table{width:100%;border-collapse:collapse}
+  .sheet th{background:#1E3A8A;color:#fff;padding:6px 8px;text-align:left;font-size:.86rem}
+  .sheet td{padding:6px 8px;border-bottom:1px solid #E2E8F0}
+  .sheet td.r,.sheet th.r{text-align:right}
+  .sheet tr.sub td{background:#FEF3C7;font-weight:700}
+  .sheet tr.grand td{background:#DBEAFE;font-weight:800}
+  .sheet .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .sheet .kpi{border:1.5px solid #CBD5E1;border-radius:10px;padding:8px 10px;background:#fff}
+  .sheet .box{border:1.5px solid #CBD5E1;border-radius:10px;padding:10px 12px;margin-top:12px}
+  .sheet .sign{display:flex;justify-content:space-between;gap:30px;margin-top:26px;text-align:center}
+  .sheet .sign .space{height:56px}.sheet .sign .nm{font-weight:800;border-top:1.5px solid #0F172A;padding-top:5px}
+  .sheet .foot{display:flex;justify-content:space-between;gap:10px;color:#64748B;font-size:.8rem;margin-top:14px;border-top:1px solid #E2E8F0;padding-top:7px}
+  .sheet .note{margin-top:8px}
+  @media (max-width:640px){ .bottomnav{display:flex} .topnav{display:none} .wrap{padding-bottom:110px} .grid2{grid-template-columns:1fr 1fr} }
+  @media (min-width:641px){ .wrap{max-width:960px} }
+  @media (min-width:1025px){ .wrap{max-width:1180px} .form-grid{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start} .form-grid .sticky{position:sticky;top:86px} }
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+  <!-- LOGIN -->
+  <div v-if="!user" class="login-wrap">
+    <div class="login-card">
+      <h1>Input<span>in</span></h1>
+      <p class="sub">Pencatatan Hasil Tambang Emas. Silakan masuk dengan akunmu.</p>
+      <div v-if="loginError" class="banner err">{{ loginError }}</div>
+      <form @submit.prevent="doLogin">
+        <label class="fl" for="lg-user">Username</label>
+        <input class="txt" id="lg-user" v-model.trim="loginForm.username" autocomplete="username" required>
+        <div style="height:12px"></div>
+        <label class="fl" for="lg-pass">Password</label>
+        <input class="txt" id="lg-pass" type="password" v-model="loginForm.password" autocomplete="current-password" required>
+        <button class="btn save-btn" :disabled="busy">{{ busy ? 'Memproses...' : 'Masuk' }}</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <template v-else>
+    <header class="topbar no-print">
+      <div class="logo">Input<span>in</span></div>
+      <nav class="topnav">
+        <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id">{{ t.label }}</button>
+      </nav>
+      <div class="sp"></div>
+      <div class="meta">{{ user.nama }} - {{ user.role==='admin' ? 'Admin' : 'Staff ' + (user.team_nama||'') }}</div>
+      <button class="ubtn" @click="showPw=true">Ganti Password</button>
+      <button class="ubtn" @click="doLogout">Keluar</button>
+    </header>
+
+    <nav class="bottomnav no-print">
+      <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id"><span>{{ t.icon }}</span>{{ t.label }}</button>
+    </nav>
+
+    <main class="wrap no-print">
+      <div v-if="flash" class="banner" :class="flash.type">{{ flash.text }}</div>
+
+      <!-- INPUT -->
+      <section v-if="view==='input'">
+        <h1 class="page">Input Hasil</h1>
+        <p class="sub">{{ teamLabelAktif }} - 2 shift per hari, label tetap Shift 1 dan Shift 2.</p>
+        <div v-if="modeEdit" class="banner edit">Mode Edit: {{ tglPanjang(form.tanggal) }} - Shift {{ form.shift }} sudah terisi. Menyimpan akan memperbarui data ini, bukan membuat duplikat.</div>
+        <div class="form-grid">
+          <div>
+            <div class="card">
+              <div v-if="user.role==='admin'" style="margin-bottom:14px">
+                <label class="fl" for="f-team">Team</label>
+                <select class="txt" id="f-team" v-model.number="form.team_id" @change="cekModeEdit">
+                  <option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option>
+                </select>
+              </div>
+              <label class="fl" for="f-tanggal">Tanggal</label>
+              <input class="txt" type="date" id="f-tanggal" v-model="form.tanggal" @change="cekModeEdit">
+              <div style="height:14px"></div>
+              <label class="fl">Shift</label>
+              <div class="seg" role="group" aria-label="Pilih shift">
+                <button type="button" :class="{active: form.shift===1}" @click="form.shift=1; cekModeEdit()">Shift 1</button>
+                <button type="button" :class="{active: form.shift===2}" @click="form.shift=2; cekModeEdit()">Shift 2</button>
+              </div>
+              <div style="height:14px"></div>
+              <label class="fl">Mode Hasil</label>
+              <div class="seg" role="group" aria-label="Mode hasil">
+                <button type="button" :class="{active: !form.tanpa_hasil}" @click="form.tanpa_hasil=false">Ada Hasil</button>
+                <button type="button" class="warn" :class="{active: form.tanpa_hasil}" @click="form.tanpa_hasil=true">Tanpa Hasil</button>
+              </div>
+              <div class="hint" v-if="form.tanpa_hasil">Hasil dianggap 0 gr. Alasan wajib ditulis di Catatan, misalnya alat rusak atau hujan seharian.</div>
+              <template v-if="!form.tanpa_hasil">
+                <div style="height:14px"></div>
+                <label class="fl" for="f-hasil">Hasil Emas Shift Ini (gram)</label>
+                <input class="txt big mono" id="f-hasil" inputmode="decimal" placeholder="Contoh: 12,5" v-model="form.hasilStr">
+                <div class="hint">Desimal resmi pakai koma: 12,5 gr. Titik juga diterima: 12.5 terbaca 12,5 dan 1.250,5 terbaca 1250,5. Tampilan hasil selalu format Indonesia (1.250,500 gr).</div>
+              </template>
+            </div>
+
+            <div class="card">
+              <h3>Pembagian Hasil Shift Ini</h3>
+              <div class="chips" style="margin:0 0 12px">
+                <button type="button" class="chip" @click="pakaiSumber('kemarin')">Pakai Pembagian Terakhir</button>
+                <button type="button" class="chip" @click="pakaiSumber('template')">Pakai Template Team</button>
+                <button type="button" class="chip" v-if="user.role==='admin' || true" @click="simpanTemplate">Simpan Sebagai Template</button>
+              </div>
+              <div class="dist" v-for="(d, i) in form.rows" :key="i">
+                <div class="dhead">
+                  <input :value="d.nama" @input="d.nama=$event.target.value" :placeholder="'Nama kelompok ' + (i+1)" :aria-label="'Nama kelompok ' + (i+1)">
+                  <button type="button" class="icon-btn" @click="form.rows.splice(i,1)" aria-label="Hapus kelompok">x</button>
+                </div>
+                <div class="grid2">
+                  <div><label class="fl" :for="'pct'+i">Persentase (%)</label>
+                  <input class="txt mono" :id="'pct'+i" inputmode="decimal" v-model="d.persenStr" placeholder="6"></div>
+                  <div><label class="fl" :for="'org'+i">Jumlah Orang</label>
+                  <input class="txt mono" :id="'org'+i" inputmode="numeric" v-model="d.orangStr" placeholder="4"></div>
+                </div>
+                <div class="calc"><span>Total kelompok: <b class="mono">{{ fmt(rowCalc(d).total) }} gr</b></span><span>Per orang: <b class="mono">{{ fmt(rowCalc(d).perOrang) }} gr</b></span></div>
+              </div>
+              <button type="button" class="add-btn" @click="form.rows.push({nama:'', persenStr:'', orangStr:''})">+ Tambah Kelompok</button>
+            </div>
+
+            <div class="card">
+              <label class="fl" for="f-catatan">Catatan / Keterangan</label>
+              <textarea class="txt" id="f-catatan" v-model="form.catatan" placeholder="Tulis catatan shift ini. Catatan tampil di PDF."></textarea>
+              <div class="chips">
+                <button type="button" class="chip" v-for="c in chipCatatan" :key="c" @click="tambahChip(c)">{{ c }}</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card sticky">
+            <h3>Ringkasan Shift Ini</h3>
+            <div class="summary"><table>
+              <tr><td>Shift</td><td>Shift {{ form.shift }}</td></tr>
+              <template v-for="(d,i) in form.rows" :key="i"><tr v-if="d.nama"><td>{{ d.nama }} ({{ fmtPct(parseID(d.persenStr)) }}%, {{ parseInt(d.orangStr)||0 }} orang)</td><td class="mono">{{ fmt(rowCalc(d).total) }} gr</td></tr></template>
+              <tr class="sisa"><td>Pendapatan Usaha ({{ fmtPct(sisaPersen) }}%)</td><td class="mono">{{ fmt(sisaGram) }} gr</td></tr>
+              <tr class="total"><td>Total Hasil Shift</td><td class="mono">{{ fmt(totalHasilForm) }} gr</td></tr>
+            </table></div>
+            <div v-if="totalPersenForm > 100" class="banner err" style="margin-top:12px">Total persentase {{ fmtPct(totalPersenForm) }}% melebihi 100%. Simpan ditolak, kurangi dulu persentasenya.</div>
+            <button class="btn save-btn" :disabled="busy || totalPersenForm > 100" @click="simpan">{{ busy ? 'Menyimpan...' : (modeEdit ? 'Simpan Perubahan' : 'Simpan Hasil') }}</button>
+            <div class="hint">Pastikan ringkasan sudah benar sebelum menyimpan.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIWAYAT -->
+      <section v-if="view==='riwayat'">
+        <h1 class="page">Riwayat Transaksi</h1>
+        <p class="sub">Dikelompokkan per tanggal. Buka rincian untuk melihat pembagian per kelompok, catatan, edit, dan hapus.</p>
+        <div class="card">
+          <div v-if="user.role==='admin'" style="margin-bottom:12px">
+            <label class="fl" for="r-team">Team</label>
+            <select class="txt" id="r-team" v-model.number="riw.team_id" @change="muatRiwayat(true)"><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
+          </div>
+          <div class="chips" style="margin:0 0 12px">
+            <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('riw', p.id); muatRiwayat(true)">{{ p.label }}</button>
+          </div>
+          <div class="filters">
+            <div><label class="fl" for="r-dari">Dari</label><input class="txt" type="date" id="r-dari" v-model="riw.from" @change="muatRiwayat(true)"></div>
+            <div><label class="fl" for="r-sampai">Sampai</label><input class="txt" type="date" id="r-sampai" v-model="riw.to" @change="muatRiwayat(true)"></div>
+            <div><label class="fl" for="r-shift">Shift</label><select class="txt" id="r-shift" v-model="riw.shift" @change="muatRiwayat(true)"><option value="">Semua</option><option value="1">Shift 1</option><option value="2">Shift 2</option></select></div>
+            <div><label class="fl" for="r-q">Cari</label><input class="txt" id="r-q" v-model="riw.q" placeholder="Kata di catatan / kelompok" @change="muatRiwayat(true)"></div>
+            <div><label class="fl" for="r-per">Per Halaman</label><select class="txt" id="r-per" v-model.number="riw.per" @change="muatRiwayat(true)"><option :value="5">5 hari</option><option :value="10">10 hari</option><option :value="30">30 hari</option></select></div>
+          </div>
+        </div>
+        <div v-if="riw.loading" class="card">Memuat...</div>
+        <div v-else-if="!riw.days.length" class="card">Tidak ada data pada rentang ini.</div>
+        <div class="day" v-for="d in riw.days" :key="d.tanggal">
+          <div class="day-head"><span>{{ tglPanjang(d.tanggal) }}</span><span>Total hari: <span class="mono">{{ fmt(d.total_hasil) }} gr</span> - <span class="pu">Pendapatan Usaha {{ fmt(d.sisa) }} gr</span></span></div>
+          <div class="shiftbox" v-for="s in d.shifts" :key="s.id">
+            <div class="srow">
+              <span><span class="badge">Shift {{ s.shift }}</span> <b class="mono" style="margin-left:8px">{{ fmt(s.hasil_gram) }} gr</b> <span v-if="s.tanpa_hasil" class="badge amber">Tanpa Hasil</span></span>
+              <span class="hint" style="margin:0">Terbagi <b class="mono">{{ fmt(s.total_terbagi) }} gr</b> - Sisa <b class="mono">{{ fmt(s.sisa) }} gr</b></span>
+              <button class="btn ghost small" @click="toggleExpand(s.id)">{{ expanded[s.id] ? 'Tutup Rincian' : 'Buka Rincian' }}</button>
+            </div>
+            <div v-if="expanded[s.id]">
+              <table class="data">
+                <thead><tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Orang</th><th class="r">Total (gr)</th><th class="r">Per Orang (gr)</th></tr></thead>
+                <tbody><tr v-for="(r,i) in s.rows" :key="i"><td>{{ r.nama }}</td><td class="r mono">{{ fmtPct(r.persentase) }}%</td><td class="r mono">{{ r.jumlah_orang }}</td><td class="r mono">{{ fmt(r.total_gram) }}</td><td class="r mono">{{ fmt(r.per_orang_gram) }}</td></tr></tbody>
+              </table>
+              <div class="note" v-if="s.catatan"><b>Catatan:</b> {{ s.catatan }}</div>
+              <div class="hint">Terakhir diubah: {{ formatWaktu(s.updated_at) }} oleh {{ s.updated_by_nama || '-' }}</div>
+              <div class="actions">
+                <button class="btn small" @click="editEntry(s, d.tanggal)">Edit</button>
+                <button class="btn ghost small" @click="lihatAudit(s.id)">Riwayat Perubahan</button>
+                <button class="btn red small" @click="mintaHapus(s, d.tanggal)">Hapus</button>
+              </div>
+              <div v-if="auditFor===s.id" class="note" style="background:#F8FAFC;border-color:var(--navy)">
+                <div v-if="!auditList.length">Belum ada catatan perubahan.</div>
+                <div v-for="(a,i) in auditList" :key="i">{{ formatWaktu(a.waktu) }} - {{ a.user_nama || 'Sistem' }} - {{ a.aksi }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pager" v-if="riw.total_hari">
+          <button :disabled="riw.page<=1" @click="riw.page--; muatRiwayat()">Sebelumnya</button>
+          <button v-for="p in halamanList" :key="p" :class="{active: p===riw.page}" @click="riw.page=p; muatRiwayat()">{{ p }}</button>
+          <button :disabled="riw.page>=riw.total_page" @click="riw.page++; muatRiwayat()">Berikutnya</button>
+        </div>
+        <p class="hint" style="text-align:center" v-if="riw.total_hari">Menampilkan {{ riw.days.length }} hari dari total {{ riw.total_hari }} hari - halaman {{ riw.page }} dari {{ riw.total_page }}</p>
+      </section>
+
+      <!-- LAPORAN -->
+      <section v-if="view==='laporan'">
+        <h1 class="page">Laporan</h1>
+        <p class="sub">Laporan utama staff adalah harian per shift. Pilih rentang, isi laporan dan PDF menyesuaikan otomatis.</p>
+        <div class="card">
+          <div v-if="user.role==='admin'" style="margin-bottom:12px">
+            <label class="fl" for="l-team">Team</label>
+            <select class="txt" id="l-team" v-model.number="lap.team_id" @change="muatLaporan"><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
+          </div>
+          <div class="chips" style="margin:0 0 12px">
+            <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('lap', p.id); muatLaporan()">{{ p.label }}</button>
+          </div>
+          <div class="filters">
+            <div><label class="fl" for="l-dari">Dari</label><input class="txt" type="date" id="l-dari" v-model="lap.from" @change="muatLaporan"></div>
+            <div><label class="fl" for="l-sampai">Sampai</label><input class="txt" type="date" id="l-sampai" v-model="lap.to" @change="muatLaporan"></div>
+          </div>
+          <div class="actions">
+            <button class="btn amber" @click="cetakLaporan(false)">Unduh PDF Rentang Ini</button>
+            <button class="btn ghost" @click="cetakLaporan(true)" v-if="lap.from===lap.to">PDF Harian (Rincian Per Shift)</button>
+          </div>
+        </div>
+        <div v-if="lap.loading" class="card">Memuat...</div>
+        <template v-else-if="lap.report">
+          <div class="kpis" style="margin-bottom:16px">
+            <div class="kpi"><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(lap.report.totals.hasil) }} gr</div></div>
+            <div class="kpi"><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(lap.report.totals.sisa) }} gr</div></div>
+            <div class="kpi"><div class="lbl">Rata-Rata Per Hari</div><div class="val mono">{{ fmt(rataHari) }} gr</div></div>
+            <div class="kpi"><div class="lbl">Hari Aktif / Shift</div><div class="val mono">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div>
+          </div>
+          <div style="overflow-x:auto">
+          <table class="rep-table">
+            <thead><tr><th>No</th><th>Tanggal</th><th class="r">Shift 1</th><th class="r">Shift 2</th><th class="r">Total Hari</th><th class="r">Terbagi</th><th class="r">Pendapatan Usaha</th><th>Catatan</th></tr></thead>
+            <tbody>
+              <template v-for="(blok, bi) in blokLaporan" :key="bi">
+                <tr v-for="(d, i) in blok.rows" :key="d.tanggal">
+                  <td class="mono">{{ d.no }}</td><td>{{ tglSingkat(d.tanggal) }}</td>
+                  <td class="r mono">{{ d.s1 ? fmt(d.s1.hasil)+' gr' : '-' }}</td>
+                  <td class="r mono">{{ d.s2 ? fmt(d.s2.hasil)+' gr' : '-' }}</td>
+                  <td class="r mono"><b>{{ fmt(d.total) }} gr</b></td>
+                  <td class="r mono">{{ fmt(d.terbagi) }} gr</td>
+                  <td class="r mono">{{ fmt(d.sisa) }} gr</td>
+                  <td>{{ catatanGabung(d) || '-' }}</td>
+                </tr>
+                <tr class="sub" v-if="blok.subtotal"><td colspan="4">Subtotal Hari {{ blok.dari }}-{{ blok.ke }} ({{ blok.label }})</td><td class="r mono">{{ fmt(blok.subtotal.total) }} gr</td><td class="r mono">{{ fmt(blok.subtotal.terbagi) }} gr</td><td class="r mono">{{ fmt(blok.subtotal.sisa) }} gr</td><td></td></tr>
+              </template>
+              <tr class="grand"><td colspan="4">TOTAL ({{ lap.from }} s/d {{ lap.to }})</td><td class="r mono">{{ fmt(lap.report.totals.hasil) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.terbagi) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.sisa) }} gr</td><td></td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <h3>Total Per Kelompok - Periode Ini</h3>
+            <table class="data"><tbody>
+              <tr v-for="k in lap.report.per_kelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
+              <tr><td><b>Pendapatan Usaha</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+            </tbody></table>
+            <div class="hint">Catatan harian tidak diulang di sini karena sudah tampil di kolom Catatan tabel utama.</div>
+          </div>
+        </template>
+      </section>
+
+      <!-- ADMIN -->
+      <section v-if="view==='admin' && user.role==='admin'">
+        <h1 class="page">Admin</h1>
+        <p class="sub">Status input, team, user, template, dan pengaturan usaha.</p>
+        <div class="card">
+          <h3>Status Input Hari Ini ({{ tglPanjang(today) }})</h3>
+          <div class="status-grid">
+            <div class="status-card" v-for="s in adminStatus" :key="s.team_id">
+              <b>{{ s.team_nama }}</b>
+              <div>Shift 1: <span :class="s.s1?'ok-t':'no-t'">{{ s.s1 ? 'Sudah input' : 'Belum input' }}</span></div>
+              <div>Shift 2: <span :class="s.s2?'ok-t':'no-t'">{{ s.s2 ? 'Sudah input' : 'Belum input' }}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Pengaturan Usaha (tersimpan di database, berlaku ke kop dan tanda tangan PDF)</h3>
+          <label class="fl" for="s-usaha">Nama Perusahaan</label>
+          <input class="txt" id="s-usaha" v-model="settingsForm.nama_perusahaan">
+          <div style="height:10px"></div>
+          <label class="fl" for="s-pimpinan">Nama Pimpinan (tanda tangan Mengetahui)</label>
+          <input class="txt" id="s-pimpinan" v-model="settingsForm.nama_pimpinan" placeholder="Nama pimpinan">
+          <div style="height:10px"></div>
+          <label class="fl" for="s-zona">Zona Waktu Usaha</label>
+          <select class="txt" id="s-zona" v-model="settingsForm.zona_waktu">
+            <option value="Asia/Jakarta">WIB - Asia/Jakarta</option>
+            <option value="Asia/Makassar">WITA - Asia/Makassar</option>
+            <option value="Asia/Jayapura">WIT - Asia/Jayapura</option>
+          </select>
+          <button class="btn" style="margin-top:14px" @click="simpanSettings">Simpan Pengaturan</button>
+        </div>
+        <div class="card">
+          <h3>Team</h3>
+          <table class="data"><thead><tr><th>Nama</th><th>Status</th><th></th></tr></thead>
+          <tbody><tr v-for="t in teamsAll" :key="t.id"><td>{{ t.nama }}</td><td>{{ t.aktif ? 'Aktif' : 'Nonaktif' }}</td><td class="r"><button class="btn ghost small" @click="toggleTeam(t)">{{ t.aktif ? 'Nonaktifkan' : 'Aktifkan' }}</button></td></tr></tbody></table>
+          <div class="grid2" style="margin-top:12px">
+            <input class="txt" v-model="teamBaru" placeholder="Nama team baru">
+            <button class="btn" @click="tambahTeam">Tambah Team</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>User</h3>
+          <table class="data"><thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Team</th><th>Status</th><th></th></tr></thead>
+          <tbody><tr v-for="u in users" :key="u.id"><td>{{ u.nama }}</td><td class="mono">{{ u.username }}</td><td>{{ u.role }}</td><td>{{ u.team_nama || '-' }}</td><td>{{ u.aktif ? 'Aktif' : 'Nonaktif' }}</td><td class="r"><button class="btn ghost small" @click="toggleUser(u)">{{ u.aktif ? 'Nonaktifkan' : 'Aktifkan' }}</button></td></tr></tbody></table>
+          <h3 style="margin-top:18px">Tambah User</h3>
+          <div class="filters">
+            <div><label class="fl">Nama</label><input class="txt" v-model="userBaru.nama"></div>
+            <div><label class="fl">Username</label><input class="txt" v-model="userBaru.username"></div>
+            <div><label class="fl">Password (min 8)</label><input class="txt" type="text" v-model="userBaru.password"></div>
+            <div><label class="fl">Role</label><select class="txt" v-model="userBaru.role"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
+            <div v-if="userBaru.role==='staff'"><label class="fl">Team</label><select class="txt" v-model.number="userBaru.team_id"><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select></div>
+          </div>
+          <button class="btn" style="margin-top:12px" @click="tambahUser">Tambah User</button>
+        </div>
+      </section>
+    </main>
+  </template>
+
+  <!-- MODAL HAPUS -->
+  <div class="modal-bg no-print" v-if="hapusTarget">
+    <div class="modal">
+      <h3 style="margin-top:0">Hapus data ini?</h3>
+      <p>{{ hapusTarget.label }} akan dihapus dari riwayat dan laporan. Tindakan ini tercatat di riwayat perubahan dan Admin bisa melihatnya.</p>
+      <div class="actions">
+        <button class="btn red" @click="konfirmasiHapus">Ya, Hapus</button>
+        <button class="btn ghost" @click="hapusTarget=null">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL GANTI PASSWORD -->
+  <div class="modal-bg no-print" v-if="showPw">
+    <div class="modal">
+      <h3 style="margin-top:0">Ganti Password</h3>
+      <div v-if="pwError" class="banner err">{{ pwError }}</div>
+      <label class="fl">Password Lama</label><input class="txt" type="password" v-model="pwForm.old">
+      <div style="height:10px"></div>
+      <label class="fl">Password Baru (min 8 karakter)</label><input class="txt" type="password" v-model="pwForm.new">
+      <div class="actions">
+        <button class="btn" @click="gantiPassword">Simpan Password Baru</button>
+        <button class="btn ghost" @click="showPw=false">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEMBAR CETAK -->
+  <div class="sheet" :class="{land: cetakMode==='rentang'}" v-if="cetak">
+    <div class="usaha">{{ settings.nama_perusahaan || 'Usaha Tambang Emas' }}</div>
+    <h2>{{ cetak.judul }}</h2>
+    <div class="meta">{{ cetak.subjudul }}</div>
+    <hr>
+    <template v-if="cetakMode==='rentang' && lap.report">
+      <div class="kpis">
+        <div class="kpi"><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(lap.report.totals.hasil) }} gr</div></div>
+        <div class="kpi"><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(lap.report.totals.sisa) }} gr</div></div>
+        <div class="kpi"><div class="lbl">Rata-Rata Per Hari</div><div class="val mono">{{ fmt(rataHari) }} gr</div></div>
+        <div class="kpi"><div class="lbl">Hari Aktif / Shift</div><div class="val mono">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div>
+      </div>
+      <table>
+        <thead><tr><th>No</th><th>Tanggal</th><th class="r">Shift 1</th><th class="r">Shift 2</th><th class="r">Total Hari</th><th class="r">Terbagi</th><th class="r">Pendapatan Usaha</th><th style="width:28%">Catatan</th></tr></thead>
+        <tbody>
+          <template v-for="(blok, bi) in blokLaporan" :key="bi">
+            <tr v-for="d in blok.rows" :key="d.tanggal">
+              <td class="mono">{{ d.no }}</td><td>{{ tglSingkat(d.tanggal) }}</td>
+              <td class="r mono">{{ d.s1 ? fmt(d.s1.hasil)+' gr' : '-' }}</td>
+              <td class="r mono">{{ d.s2 ? fmt(d.s2.hasil)+' gr' : '-' }}</td>
+              <td class="r mono"><b>{{ fmt(d.total) }} gr</b></td>
+              <td class="r mono">{{ fmt(d.terbagi) }} gr</td>
+              <td class="r mono">{{ fmt(d.sisa) }} gr</td>
+              <td>{{ catatanGabung(d) || '-' }}</td>
+            </tr>
+            <tr class="sub" v-if="blok.subtotal"><td colspan="4">Subtotal Hari {{ blok.dari }}-{{ blok.ke }} ({{ blok.label }})</td><td class="r mono">{{ fmt(blok.subtotal.total) }} gr</td><td class="r mono">{{ fmt(blok.subtotal.terbagi) }} gr</td><td class="r mono">{{ fmt(blok.subtotal.sisa) }} gr</td><td></td></tr>
+          </template>
+          <tr class="grand"><td colspan="4">TOTAL ({{ lap.from }} s/d {{ lap.to }})</td><td class="r mono">{{ fmt(lap.report.totals.hasil) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.terbagi) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.sisa) }} gr</td><td></td></tr>
+        </tbody>
+      </table>
+      <div class="box">
+        <b>Total Per Kelompok - Periode Ini</b>
+        <table>
+          <tr v-for="k in lap.report.per_kelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
+          <tr><td><b>Pendapatan Usaha</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+        </table>
+        <div style="color:#64748B;font-size:.85rem;margin-top:6px">Catatan harian tidak diulang di bagian ini karena sudah tampil di kolom Catatan pada tabel utama di atas.</div>
+      </div>
+    </template>
+    <template v-if="cetakMode==='harian'">
+      <div v-for="s in cetak.shifts" :key="s.id" style="margin-bottom:14px">
+        <b>Shift {{ s.shift }}</b> - Hasil: <b class="mono">{{ fmt(s.hasil_gram) }} gr</b><span v-if="s.tanpa_hasil"> (Tanpa Hasil)</span>
+        <table>
+          <thead><tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Orang</th><th class="r">Total (gr)</th><th class="r">Per Orang (gr)</th></tr></thead>
+          <tbody>
+            <tr v-for="(r,i) in s.rows" :key="i"><td>{{ r.nama }}</td><td class="r mono">{{ fmtPct(r.persentase) }}%</td><td class="r mono">{{ r.jumlah_orang }}</td><td class="r mono">{{ fmt(r.total_gram) }}</td><td class="r mono">{{ fmt(r.per_orang_gram) }}</td></tr>
+            <tr class="sub"><td colspan="3">Pendapatan Usaha</td><td class="r mono">{{ fmt(s.sisa) }} gr</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="note" v-if="s.catatan"><b>Catatan Shift {{ s.shift }}:</b> {{ s.catatan }}</div>
+      </div>
+    </template>
+    <div class="sign">
+      <div><div>Diinput oleh,</div><div class="space"></div><div class="nm">{{ cetak.staffNama }}</div></div>
+      <div><div>Mengetahui,</div><div class="space"></div><div class="nm">{{ settings.nama_pimpinan || 'Pimpinan' }}</div></div>
+    </div>
+    <div class="foot"><span>Dicetak pada {{ timestampCetak }}</span><span>Inputin - {{ cetakMode==='rentang' ? 'Format A4 Landscape' : 'Format A4 Portrait' }}</span></div>
+  </div>
+</div>
+<script>/*__VUE__*/</script>
+<script>/*__APP__*/</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}</script>
+</body>
+</html>

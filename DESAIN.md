@@ -190,6 +190,14 @@ Database dikelola Pax dari sini lewat Cloudflare API (token custom.cloudflare, i
 - Inject data awal (seed): dari sini - 2 team awal, akun Admin, akun staff awal, template pembagian, dan settings default (nama perusahaan, pimpinan, zona waktu WIB).
 - Seterusnya Pax bisa membaca, mengecek, membackup (export), dan memperbaiki data dari sini kapan pun diminta. Data operasional harian tetap masuk lewat input staff di app, bukan lewat inject.
 
+## 13. Status Produksi (22 Okt 2026 malam, perintah Hades: lanjut build)
+
+- App versi asli SUDAH DIBANGUN dan LIVE di https://inputin.hadesxyz.workers.dev (Worker `inputin`, deploy awal via API oleh Pax untuk verifikasi; CI jangka panjang = Workers Builds dari GitHub, Hades menyambungkan repo ke Cloudflare).
+- Database D1 `inputin-db` (7dc53776-ebab-417d-be8f-18d5f2942782) dibuat + skema (migrations/0001_schema.sql) + seed oleh Pax lewat API: 2 team, akun admin + staff1 + staff2 (password acak di credentials-awal.txt lokal, tidak di-commit), settings default zona Asia/Jakarta.
+- Kode: src/worker.js (API + auth PBKDF2 + sesi cookie + audit), frontend Vue satu file dari app/template.html + app/app.js dirakit scripts/build.mjs ke public/index.html + src/frontend.js. wrangler.toml siap untuk Workers Builds (build command: npm run build; deploy command: npx wrangler deploy).
+- Uji live end-to-end 19/19 PASS (scripts/e2e-live.py): login benar/salah, contoh Hades 100 gr menghasilkan Operator 6,000 dan Pendapatan Usaha 90,000, persen di atas 100 ditolak, simpan ulang = update, isolasi staff antar team, laporan, audit buat/ubah, tanpa hasil wajib alasan, soft delete, admin status, staff ditolak dari endpoint admin. Data uji dibersihkan setelah tes.
+- Uji UI live 7/7 PASS (scripts/ui-live.mjs): login tampil, login staff masuk form, ringkasan 6,000/90,000 tampil, laporan + riwayat termuat, tanpa error JS. Bug nyata yang ditemukan dan diperbaiki selama uji: v-if dan v-for dalam satu elemen tr ringkasan (Vue 3 membaca v-if lebih dulu sehingga render crash) - diganti pola template pembungkus.
+
 ## 12. Keputusan Berikutnya untuk Diskusi
 1. Palet warna: A (Navy + Emas, rekomendasi), B (Hijau Tua + Emas), atau C (Arang + Emas)?
 2. Nama app dan alamat web yang diinginkan? Contoh: tambang.hadesxyz.workers.dev atau nama usaha sendiri.
