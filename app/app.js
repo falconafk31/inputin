@@ -59,6 +59,7 @@ createApp({
     const form = reactive({ team_id: null, tanggal: "", shift: 1, tanpa_hasil: false, hasilStr: "", catatan: "", rows: [barisBaru("Operator", "6", "6"), barisBaru("Helper", "4", "5")] });
     const modeEdit = ref(false);
     const editingId = ref(null);
+    const asliEdit = ref(null); // Salinan data tersimpan saat Mode Edit dimuat - pembanding untuk daftar perubahan sebelum submit.
     const pernahSimpan = ref(false);
     const prefillInfo = ref("");
     const acc = reactive({ matriks: false, kelompok: false, perteam: false, pengaturan: false, team: false, user: false, template: false });
@@ -90,11 +91,12 @@ createApp({
           form.hasilStr = d.entry.tanpa_hasil ? "" : String(d.entry.hasil_gram).replace(".", ",");
           form.catatan = d.entry.catatan || "";
           form.rows = d.entry.rows.length ? d.entry.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang))) : [barisBaru("", "", "")];
+          asliEdit.value = { tanpa_hasil: !!d.entry.tanpa_hasil, hasil_gram: d.entry.hasil_gram || 0, catatan: d.entry.catatan || "", rows: (d.entry.rows || []).map((r) => ({ nama: r.nama, persentase: r.persentase, jumlah_orang: r.jumlah_orang })) };
         } else {
           // Slot kosong: bila form sebelumnya memuat entri (Mode Edit), bersihkan hasil + catatan + mode tanpa hasil
           // agar angka entri lama tidak terbawa ke slot baru. Isian segar yang belum tersimpan (bukan Mode Edit) dibiarkan.
           if (modeEdit.value) { form.tanpa_hasil = false; form.hasilStr = ""; form.catatan = ""; }
-          modeEdit.value = false; editingId.value = null; await prefillTerakhir();
+          modeEdit.value = false; editingId.value = null; asliEdit.value = null; await prefillTerakhir();
         }
       } catch (e) { /* abaikan */ }
     }
@@ -186,7 +188,39 @@ createApp({
     function buangAntrian(id) { antrian.value = antrian.value.filter((a) => a.id !== id); simpanAntrianLS(); }
     function cobaLagiAntrian(id) { const it = antrian.value.find((a) => a.id === id); if (it) { it.status = "menunggu"; it.pesan = ""; simpanAntrianLS(); kirimAntrian(); } }
 
-    async function simpan() {
+    // ===== Konfirmasi sebelum submit bila data tersimpan diubah (Mode Edit) =====
+    const ubahTarget = ref(null);
+    function hitungPerubahan() {
+      const a = asliEdit.value; if (!a) return [];
+      const out = [];
+      const hasilNow = form.tanpa_hasil ? 0 : (parseID(form.hasilStr) || 0);
+      if (!!a.tanpa_hasil !== !!form.tanpa_hasil) out.push("Mode Tanpa Hasil: " + (a.tanpa_hasil ? "Ya" : "Tidak") + " menjadi " + (form.tanpa_hasil ? "Ya" : "Tidak"));
+      else if (!form.tanpa_hasil && Math.abs((a.hasil_gram || 0) - hasilNow) > 1e-9) out.push("Hasil: " + fmt(a.hasil_gram) + " gr menjadi " + fmt(hasilNow) + " gr");
+      const rowsNow = form.rows.filter((r) => r.nama).map((r) => ({ nama: r.nama, persentase: parseID(r.persenStr) || 0, jumlah_orang: parseInt(r.orangStr) || 0 }));
+      const mapA = Object.fromEntries(a.rows.map((r) => [r.nama, r]));
+      const mapN = Object.fromEntries(rowsNow.map((r) => [r.nama, r]));
+      for (const n of Object.keys(mapN)) {
+        if (!(n in mapA)) out.push("Kelompok baru: " + n + " (" + fmtPct(mapN[n].persentase) + "%, " + mapN[n].jumlah_orang + " orang)");
+        else {
+          if (mapA[n].persentase !== mapN[n].persentase) out.push(n + ": persen " + fmtPct(mapA[n].persentase) + "% menjadi " + fmtPct(mapN[n].persentase) + "%");
+          if (mapA[n].jumlah_orang !== mapN[n].jumlah_orang) out.push(n + ": jumlah orang " + mapA[n].jumlah_orang + " menjadi " + mapN[n].jumlah_orang);
+        }
+      }
+      for (const n of Object.keys(mapA)) if (!(n in mapN)) out.push("Kelompok dihapus: " + n);
+      if ((a.catatan || "") !== (form.catatan || "")) out.push("Catatan diubah");
+      return out;
+    }
+    function simpan() {
+      // Data baru (bukan Mode Edit) langsung disimpan seperti biasa. Mode Edit: tampilkan daftar perubahan dulu.
+      // Kasus Tanpa Hasil tanpa catatan dilewatkan langsung agar pesan penolakan server tampil seperti sebelumnya.
+      if (modeEdit.value && asliEdit.value && !(form.tanpa_hasil && !form.catatan.trim())) {
+        const perubahan = hitungPerubahan();
+        if (perubahan.length) { ubahTarget.value = { label: tglPanjang(form.tanggal) + " - Shift " + form.shift, perubahan }; return; }
+      }
+      lakukanSimpan();
+    }
+    function konfirmasiUbah() { ubahTarget.value = null; lakukanSimpan(); }
+    async function lakukanSimpan() {
       pernahSimpan.value = true;
       busy.value = true;
       const payload = { team_id: form.team_id, tanggal: form.tanggal, shift: form.shift, tanpa_hasil: form.tanpa_hasil, hasil_gram: parseID(form.hasilStr), catatan: form.catatan, rows: form.rows.filter((r) => r.nama).map((r) => ({ nama: r.nama, persentase: parseID(r.persenStr), jumlah_orang: parseInt(r.orangStr) || 0 })) };
@@ -198,6 +232,7 @@ createApp({
         if (sisaAntrian.length !== antrian.value.length) { antrian.value = sisaAntrian; simpanAntrianLS(); }
         setFlash((modeEdit.value ? "Perubahan tersimpan: " : "Tersimpan: ") + tglPanjang(form.tanggal) + " - Shift " + form.shift + ".");
         modeEdit.value = true;
+        asliEdit.value = { tanpa_hasil: payload.tanpa_hasil, hasil_gram: payload.hasil_gram || 0, catatan: payload.catatan || "", rows: payload.rows.map((r) => ({ nama: r.nama, persentase: r.persentase, jumlah_orang: r.jumlah_orang })) };
         await muatRiwayat(true); await muatAdminStatus();
         kirimAntrian();
       } catch (e) {
@@ -252,6 +287,15 @@ createApp({
       try { await api(`/api/entries/${hapusTarget.value.id}`, { method: "DELETE" }); setFlash("Data terhapus dan tercatat di riwayat perubahan."); hapusTarget.value = null; await muatRiwayat(); }
       catch (e) { setFlash(e.message, "err"); }
     }
+    // ===== Konfirmasi hapus baris kelompok di form (tombol X) =====
+    const hapusBarisTarget = ref(null);
+    function mintaHapusBaris(i) {
+      const d = form.rows[i]; if (!d) return;
+      const terisi = (d.nama && d.nama.trim()) || (d.persenStr && d.persenStr.trim()) || (d.orangStr && d.orangStr.trim());
+      if (!terisi) { form.rows.splice(i, 1); return; } // Baris yang masih kosong polos langsung terhapus, tidak perlu konfirmasi.
+      hapusBarisTarget.value = { idx: i, nama: (d.nama || "").trim() || ("Kelompok " + (i + 1)) };
+    }
+    function konfirmasiHapusBaris() { if (hapusBarisTarget.value) form.rows.splice(hapusBarisTarget.value.idx, 1); hapusBarisTarget.value = null; }
     const auditFor = ref(null); const auditList = ref([]);
     async function lihatAudit(id) {
       if (auditFor.value === id) { auditFor.value = null; return; }
@@ -259,7 +303,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.4";
+    const APP_VERSION = "3.4.5";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -728,7 +772,7 @@ createApp({
     return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
-      presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
+      presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, hapusBarisTarget, mintaHapusBaris, konfirmasiHapusBaris, ubahTarget, konfirmasiUbah, auditFor, auditList, lihatAudit,
       lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
       adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };

@@ -81,7 +81,8 @@ try {
   await wait(1200);
   await ev2(`(()=>{ window.__fetchAsli = window.fetch; window.fetch = (u,o)=>{ if (String(u).includes('/api/entries') && o && o.method==='POST') return Promise.reject(new TypeError('stub offline')); return window.__fetchAsli(u,o); }; return 'stub aktif'; })()`);
   const setInput = async (sel, v, proto) => { await ev2(`(()=>{ const el=document.querySelector('${sel}'); const d=Object.getOwnPropertyDescriptor(${proto}.prototype,'value'); d.set.call(el,'${v}'); el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return 'ok'; })()`); await wait(500); };
-  const simpanKlik = async () => { await ev2("document.querySelector('.save-btn').click(); 'ok'"); await wait(1500); };
+  // Sejak v3.4.5, simpan dalam Mode Edit menampilkan modal daftar perubahan dulu - klik konfirmasinya bila muncul.
+  const simpanKlik = async () => { await ev2("document.querySelector('.save-btn').click(); 'ok'"); await wait(900); await ev2("(()=>{ const b=[...document.querySelectorAll('.modal .btn')].find(x=>x.innerText.trim()==='Ya, Simpan Perubahan'); if (b) b.click(); return 'ok'; })()"); await wait(1500); };
   await setInput("#f-tanggal", "2026-10-20", "HTMLInputElement"); await wait(1000);
   await setInput("#f-hasil", "77", "HTMLInputElement");
   await simpanKlik();
