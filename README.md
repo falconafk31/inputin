@@ -40,6 +40,7 @@ scripts/
 wrangler.toml   Konfigurasi Worker + binding D1
 DESAIN.md       Dokumen desain master: aturan bisnis, skema data, UI/UX, keputusan yang dikunci
 RINCIAN-PDF.md  Spesifikasi resmi isi PDF Harian dan PDF Rentang
+TUTORIAL-SQL-D1.md  Tutorial mengelola database D1 langsung dengan SQL
 ```
 
 ## Memasang di Cloudflare Anda sendiri
@@ -67,3 +68,5 @@ node scripts/build.mjs   # menghasilkan public/index.html dan aset di src/
 ```
 
 File hasil build (`public/`, `src/frontend.js`, `src/pdfassets.js`, `src/iconassets.js`) sengaja tidak di-commit; semuanya dibuat ulang oleh `build.mjs` dari sumber di `app/` setiap kali deploy.
+
+Untuk mengelola database langsung dengan SQL (inspeksi data, pemulihan entri terhapus, audit trail, backup dan reset manual), lihat [TUTORIAL-SQL-D1.md](TUTORIAL-SQL-D1.md).
