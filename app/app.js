@@ -140,10 +140,22 @@ createApp({
     const ANTRI_KEY = "inputin-antrian-v1";
     const antrian = ref([]);
     const antrianTampil = computed(() => user.value ? antrian.value.filter((a) => a.pemilik === user.value.username) : []);
-    function muatAntrian() { try { antrian.value = JSON.parse(localStorage.getItem(ANTRI_KEY) || "[]"); } catch (e) { antrian.value = []; } }
+    function kunciAntrian(a) { const p = a.payload || {}; return a.pemilik + "|" + p.team_id + "|" + p.tanggal + "|" + p.shift; }
+    function muatAntrian() {
+      try { antrian.value = JSON.parse(localStorage.getItem(ANTRI_KEY) || "[]"); } catch (e) { antrian.value = []; }
+      // Rapatkan antrian lama yang menumpuk: satu kunci (pemilik+team+tanggal+shift) cukup satu item, yang berlaku yang terakhir disimpan.
+      const terakhir = new Map();
+      for (const a of antrian.value) terakhir.set(kunciAntrian(a), a);
+      const bersih = antrian.value.filter((a) => terakhir.get(kunciAntrian(a)) === a);
+      if (bersih.length !== antrian.value.length) { antrian.value = bersih; simpanAntrianLS(); }
+    }
     function simpanAntrianLS() { try { localStorage.setItem(ANTRI_KEY, JSON.stringify(antrian.value)); } catch (e) {} }
     function tambahAntrian(payload) {
-      antrian.value.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), pemilik: user.value ? user.value.username : "", payload, dibuat: new Date().toISOString(), status: "menunggu", pesan: "" });
+      const pemilik = user.value ? user.value.username : "";
+      const kunci = pemilik + "|" + payload.team_id + "|" + payload.tanggal + "|" + payload.shift;
+      const lama = antrian.value.find((a) => kunciAntrian(a) === kunci);
+      if (lama) { lama.payload = payload; lama.dibuat = new Date().toISOString(); lama.status = "menunggu"; lama.pesan = ""; }
+      else antrian.value.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), pemilik, payload, dibuat: new Date().toISOString(), status: "menunggu", pesan: "" });
       simpanAntrianLS();
     }
     let sedangKirim = false;
@@ -175,6 +187,10 @@ createApp({
       const payload = { team_id: form.team_id, tanggal: form.tanggal, shift: form.shift, tanpa_hasil: form.tanpa_hasil, hasil_gram: parseID(form.hasilStr), catatan: form.catatan, rows: form.rows.filter((r) => r.nama).map((r) => ({ nama: r.nama, persentase: parseID(r.persenStr), jumlah_orang: parseInt(r.orangStr) || 0 })) };
       try {
         await api("/api/entries", { method: "POST", body: JSON.stringify(payload) });
+        // Simpan langsung berhasil: item antrian dengan kunci yang sama sudah kedaluwarsa, buang agar tidak menimpa data terbaru saat antrian terkirim nanti.
+        const kunci = (user.value ? user.value.username : "") + "|" + payload.team_id + "|" + payload.tanggal + "|" + payload.shift;
+        const sisaAntrian = antrian.value.filter((a) => kunciAntrian(a) !== kunci);
+        if (sisaAntrian.length !== antrian.value.length) { antrian.value = sisaAntrian; simpanAntrianLS(); }
         setFlash((modeEdit.value ? "Perubahan tersimpan: " : "Tersimpan: ") + tglPanjang(form.tanggal) + " - Shift " + form.shift + ".");
         modeEdit.value = true;
         await muatRiwayat(true); await muatAdminStatus();
@@ -238,7 +254,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.1";
+    const APP_VERSION = "3.4.2";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
