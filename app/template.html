@@ -20,6 +20,10 @@
   ::selection{background:var(--ring)}
   .mono{font-family:"Fira Code",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;font-variant-ligatures:none}
   .num{font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .inp-edit{position:relative;display:block}
+  .inp-edit>input{padding-right:34px;width:100%}
+  .inp-edit svg{position:absolute;right:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#94A3B8;pointer-events:none}
+  .dhead .inp-edit{flex:1}
   button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
   input,select,textarea{font:inherit;color:inherit}
   .btn,.chip,.seg button,.topnav button,.bottomnav button,.icon-btn,.pager button,.ubtn,.add-btn{transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .12s ease}
@@ -387,14 +391,14 @@
               <div v-if="prefillInfo" class="banner info" style="margin:0 0 12px">{{ prefillInfo }}</div>
               <div class="dist" v-for="(d, i) in form.rows" :key="d.uid || i">
                 <div class="dhead">
-                  <input :value="d.nama" @input="d.nama=$event.target.value; prefillInfo=''" :placeholder="'Nama kelompok ' + (i+1)" :aria-label="'Nama kelompok ' + (i+1)">
+                  <span class="inp-edit"><input :value="d.nama" @input="d.nama=$event.target.value; prefillInfo=''" :placeholder="'Nama kelompok ' + (i+1)" :aria-label="'Nama kelompok ' + (i+1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span>
                   <button type="button" class="icon-btn" @click="mintaHapusBaris(i)" aria-label="Hapus kelompok">x</button>
                 </div>
                 <div class="grid2">
                   <div><label class="fl" :for="'pct'+i">Persentase (%)</label>
-                  <input class="txt mono" :id="'pct'+i" inputmode="decimal" v-model="d.persenStr" @input="prefillInfo=''" placeholder="6"></div>
+                  <span class="inp-edit"><input class="txt mono" :id="'pct'+i" inputmode="decimal" v-model="d.persenStr" @input="prefillInfo=''" placeholder="6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span></div>
                   <div><label class="fl" :for="'org'+i">Jumlah Orang</label>
-                  <input class="txt mono" :id="'org'+i" inputmode="numeric" v-model="d.orangStr" @input="prefillInfo=''" placeholder="4"></div>
+                  <span class="inp-edit"><input class="txt mono" :id="'org'+i" inputmode="numeric" v-model="d.orangStr" @input="prefillInfo=''" placeholder="4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span></div>
                 </div>
                 <div class="calc"><span>Total kelompok: <b class="mono">{{ fmt(rowCalc(d).total) }} gr</b></span><span>Per orang: <b class="mono">{{ fmt(rowCalc(d).perOrang) }} gr</b></span></div>
               </div>
@@ -747,7 +751,7 @@
           <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>User</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.user=!acc.user">{{ acc.user ? 'Tutup' : 'Buka' }}</button></div>
           <div class="tscroll">
           <table class="data"><thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Team</th><th>Status</th><th></th></tr></thead>
-          <tbody><tr v-for="u in users" :key="u.id"><td>{{ u.nama }}</td><td class="mono">{{ u.username }}</td><td>{{ u.role }}</td><td>{{ u.team_nama || '-' }}</td><td>{{ u.aktif ? 'Aktif' : 'Nonaktif' }}</td><td class="r"><button class="btn ghost small" @click="toggleUser(u)">{{ u.aktif ? 'Nonaktifkan' : 'Aktifkan' }}</button></td></tr></tbody></table>
+          <tbody><tr v-for="u in users" :key="u.id"><td>{{ u.nama }}</td><td class="mono">{{ u.username }}</td><td>{{ u.role }}</td><td>{{ u.team_nama || '-' }}</td><td>{{ u.aktif ? 'Aktif' : 'Nonaktif' }}</td><td class="r"><button class="btn ghost small" @click="bukaEditUser(u)">Edit</button> <button class="btn ghost small" @click="toggleUser(u)">{{ u.aktif ? 'Nonaktifkan' : 'Aktifkan' }}</button></td></tr></tbody></table>
           </div>
           <h3 style="margin-top:18px">Tambah User</h3>
           <div class="filters">
@@ -808,6 +812,24 @@
       <div class="actions">
         <button class="btn red" @click="konfirmasiHapusBaris">Ya, Hapus</button>
         <button class="btn ghost" @click="hapusBarisTarget=null">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT USER -->
+  <div class="modal-bg no-print" v-if="editUser.tampil">
+    <div class="modal">
+      <h3 style="margin-top:0">Edit User</h3>
+      <div class="filters">
+        <div><label class="fl">Nama</label><input class="txt" v-model="editUser.nama" autocomplete="off"></div>
+        <div><label class="fl">Username</label><input class="txt mono" v-model="editUser.username" autocomplete="off"></div>
+        <div><label class="fl">Password Baru (kosongkan bila tidak diganti)</label><input class="txt" :type="editUser.lihat ? 'text' : 'password'" v-model="editUser.password" autocomplete="new-password" placeholder="Minimal 8 karakter"><label class="hint" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" v-model="editUser.lihat"> Tampilkan password</label></div>
+        <div><label class="fl">Role</label><select class="txt" v-model="editUser.role"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
+        <div v-if="editUser.role==='staff'"><label class="fl">Team</label><select class="txt" v-model.number="editUser.team_id"><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select></div>
+      </div>
+      <div class="actions">
+        <button class="btn" :disabled="editUser.busy" @click="simpanEditUser">{{ editUser.busy ? 'Menyimpan...' : 'Simpan Perubahan' }}</button>
+        <button class="btn ghost" :disabled="editUser.busy" @click="editUser.tampil=false">Batal</button>
       </div>
     </div>
   </div>

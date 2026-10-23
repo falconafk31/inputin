@@ -429,9 +429,27 @@ async function handleApi(request, env, url) {
     const userMatch = path.match(/^\/api\/admin\/users\/(\d+)$/);
     if (userMatch && method === "PUT") {
       const id = parseInt(userMatch[1], 10);
+      const target = await db.prepare("SELECT id, role, aktif FROM users WHERE id = ?").bind(id).first();
+      if (!target) return err("User tidak ditemukan.", 404);
+      const namaBaru = String(body.nama || "").trim();
+      if (!namaBaru) return err("Nama wajib diisi.", 400);
+      const roleBaru = body.role === "admin" ? "admin" : "staff";
+      const aktifBaru = body.aktif ? 1 : 0;
+      if (target.role === "admin" && target.aktif && (roleBaru !== "admin" || !aktifBaru)) {
+        const lain = await db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND aktif = 1 AND id <> ?").bind(id).first();
+        if (!lain || !lain.n) return err("Tidak bisa: ini satu-satunya Admin aktif.", 400);
+      }
       await db.prepare("UPDATE users SET nama = ?, role = ?, team_id = ?, aktif = ? WHERE id = ?")
-        .bind(String(body.nama || "").trim(), body.role === "admin" ? "admin" : "staff", body.role === "admin" ? null : (parseInt(body.team_id, 10) || null), body.aktif ? 1 : 0, id).run();
-      if (body.password && String(body.password).length >= 8) {
+        .bind(namaBaru, roleBaru, roleBaru === "admin" ? null : (parseInt(body.team_id, 10) || null), aktifBaru, id).run();
+      if (body.username !== undefined) {
+        const usernameBaru = String(body.username || "").trim();
+        if (!usernameBaru) return err("Username wajib diisi.", 400);
+        const dup = await db.prepare("SELECT id FROM users WHERE username = ? AND id <> ?").bind(usernameBaru, id).first();
+        if (dup) return err("Username sudah dipakai.", 400);
+        await db.prepare("UPDATE users SET username = ? WHERE id = ?").bind(usernameBaru, id).run();
+      }
+      if (body.password) {
+        if (String(body.password).length < 8) return err("Password minimal 8 karakter.", 400);
         await db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").bind(await hashPassword(String(body.password)), id).run();
       }
       return json({ ok: true });
