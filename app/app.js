@@ -303,7 +303,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.5";
+    const APP_VERSION = "3.5.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -344,6 +344,143 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
       lap.loading = false;
     }
+
+    // ===== Tab Grafik - Dashboard Fase 1 (SVG digambar sendiri, data dari /api/report) =====
+    const lapTab = ref("tabel");
+    const graf = reactive({ mode: "30hari", report: null, loading: false, from: "", to: "" });
+    const NAMA_HARI_G = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const NAMA_BULAN_G = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    function rentangGrafik() {
+      const t = today.value;
+      if (graf.mode === "30hari") return [addDays(t, -29), t];
+      if (graf.mode === "12bulan") { const [y, m] = t.split("-").map(Number); const awal = new Date(y, m - 12, 1); const p = (x) => String(x).padStart(2, "0"); return [awal.getFullYear() + "-" + p(awal.getMonth() + 1) + "-01", t]; }
+      return [t.slice(0, 4) + "-01-01", t];
+    }
+    async function muatGrafik() {
+      if (!lap.team_id) return;
+      const [f, tt] = rentangGrafik(); graf.from = f; graf.to = tt; graf.loading = true;
+      try { graf.report = await api(`/api/report?team_id=${lap.team_id}&from=${f}&to=${tt}`); }
+      catch (e) { setFlash(e.message, "err"); }
+      graf.loading = false;
+    }
+    function bukaTabGrafik() { lapTab.value = "grafik"; if (!graf.report && !graf.loading) muatGrafik(); }
+    function setModeGrafik(m) { if (graf.mode === m) return; graf.mode = m; muatGrafik(); }
+    const grafDays = computed(() => (graf.report && graf.report.days) || []);
+    function daftarHariLengkap() {
+      if (!graf.from || !graf.to) return [];
+      const map = Object.fromEntries(grafDays.value.map((d) => [d.tanggal, d]));
+      const out = []; let cur = graf.from;
+      while (cur <= graf.to) { out.push(map[cur] || { tanggal: cur, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, kelompok: {}, shift_rows: {} }); cur = addDays(cur, 1); }
+      return out;
+    }
+    const grafKpi = computed(() => {
+      const t = graf.report ? graf.report.totals : null;
+      if (!t) return null;
+      const aktif = t.hari_aktif || 0;
+      return { hasil: t.hasil, sisa: t.sisa, terbagi: t.terbagi, rata: aktif ? Math.round((t.hasil / aktif) * 1000) / 1000 : 0, hariAktif: aktif, shift: t.shift_tercatat };
+    });
+    const grafHarian = computed(() => {
+      if (graf.mode !== "30hari" || !graf.report) return null;
+      const hari = daftarHariLengkap(); if (!hari.length) return null;
+      const W = 720, H = 252, dasar = 210, tinggiMaks = 166;
+      const maks = Math.max(1, ...hari.map((d) => d.total));
+      const slot = W / hari.length, lebarBar = Math.min(15, slot - 5);
+      const bars = hari.map((d, i) => {
+        const s1 = d.s1 ? d.s1.hasil : 0, s2 = d.s2 ? d.s2.hasil : 0;
+        const h1 = s1 / maks * tinggiMaks, h2 = s2 / maks * tinggiMaks;
+        const x = i * slot + (slot - lebarBar) / 2;
+        return { tanggal: d.tanggal, x, w: lebarBar, y1: dasar - h1, h1, y2: dasar - h1 - h2, h2, total: d.total, cx: x + lebarBar / 2, puY: dasar - (d.sisa / maks * tinggiMaks) };
+      });
+      const garis = bars.map((b) => b.cx + "," + Math.round(b.puY * 10) / 10).join(" ");
+      let terbaik = null;
+      for (const b of bars) if (b.total > 0 && (!terbaik || b.total > terbaik.total)) terbaik = b;
+      return { bars, garis, dasar, W, H, terbaik, labelAwal: tglSingkat(hari[0].tanggal), labelAkhir: tglSingkat(hari[hari.length - 1].tanggal) };
+    });
+    const grafBulanan = computed(() => {
+      if (graf.mode === "30hari" || !graf.report) return null;
+      const map = {};
+      for (const d of grafDays.value) { const k = d.tanggal.slice(0, 7); map[k] = Math.round(((map[k] || 0) + d.total) * 1000) / 1000; }
+      const out = []; let [y, m] = graf.from.split("-").map(Number);
+      const [ty, tm] = graf.to.split("-").map(Number);
+      while (y < ty || (y === ty && m <= tm)) { const k = y + "-" + String(m).padStart(2, "0"); out.push({ kunci: k, label: NAMA_BULAN_G[m - 1] + (graf.mode === "12bulan" && m === 1 ? " " + String(y).slice(2) : ""), total: map[k] || 0 }); m++; if (m > 12) { m = 1; y++; } }
+      const W = 720, H = 252, dasar = 210, tinggiMaks = 166;
+      const maks = Math.max(1, ...out.map((b) => b.total));
+      const slot = W / out.length, lebarBar = Math.min(46, slot - 12);
+      const berjalan = today.value.slice(0, 7);
+      return { dasar, W, H, bars: out.map((b, i) => ({ ...b, x: i * slot + (slot - lebarBar) / 2, w: lebarBar, y: dasar - b.total / maks * tinggiMaks, h: b.total / maks * tinggiMaks, cx: i * slot + slot / 2, kini: b.kunci === berjalan })) };
+    });
+    const WARNA_KELOMPOK_G = ["#1E40AF", "#F59E0B", "#059669", "#7C3AED", "#DB2777", "#0891B2", "#65A30D", "#94A3B8"];
+    const grafDonat = computed(() => {
+      const pk = (graf.report && graf.report.per_kelompok) || [];
+      const total = Math.round(pk.reduce((a, g) => a + g.total, 0) * 1000) / 1000;
+      if (!total) return null;
+      const R = 52, C = 2 * Math.PI * R;
+      let acc = 0;
+      const potong = pk.map((g, i) => { const frac = g.total / total; const el = { nama: g.nama, total: g.total, persen: Math.round(frac * 1000) / 10, warna: WARNA_KELOMPOK_G[i % WARNA_KELOMPOK_G.length], dash: (C * frac) + " " + C, offset: -C * acc }; acc += frac; return el; });
+      return { potong, total, R };
+    });
+    const IKON_G = {
+      tren: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+      kalender: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+      orang: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      koin: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+      uang: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+      cek: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+    };
+    const grafAnalisa = computed(() => {
+      const days = grafDays.value;
+      if (!graf.report || !days.length) return [];
+      const out = [];
+      const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const namaHari = (t) => { const [y, m, d] = t.split("-").map(Number); return NAMA_HARI_G[new Date(y, m - 1, d).getDay()] + ", " + tglSingkat(t); };
+      const aktif = days.filter((d) => d.total > 0);
+      if (aktif.length) {
+        const terbaik = aktif.reduce((a, b) => (b.total > a.total ? b : a));
+        const terendah = aktif.reduce((a, b) => (b.total < a.total ? b : a));
+        out.push({ svg: IKON_G.tren, html: "<b>Hari terbaik:</b> " + namaHari(terbaik.tanggal) + " - <b>" + fmt(terbaik.total) + " gr</b>. Hari aktif terendah: " + namaHari(terendah.tanggal) + " - " + fmt(terendah.total) + " gr." });
+        const perHari = {};
+        for (const d of aktif) { const [y, m, dd] = d.tanggal.split("-").map(Number); const wd = new Date(y, m - 1, dd).getDay(); const g = perHari[wd] = perHari[wd] || { total: 0, n: 0 }; g.total += d.total; g.n += 1; }
+        const daftarHari = Object.entries(perHari).map(([wd, g]) => ({ wd: Number(wd), rata: g.total / g.n }));
+        if (daftarHari.length > 1) {
+          const top = daftarHari.reduce((a, b) => (b.rata > a.rata ? b : a));
+          const low = daftarHari.reduce((a, b) => (b.rata < a.rata ? b : a));
+          out.push({ svg: IKON_G.kalender, html: "<b>Hari paling produktif:</b> " + NAMA_HARI_G[top.wd] + " (rata-rata " + fmt(Math.round(top.rata * 1000) / 1000) + " gr). Paling sepi: " + NAMA_HARI_G[low.wd] + " (rata-rata " + fmt(Math.round(low.rata * 1000) / 1000) + " gr)." });
+        }
+      }
+      const perKel = {};
+      for (const d of days) for (const sh of ["1", "2"]) for (const r of (d.shift_rows && d.shift_rows[sh]) || []) {
+        const g = perKel[r.nama] = perKel[r.nama] || { orang: 0, shift: 0, gram: 0 };
+        g.orang += r.jumlah_orang || 0; g.shift += 1; g.gram += r.total_gram || 0;
+      }
+      const daftarKel = Object.entries(perKel).map(([nama, g]) => ({ nama, rataOrang: g.shift ? g.orang / g.shift : 0, perOrang: g.orang ? g.gram / g.orang : 0, orangShift: g.orang }));
+      if (daftarKel.length) {
+        const terbanyak = daftarKel.reduce((a, b) => (b.rataOrang > a.rataOrang ? b : a));
+        const totalOrangShift = daftarKel.reduce((a, g) => a + g.orangShift, 0);
+        out.push({ svg: IKON_G.orang, html: "<b>Pekerja:</b> " + esc(terbanyak.nama) + " rata-rata " + fmtPct(terbanyak.rataOrang) + " orang per shift (terbanyak). Total " + totalOrangShift + " orang-shift pada periode ini." });
+        const valid = daftarKel.filter((g) => g.orangShift > 0);
+        if (valid.length) {
+          const hi = valid.reduce((a, b) => (b.perOrang > a.perOrang ? b : a));
+          const lo = valid.reduce((a, b) => (b.perOrang < a.perOrang ? b : a));
+          out.push({ svg: IKON_G.koin, html: "<b>Jatah per orang tertinggi:</b> " + esc(hi.nama) + " @ " + fmt(Math.round(hi.perOrang * 1000) / 1000) + " gr; terendah " + esc(lo.nama) + " @ " + fmt(Math.round(lo.perOrang * 1000) / 1000) + " gr." });
+        }
+      }
+      const t = graf.report.totals;
+      if (t && t.hasil > 0) {
+        let tren = "";
+        if (aktif.length >= 4) {
+          const tengah = Math.floor(aktif.length / 2);
+          const a1 = aktif.slice(0, tengah), a2 = aktif.slice(tengah);
+          const r1 = a1.reduce((a, d) => a + d.total, 0) / a1.length, r2 = a2.reduce((a, d) => a + d.total, 0) / a2.length;
+          if (r1 > 0) { const naik = Math.round(((r2 - r1) / r1) * 100); tren = " Paruh akhir periode rata-rata " + (naik >= 0 ? "naik " : "turun ") + Math.abs(naik) + "% dibanding paruh awal."; }
+        }
+        out.push({ svg: IKON_G.uang, html: "<b>Pendapatan Usaha:</b> rata-rata " + fmtPct(Math.round((t.sisa / t.hasil) * 1000) / 10) + "% dari hasil." + tren });
+      }
+      const totalHari = daftarHariLengkap().length;
+      const hariNol = days.filter((d) => d.total === 0).length;
+      const hariKosong = Math.max(0, totalHari - days.length);
+      out.push({ svg: IKON_G.cek, html: "<b>Konsistensi:</b> " + aktif.length + " dari " + totalHari + " hari menghasilkan" + (hariNol ? ", " + hariNol + " hari tercatat tanpa hasil" : "") + (hariKosong ? ", " + hariKosong + " hari belum tercatat" : "") + "." });
+      return out;
+    });
     function totalKolom(nama) {
       if (!lap.report) return 0;
       if (nama === "Lainnya") { const utama = (lap.kolomKelompok || []).slice(0, 5); return Math.round(lap.report.per_kelompok.filter((g) => !utama.includes(g.nama)).reduce((a, g) => a + g.total, 0) * 1000) / 1000; }
@@ -773,7 +910,7 @@ createApp({
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
       presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, hapusBarisTarget, mintaHapusBaris, konfirmasiHapusBaris, ubahTarget, konfirmasiUbah, auditFor, auditList, lihatAudit,
-      lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
+      lap, muatLaporan, lapTab, graf, bukaTabGrafik, setModeGrafik, muatGrafik, grafKpi, grafHarian, grafBulanan, grafDonat, grafAnalisa, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
       adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }

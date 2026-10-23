@@ -174,6 +174,19 @@
   .pager button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pager button:disabled{opacity:.4}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .tabseg{margin:0 0 14px}
+  .grafik-svg{width:100%;height:auto;display:block}
+  .legend-g{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted2);font-weight:600;margin-top:8px}
+  .legend-g i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+  .an-row{display:flex;gap:11px;padding:9px 0;border-top:1px dashed var(--line)}
+  .an-row:first-of-type{border-top:none}
+  .an-ic{width:30px;height:30px;flex:none;border-radius:9px;background:#EFF6FF;color:var(--navy);display:flex;align-items:center;justify-content:center}
+  .an-ic svg{width:17px;height:17px}
+  .an-teks{margin:0;font-size:13.5px;line-height:1.55;align-self:center}
+  .donat-flex{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .donat-svg{width:128px;height:128px;flex:none}
+  .donat-legend{display:flex;flex-direction:column;gap:7px;font-size:13px}
+  .dl-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px}
   .kpi{background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:16px;padding:13px;box-shadow:0 1px 3px rgba(15,23,42,.04);display:flex;gap:10px;align-items:flex-start}
   .kpi .ic{margin-top:2px;color:var(--navy)}
   .kpi.k-hijau{border-left-color:#16A34A}.kpi.k-hijau .ic{color:#16A34A}
@@ -490,7 +503,93 @@
       <section v-if="view==='laporan'">
         <h1 class="page">Laporan</h1>
         <p class="sub">Laporan utama staff adalah harian per shift. Pilih rentang, isi laporan dan PDF menyesuaikan otomatis.</p>
-        <div class="card">
+        <div class="seg tabseg" role="tablist" aria-label="Mode laporan">
+          <button type="button" :class="{active: lapTab==='grafik'}" @click="bukaTabGrafik()">Grafik</button>
+          <button type="button" :class="{active: lapTab==='tabel'}" @click="lapTab='tabel'">Tabel &amp; PDF</button>
+        </div>
+
+        <!-- TAB GRAFIK (Dashboard Fase 1) -->
+        <template v-if="lapTab==='grafik'">
+          <div class="card">
+            <div v-if="user.role==='admin'" style="margin-bottom:12px">
+              <label class="fl" for="g-team">Team</label>
+              <select class="txt" id="g-team" v-model="lap.team_id" @change="muatGrafik()"><option value="all">Semua Team (Satu Perusahaan)</option><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
+            </div>
+            <div class="chips" style="margin:0">
+              <button class="chip" :class="{on: graf.mode==='30hari'}" @click="setModeGrafik('30hari')">30 Hari</button>
+              <button class="chip" :class="{on: graf.mode==='12bulan'}" @click="setModeGrafik('12bulan')">12 Bulan</button>
+              <button class="chip" :class="{on: graf.mode==='tahun'}" @click="setModeGrafik('tahun')">Tahun Ini</button>
+            </div>
+          </div>
+          <p v-if="graf.loading" class="hint" style="text-align:center;padding:18px 0">Memuat grafik...</p>
+          <template v-else-if="grafKpi && grafKpi.hasil > 0">
+            <div class="kpis" style="margin-bottom:16px">
+              <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span><div><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(grafKpi.hasil) }} gr</div></div></div>
+              <div class="kpi k-hijau"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span><div><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(grafKpi.sisa) }} gr</div></div></div>
+              <div class="kpi k-teal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span><div><div class="lbl">Rata-Rata / Hari Aktif</div><div class="val mono">{{ fmt(grafKpi.rata) }} gr</div></div></div>
+            </div>
+
+            <div class="card" v-if="grafHarian">
+              <h3 style="margin-top:0">Hasil Harian - 30 Hari Terakhir</h3>
+              <p class="hint" style="margin:2px 0 10px">Batang bertumpuk per shift; garis hijau = Pendapatan Usaha per hari.</p>
+              <svg class="grafik-svg" viewBox="0 0 720 252" role="img" aria-label="Grafik hasil harian">
+                <line :x1="0" :y1="grafHarian.dasar" :x2="grafHarian.W" :y2="grafHarian.dasar" stroke="#CBD5E1" stroke-width="1"/>
+                <g v-for="(b, i) in grafHarian.bars" :key="i">
+                  <rect :x="b.x" :y="b.y1" :width="b.w" :height="b.h1" rx="2" fill="#1E40AF"/>
+                  <rect :x="b.x" :y="b.y2" :width="b.w" :height="b.h2" rx="2" fill="#F59E0B"/>
+                </g>
+                <polyline :points="grafHarian.garis" fill="none" stroke="#059669" stroke-width="2"/>
+                <text v-if="grafHarian.terbaik" :x="grafHarian.terbaik.cx" :y="grafHarian.terbaik.y2 - 7" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF" class="mono">{{ fmt(grafHarian.terbaik.total) }}</text>
+                <text x="0" :y="grafHarian.H - 16" font-size="11.5" fill="#94A3B8">{{ grafHarian.labelAwal }}</text>
+                <text :x="grafHarian.W" :y="grafHarian.H - 16" text-anchor="end" font-size="11.5" fill="#94A3B8">{{ grafHarian.labelAkhir }}</text>
+              </svg>
+              <div class="legend-g"><span><i style="background:#1E40AF"></i>Shift 1</span><span><i style="background:#F59E0B"></i>Shift 2</span><span><i style="background:#059669;border-radius:50%"></i>Pendapatan Usaha</span></div>
+            </div>
+
+            <div class="card" v-if="grafBulanan">
+              <h3 style="margin-top:0">{{ graf.mode === 'tahun' ? 'Hasil Bulanan - Tahun Ini' : 'Hasil Bulanan - 12 Bulan Terakhir' }}</h3>
+              <p class="hint" style="margin:2px 0 10px">Total hasil per bulan (gr). Bulan berjalan berwarna oranye.</p>
+              <svg class="grafik-svg" viewBox="0 0 720 252" role="img" aria-label="Grafik hasil bulanan">
+                <line :x1="0" :y1="grafBulanan.dasar" :x2="grafBulanan.W" :y2="grafBulanan.dasar" stroke="#CBD5E1" stroke-width="1"/>
+                <g v-for="(b, i) in grafBulanan.bars" :key="i">
+                  <rect :x="b.x" :y="b.y" :width="b.w" :height="b.h" rx="3" :fill="b.kini ? '#D97706' : '#1E40AF'"/>
+                  <text v-if="b.total > 0" :x="b.cx" :y="b.y - 6" text-anchor="middle" font-size="11" fill="#64748B" class="mono">{{ fmt(b.total) }}</text>
+                  <text :x="b.cx" :y="grafBulanan.dasar + 17" text-anchor="middle" font-size="11.5" fill="#64748B">{{ b.label }}</text>
+                </g>
+              </svg>
+            </div>
+
+            <div class="card" v-if="grafAnalisa.length">
+              <h3 style="margin-top:0">Analisa Singkat</h3>
+              <p class="hint" style="margin:2px 0 4px">Dihitung otomatis dari data periode ini.</p>
+              <div class="an-row" v-for="(a, i) in grafAnalisa" :key="i">
+                <span class="an-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="a.svg"></svg></span>
+                <p class="an-teks" v-html="a.html"></p>
+              </div>
+            </div>
+
+            <div class="card" v-if="grafDonat">
+              <h3 style="margin-top:0">Komposisi Terbagi per Kelompok</h3>
+              <p class="hint" style="margin:2px 0 10px">Porsi pembagian pada periode ini.</p>
+              <div class="donat-flex">
+                <svg class="donat-svg" viewBox="0 0 128 128" role="img" aria-label="Donat komposisi terbagi per kelompok">
+                  <circle cx="64" cy="64" :r="grafDonat.R" fill="none" stroke="#E2E8F0" stroke-width="17"/>
+                  <circle v-for="(p, i) in grafDonat.potong" :key="i" cx="64" cy="64" :r="grafDonat.R" fill="none" :stroke="p.warna" stroke-width="17" :stroke-dasharray="p.dash" :stroke-dashoffset="p.offset" transform="rotate(-90 64 64)"/>
+                  <text x="64" y="61" text-anchor="middle" font-size="14" font-weight="800" class="mono">{{ fmt(grafDonat.total) }}</text>
+                  <text x="64" y="77" text-anchor="middle" font-size="9.5" fill="#64748B">gr terbagi</text>
+                </svg>
+                <div class="donat-legend">
+                  <div v-for="(p, i) in grafDonat.potong" :key="i"><span class="dl-dot" :style="{background: p.warna}"></span>{{ p.nama }} <b class="mono">{{ fmt(p.total) }} gr ({{ fmtPct(p.persen) }}%)</b></div>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div class="card" v-else-if="!graf.loading">
+            <p class="hint" style="text-align:center;margin:0">Belum ada data pada periode ini. Grafik akan muncul setelah ada hasil tercatat.</p>
+          </div>
+        </template>
+
+        <div class="card" v-if="lapTab==='tabel'">
           <div v-if="user.role==='admin'" style="margin-bottom:12px">
             <label class="fl" for="l-team">Team</label>
             <select class="txt" id="l-team" v-model="lap.team_id" @change="muatLaporan"><option value="all">Semua Team (Satu Perusahaan)</option><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
@@ -507,8 +606,8 @@
             <button class="btn ghost" :disabled="pdfState==='loading'" @click="unduhPDF(true)" v-if="lap.from===lap.to"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>PDF Harian (Rincian Per Shift)</button>
           </div>
         </div>
-        <div v-if="lap.loading" class="card">Memuat...</div>
-        <template v-else-if="lap.report">
+        <div v-if="lapTab==='tabel' && lap.loading" class="card">Memuat...</div>
+        <template v-else-if="lapTab==='tabel' && lap.report">
           <div v-if="lapKosong" class="card empty-state"><span class="es-icon">🗂️</span><b>Belum ada catatan di rentang ini.</b><span>Coba ubah tanggal.</span></div>
           <template v-else>
           <div class="kpis" style="margin-bottom:16px">
@@ -1048,7 +1147,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.5";
+    const APP_VERSION = "3.5.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -1089,6 +1188,143 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
       lap.loading = false;
     }
+
+    // ===== Tab Grafik - Dashboard Fase 1 (SVG digambar sendiri, data dari /api/report) =====
+    const lapTab = ref("tabel");
+    const graf = reactive({ mode: "30hari", report: null, loading: false, from: "", to: "" });
+    const NAMA_HARI_G = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const NAMA_BULAN_G = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    function rentangGrafik() {
+      const t = today.value;
+      if (graf.mode === "30hari") return [addDays(t, -29), t];
+      if (graf.mode === "12bulan") { const [y, m] = t.split("-").map(Number); const awal = new Date(y, m - 12, 1); const p = (x) => String(x).padStart(2, "0"); return [awal.getFullYear() + "-" + p(awal.getMonth() + 1) + "-01", t]; }
+      return [t.slice(0, 4) + "-01-01", t];
+    }
+    async function muatGrafik() {
+      if (!lap.team_id) return;
+      const [f, tt] = rentangGrafik(); graf.from = f; graf.to = tt; graf.loading = true;
+      try { graf.report = await api(`/api/report?team_id=${lap.team_id}&from=${f}&to=${tt}`); }
+      catch (e) { setFlash(e.message, "err"); }
+      graf.loading = false;
+    }
+    function bukaTabGrafik() { lapTab.value = "grafik"; if (!graf.report && !graf.loading) muatGrafik(); }
+    function setModeGrafik(m) { if (graf.mode === m) return; graf.mode = m; muatGrafik(); }
+    const grafDays = computed(() => (graf.report && graf.report.days) || []);
+    function daftarHariLengkap() {
+      if (!graf.from || !graf.to) return [];
+      const map = Object.fromEntries(grafDays.value.map((d) => [d.tanggal, d]));
+      const out = []; let cur = graf.from;
+      while (cur <= graf.to) { out.push(map[cur] || { tanggal: cur, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, kelompok: {}, shift_rows: {} }); cur = addDays(cur, 1); }
+      return out;
+    }
+    const grafKpi = computed(() => {
+      const t = graf.report ? graf.report.totals : null;
+      if (!t) return null;
+      const aktif = t.hari_aktif || 0;
+      return { hasil: t.hasil, sisa: t.sisa, terbagi: t.terbagi, rata: aktif ? Math.round((t.hasil / aktif) * 1000) / 1000 : 0, hariAktif: aktif, shift: t.shift_tercatat };
+    });
+    const grafHarian = computed(() => {
+      if (graf.mode !== "30hari" || !graf.report) return null;
+      const hari = daftarHariLengkap(); if (!hari.length) return null;
+      const W = 720, H = 252, dasar = 210, tinggiMaks = 166;
+      const maks = Math.max(1, ...hari.map((d) => d.total));
+      const slot = W / hari.length, lebarBar = Math.min(15, slot - 5);
+      const bars = hari.map((d, i) => {
+        const s1 = d.s1 ? d.s1.hasil : 0, s2 = d.s2 ? d.s2.hasil : 0;
+        const h1 = s1 / maks * tinggiMaks, h2 = s2 / maks * tinggiMaks;
+        const x = i * slot + (slot - lebarBar) / 2;
+        return { tanggal: d.tanggal, x, w: lebarBar, y1: dasar - h1, h1, y2: dasar - h1 - h2, h2, total: d.total, cx: x + lebarBar / 2, puY: dasar - (d.sisa / maks * tinggiMaks) };
+      });
+      const garis = bars.map((b) => b.cx + "," + Math.round(b.puY * 10) / 10).join(" ");
+      let terbaik = null;
+      for (const b of bars) if (b.total > 0 && (!terbaik || b.total > terbaik.total)) terbaik = b;
+      return { bars, garis, dasar, W, H, terbaik, labelAwal: tglSingkat(hari[0].tanggal), labelAkhir: tglSingkat(hari[hari.length - 1].tanggal) };
+    });
+    const grafBulanan = computed(() => {
+      if (graf.mode === "30hari" || !graf.report) return null;
+      const map = {};
+      for (const d of grafDays.value) { const k = d.tanggal.slice(0, 7); map[k] = Math.round(((map[k] || 0) + d.total) * 1000) / 1000; }
+      const out = []; let [y, m] = graf.from.split("-").map(Number);
+      const [ty, tm] = graf.to.split("-").map(Number);
+      while (y < ty || (y === ty && m <= tm)) { const k = y + "-" + String(m).padStart(2, "0"); out.push({ kunci: k, label: NAMA_BULAN_G[m - 1] + (graf.mode === "12bulan" && m === 1 ? " " + String(y).slice(2) : ""), total: map[k] || 0 }); m++; if (m > 12) { m = 1; y++; } }
+      const W = 720, H = 252, dasar = 210, tinggiMaks = 166;
+      const maks = Math.max(1, ...out.map((b) => b.total));
+      const slot = W / out.length, lebarBar = Math.min(46, slot - 12);
+      const berjalan = today.value.slice(0, 7);
+      return { dasar, W, H, bars: out.map((b, i) => ({ ...b, x: i * slot + (slot - lebarBar) / 2, w: lebarBar, y: dasar - b.total / maks * tinggiMaks, h: b.total / maks * tinggiMaks, cx: i * slot + slot / 2, kini: b.kunci === berjalan })) };
+    });
+    const WARNA_KELOMPOK_G = ["#1E40AF", "#F59E0B", "#059669", "#7C3AED", "#DB2777", "#0891B2", "#65A30D", "#94A3B8"];
+    const grafDonat = computed(() => {
+      const pk = (graf.report && graf.report.per_kelompok) || [];
+      const total = Math.round(pk.reduce((a, g) => a + g.total, 0) * 1000) / 1000;
+      if (!total) return null;
+      const R = 52, C = 2 * Math.PI * R;
+      let acc = 0;
+      const potong = pk.map((g, i) => { const frac = g.total / total; const el = { nama: g.nama, total: g.total, persen: Math.round(frac * 1000) / 10, warna: WARNA_KELOMPOK_G[i % WARNA_KELOMPOK_G.length], dash: (C * frac) + " " + C, offset: -C * acc }; acc += frac; return el; });
+      return { potong, total, R };
+    });
+    const IKON_G = {
+      tren: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+      kalender: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+      orang: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      koin: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+      uang: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+      cek: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+    };
+    const grafAnalisa = computed(() => {
+      const days = grafDays.value;
+      if (!graf.report || !days.length) return [];
+      const out = [];
+      const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const namaHari = (t) => { const [y, m, d] = t.split("-").map(Number); return NAMA_HARI_G[new Date(y, m - 1, d).getDay()] + ", " + tglSingkat(t); };
+      const aktif = days.filter((d) => d.total > 0);
+      if (aktif.length) {
+        const terbaik = aktif.reduce((a, b) => (b.total > a.total ? b : a));
+        const terendah = aktif.reduce((a, b) => (b.total < a.total ? b : a));
+        out.push({ svg: IKON_G.tren, html: "<b>Hari terbaik:</b> " + namaHari(terbaik.tanggal) + " - <b>" + fmt(terbaik.total) + " gr</b>. Hari aktif terendah: " + namaHari(terendah.tanggal) + " - " + fmt(terendah.total) + " gr." });
+        const perHari = {};
+        for (const d of aktif) { const [y, m, dd] = d.tanggal.split("-").map(Number); const wd = new Date(y, m - 1, dd).getDay(); const g = perHari[wd] = perHari[wd] || { total: 0, n: 0 }; g.total += d.total; g.n += 1; }
+        const daftarHari = Object.entries(perHari).map(([wd, g]) => ({ wd: Number(wd), rata: g.total / g.n }));
+        if (daftarHari.length > 1) {
+          const top = daftarHari.reduce((a, b) => (b.rata > a.rata ? b : a));
+          const low = daftarHari.reduce((a, b) => (b.rata < a.rata ? b : a));
+          out.push({ svg: IKON_G.kalender, html: "<b>Hari paling produktif:</b> " + NAMA_HARI_G[top.wd] + " (rata-rata " + fmt(Math.round(top.rata * 1000) / 1000) + " gr). Paling sepi: " + NAMA_HARI_G[low.wd] + " (rata-rata " + fmt(Math.round(low.rata * 1000) / 1000) + " gr)." });
+        }
+      }
+      const perKel = {};
+      for (const d of days) for (const sh of ["1", "2"]) for (const r of (d.shift_rows && d.shift_rows[sh]) || []) {
+        const g = perKel[r.nama] = perKel[r.nama] || { orang: 0, shift: 0, gram: 0 };
+        g.orang += r.jumlah_orang || 0; g.shift += 1; g.gram += r.total_gram || 0;
+      }
+      const daftarKel = Object.entries(perKel).map(([nama, g]) => ({ nama, rataOrang: g.shift ? g.orang / g.shift : 0, perOrang: g.orang ? g.gram / g.orang : 0, orangShift: g.orang }));
+      if (daftarKel.length) {
+        const terbanyak = daftarKel.reduce((a, b) => (b.rataOrang > a.rataOrang ? b : a));
+        const totalOrangShift = daftarKel.reduce((a, g) => a + g.orangShift, 0);
+        out.push({ svg: IKON_G.orang, html: "<b>Pekerja:</b> " + esc(terbanyak.nama) + " rata-rata " + fmtPct(terbanyak.rataOrang) + " orang per shift (terbanyak). Total " + totalOrangShift + " orang-shift pada periode ini." });
+        const valid = daftarKel.filter((g) => g.orangShift > 0);
+        if (valid.length) {
+          const hi = valid.reduce((a, b) => (b.perOrang > a.perOrang ? b : a));
+          const lo = valid.reduce((a, b) => (b.perOrang < a.perOrang ? b : a));
+          out.push({ svg: IKON_G.koin, html: "<b>Jatah per orang tertinggi:</b> " + esc(hi.nama) + " @ " + fmt(Math.round(hi.perOrang * 1000) / 1000) + " gr; terendah " + esc(lo.nama) + " @ " + fmt(Math.round(lo.perOrang * 1000) / 1000) + " gr." });
+        }
+      }
+      const t = graf.report.totals;
+      if (t && t.hasil > 0) {
+        let tren = "";
+        if (aktif.length >= 4) {
+          const tengah = Math.floor(aktif.length / 2);
+          const a1 = aktif.slice(0, tengah), a2 = aktif.slice(tengah);
+          const r1 = a1.reduce((a, d) => a + d.total, 0) / a1.length, r2 = a2.reduce((a, d) => a + d.total, 0) / a2.length;
+          if (r1 > 0) { const naik = Math.round(((r2 - r1) / r1) * 100); tren = " Paruh akhir periode rata-rata " + (naik >= 0 ? "naik " : "turun ") + Math.abs(naik) + "% dibanding paruh awal."; }
+        }
+        out.push({ svg: IKON_G.uang, html: "<b>Pendapatan Usaha:</b> rata-rata " + fmtPct(Math.round((t.sisa / t.hasil) * 1000) / 10) + "% dari hasil." + tren });
+      }
+      const totalHari = daftarHariLengkap().length;
+      const hariNol = days.filter((d) => d.total === 0).length;
+      const hariKosong = Math.max(0, totalHari - days.length);
+      out.push({ svg: IKON_G.cek, html: "<b>Konsistensi:</b> " + aktif.length + " dari " + totalHari + " hari menghasilkan" + (hariNol ? ", " + hariNol + " hari tercatat tanpa hasil" : "") + (hariKosong ? ", " + hariKosong + " hari belum tercatat" : "") + "." });
+      return out;
+    });
     function totalKolom(nama) {
       if (!lap.report) return 0;
       if (nama === "Lainnya") { const utama = (lap.kolomKelompok || []).slice(0, 5); return Math.round(lap.report.per_kelompok.filter((g) => !utama.includes(g.nama)).reduce((a, g) => a + g.total, 0) * 1000) / 1000; }
@@ -1518,7 +1754,7 @@ createApp({
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
       presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, hapusBarisTarget, mintaHapusBaris, konfirmasiHapusBaris, ubahTarget, konfirmasiUbah, auditFor, auditList, lihatAudit,
-      lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
+      lap, muatLaporan, lapTab, graf, bukaTabGrafik, setModeGrafik, muatGrafik, grafKpi, grafHarian, grafBulanan, grafDonat, grafAnalisa, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
       adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }
