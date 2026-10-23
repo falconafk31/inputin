@@ -68,8 +68,9 @@ try {
   // Tanam antrian lama yang menumpuk SEBELUM reload: 3 salinan shift 1 (hasil 1, 2, 3) + 1 item shift 2 (hasil 9)
   await ev2(`(()=>{ const mk=(shift,hasil,n)=>({ id: 'tanam-'+n, pemilik: 'admin', payload: { team_id: 1, tanggal: '2026-10-20', shift, tanpa_hasil: false, hasil_gram: hasil, catatan: 'tanam uji', rows: [{ nama: 'Operator', persentase: 6, jumlah_orang: 6 }] }, dibuat: new Date().toISOString(), status: 'menunggu', pesan: '' }); localStorage.setItem('inputin-antrian-v1', JSON.stringify([mk(1,1,1), mk(1,2,2), mk(1,3,3), mk(2,9,4)])); return 'tertanam 4'; })()`);
   await ev2("location.reload(); 'ok'");
-  await wait(5000);
-  const qTanam = await ev2("JSON.parse(localStorage.getItem('inputin-antrian-v1')||'[]').length");
+  // Tunggu antrian terkirim habis (poll sampai 24 detik; kirim berurutan lewat proxy uji bisa lambat saat beban tinggi)
+  let qTanam = -1;
+  for (let i = 0; i < 12; i++) { await wait(2000); qTanam = await ev2("JSON.parse(localStorage.getItem('inputin-antrian-v1')||'[]').length"); if (qTanam === 0) break; }
   cek("muat: antrian menumpuk dirapatkan lalu terkirim (sisa 0)", qTanam === 0, "sisa " + qTanam);
   const s1 = await api("/api/entries/one?team_id=1&tanggal=2026-10-20&shift=1");
   cek("muat: yang tercatat salinan terakhir (3 gr)", s1.entry && Math.abs(s1.entry.hasil_gram - 3) < 1e-9, s1.entry ? "hasil " + s1.entry.hasil_gram : "tidak ada");
