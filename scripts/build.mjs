@@ -43,4 +43,8 @@ fs.writeFileSync(path.join(root, "public/assets", fontsName), pdfFontsJs);
 fs.writeFileSync(path.join(root, "src/frontend.js"), "export default " + JSON.stringify(html) + ";\n");
 const assetsMap = { [vendorName]: jspdf, [fontsName]: pdfFontsJs };
 fs.writeFileSync(path.join(root, "src/pdfassets.js"), "export default " + JSON.stringify(assetsMap) + ";\n");
+const iconAssets = {};
+const iconDir = path.join(root, "app/icons");
+if (fs.existsSync(iconDir)) for (const f of fs.readdirSync(iconDir)) { if (f.endsWith(".png.b64")) iconAssets["/" + f.replace(/\.b64$/, "")] = fs.readFileSync(path.join(iconDir, f), "utf8").trim(); }
+fs.writeFileSync(path.join(root, "src/iconassets.js"), "export default " + JSON.stringify(iconAssets) + ";\n");
 console.log("Build OK:", (html.length / 1024).toFixed(0), "KB html | aset PDF:", vendorName, "+", fontsName, "(" + totalKb + " KB, lazy)");

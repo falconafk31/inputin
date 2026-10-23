@@ -57,6 +57,9 @@ createApp({
     const form = reactive({ team_id: null, tanggal: "", shift: 1, tanpa_hasil: false, hasilStr: "", catatan: "", rows: [{ nama: "Operator", persenStr: "6", orangStr: "6" }, { nama: "Helper", persenStr: "4", orangStr: "5" }] });
     const modeEdit = ref(false);
     const editingId = ref(null);
+    const pernahSimpan = ref(false);
+    const prefillInfo = ref("");
+    const acc = reactive({ matriks: false, kelompok: false, perteam: false, pengaturan: false, team: false, user: false, template: false });
     const teamLabelAktif = computed(() => {
       const t = teams.value.find((x) => x.id === form.team_id);
       return user.value && user.value.role === "staff" ? (user.value.team_nama || "") : (t ? t.nama : "");
@@ -66,21 +69,40 @@ createApp({
     const totalPersenForm = computed(() => form.rows.reduce((a, d) => a + parseID(d.persenStr), 0));
     const sisaGram = computed(() => Math.round((totalHasilForm.value - form.rows.reduce((a, d) => a + rowCalc(d).total, 0)) * 1000) / 1000);
     const sisaPersen = computed(() => 100 - totalPersenForm.value);
+    const peringatanForm = computed(() => {
+      const w = [];
+      if (!form.tanpa_hasil && form.hasilStr.trim() !== "" && parseID(form.hasilStr) === 0) w.push("Hasil terisi 0 gram tetapi Mode Tanpa Hasil mati. Kalau memang tidak ada hasil, aktifkan Mode Tanpa Hasil dan isi alasannya di catatan.");
+      for (const r of form.rows) { if (r.nama && parseID(r.persenStr) > 0 && !(parseInt(r.orangStr) > 0)) w.push("Kelompok " + r.nama + ": persentase terisi tetapi jumlah orang masih 0."); }
+      if (pernahSimpan.value && !form.catatan.trim()) w.push("Catatan masih kosong - catatan wajib diisi.");
+      return w;
+    });
     function tambahChip(c) { form.catatan = form.catatan ? (form.catatan.replace(/[.\s]+$/, "") + ". " + c + ".") : (c + "."); }
     async function cekModeEdit() {
       if (!form.team_id || !form.tanggal) return;
       try {
         const d = await api(`/api/entries/one?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
         if (d.entry) {
+          prefillInfo.value = "";
           modeEdit.value = true; editingId.value = d.entry.id;
           form.tanpa_hasil = !!d.entry.tanpa_hasil;
           form.hasilStr = d.entry.tanpa_hasil ? "" : String(d.entry.hasil_gram).replace(".", ",");
           form.catatan = d.entry.catatan || "";
           form.rows = d.entry.rows.length ? d.entry.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) })) : [{ nama: "", persenStr: "", orangStr: "" }];
-        } else { modeEdit.value = false; editingId.value = null; }
+        } else { modeEdit.value = false; editingId.value = null; await prefillTerakhir(); }
+      } catch (e) { /* abaikan */ }
+    }
+    async function prefillTerakhir() {
+      prefillInfo.value = "";
+      try {
+        const d = await api(`/api/entries/copy-source?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
+        if (d.rows && d.rows.length) {
+          form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
+          prefillInfo.value = "Pembagian terisi otomatis dari " + tglPanjang(d.dari_tanggal) + " - periksa dulu sebelum menyimpan.";
+        }
       } catch (e) { /* abaikan */ }
     }
     async function pakaiSumber(jenis) {
+      prefillInfo.value = "";
       try {
         if (jenis === "kemarin") {
           const d = await api(`/api/entries/copy-source?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
@@ -89,27 +111,78 @@ createApp({
           setFlash("Pembagian disalin dari " + tglPanjang(d.dari_tanggal) + ".");
         } else {
           const d = await api(`/api/templates?team_id=${form.team_id}`);
-          if (!d.rows.length) return setFlash("Template team masih kosong. Isi pembagian lalu klik Simpan Sebagai Template.", "err");
+          if (!d.rows.length) return setFlash("Template team masih kosong. Template diatur Admin di halaman Admin.", "err");
           form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
           setFlash("Template team dipakai.");
         }
       } catch (e) { setFlash(e.message, "err"); }
     }
-    async function simpanTemplate() {
+    // ===== Template pembagian (dikelola Admin) =====
+    const tplAdmin = reactive({ team_id: null, rows: [], loading: false });
+    async function muatTplAdmin() {
+      if (!tplAdmin.team_id) return;
+      tplAdmin.loading = true;
       try {
-        await api("/api/templates", { method: "PUT", body: JSON.stringify({ team_id: form.team_id, rows: form.rows.filter((r) => r.nama).map((r) => ({ nama: r.nama, persentase: parseID(r.persenStr), jumlah_orang: parseInt(r.orangStr) || 0 })) }) });
-        setFlash("Template pembagian team tersimpan.");
+        const d = await api(`/api/templates?team_id=${tplAdmin.team_id}`);
+        tplAdmin.rows = d.rows.length ? d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) })) : [{ nama: "", persenStr: "", orangStr: "" }];
+      } catch (e) { setFlash(e.message, "err"); }
+      tplAdmin.loading = false;
+    }
+    async function simpanTplAdmin() {
+      try {
+        await api("/api/templates", { method: "PUT", body: JSON.stringify({ team_id: tplAdmin.team_id, rows: tplAdmin.rows.filter((r) => r.nama).map((r) => ({ nama: r.nama, persentase: parseID(r.persenStr), jumlah_orang: parseInt(r.orangStr) || 0 })) }) });
+        setFlash("Template pembagian tersimpan untuk team ini.");
       } catch (e) { setFlash(e.message, "err"); }
     }
+    // ===== Antrian simpan offline (tersimpan di HP, terkirim otomatis saat ada sinyal) =====
+    const ANTRI_KEY = "inputin-antrian-v1";
+    const antrian = ref([]);
+    const antrianTampil = computed(() => user.value ? antrian.value.filter((a) => a.pemilik === user.value.username) : []);
+    function muatAntrian() { try { antrian.value = JSON.parse(localStorage.getItem(ANTRI_KEY) || "[]"); } catch (e) { antrian.value = []; } }
+    function simpanAntrianLS() { try { localStorage.setItem(ANTRI_KEY, JSON.stringify(antrian.value)); } catch (e) {} }
+    function tambahAntrian(payload) {
+      antrian.value.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2, 8), pemilik: user.value ? user.value.username : "", payload, dibuat: new Date().toISOString(), status: "menunggu", pesan: "" });
+      simpanAntrianLS();
+    }
+    let sedangKirim = false;
+    async function kirimAntrian() {
+      if (sedangKirim || !user.value) return;
+      const mine = antrian.value.filter((a) => a.pemilik === user.value.username && a.status !== "gagal");
+      if (!mine.length) return;
+      sedangKirim = true;
+      let terkirim = 0;
+      for (const item of [...mine]) {
+        try {
+          await api("/api/entries", { method: "POST", body: JSON.stringify(item.payload) });
+          antrian.value = antrian.value.filter((a) => a.id !== item.id);
+          simpanAntrianLS(); terkirim++;
+        } catch (e) {
+          if (e instanceof TypeError) break;
+          item.status = "gagal"; item.pesan = e.message; simpanAntrianLS();
+        }
+      }
+      sedangKirim = false;
+      if (terkirim) { setFlash(terkirim + " input dari antrian berhasil terkirim."); await muatRiwayat(true); await muatAdminStatus(); await cekModeEdit(); }
+    }
+    function buangAntrian(id) { antrian.value = antrian.value.filter((a) => a.id !== id); simpanAntrianLS(); }
+    function cobaLagiAntrian(id) { const it = antrian.value.find((a) => a.id === id); if (it) { it.status = "menunggu"; it.pesan = ""; simpanAntrianLS(); kirimAntrian(); } }
+
     async function simpan() {
+      pernahSimpan.value = true;
       busy.value = true;
+      const payload = { team_id: form.team_id, tanggal: form.tanggal, shift: form.shift, tanpa_hasil: form.tanpa_hasil, hasil_gram: parseID(form.hasilStr), catatan: form.catatan, rows: form.rows.filter((r) => r.nama).map((r) => ({ nama: r.nama, persentase: parseID(r.persenStr), jumlah_orang: parseInt(r.orangStr) || 0 })) };
       try {
-        const payload = { team_id: form.team_id, tanggal: form.tanggal, shift: form.shift, tanpa_hasil: form.tanpa_hasil, hasil_gram: parseID(form.hasilStr), catatan: form.catatan, rows: form.rows.filter((r) => r.nama).map((r) => ({ nama: r.nama, persentase: parseID(r.persenStr), jumlah_orang: parseInt(r.orangStr) || 0 })) };
         await api("/api/entries", { method: "POST", body: JSON.stringify(payload) });
         setFlash((modeEdit.value ? "Perubahan tersimpan: " : "Tersimpan: ") + tglPanjang(form.tanggal) + " - Shift " + form.shift + ".");
         modeEdit.value = true;
         await muatRiwayat(true); await muatAdminStatus();
-      } catch (e) { setFlash(e.message, "err"); }
+        kirimAntrian();
+      } catch (e) {
+        if (e instanceof TypeError || !navigator.onLine) {
+          tambahAntrian(payload);
+          setFlash("Tidak ada sinyal. Input tersimpan aman di HP (" + antrianTampil.value.length + " menunggu) dan akan terkirim otomatis saat sinyal kembali.", "err");
+        } else setFlash(e.message, "err");
+      }
       busy.value = false;
     }
 
@@ -160,7 +233,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.2.0";
+    const APP_VERSION = "3.3.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -201,7 +274,20 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
       lap.loading = false;
     }
-    function totalKolom(nama) { if (!lap.report) return 0; return Math.round(lap.report.days.reduce((a, d) => a + ((d.kelompok && d.kelompok[nama]) || 0), 0) * 1000) / 1000; }
+    function totalKolom(nama) {
+      if (!lap.report) return 0;
+      if (nama === "Lainnya") { const utama = (lap.kolomKelompok || []).slice(0, 5); return Math.round(lap.report.per_kelompok.filter((g) => !utama.includes(g.nama)).reduce((a, g) => a + g.total, 0) * 1000) / 1000; }
+      return Math.round(lap.report.days.reduce((a, d) => a + ((d.kelompok && d.kelompok[nama]) || 0), 0) * 1000) / 1000;
+    }
+    const kolomTampil = computed(() => { const k = lap.kolomKelompok || []; if (k.length <= 6) return k; return [...k.slice(0, 5), "Lainnya"]; });
+    function nilaiKolom(d, nama) {
+      if (!d.kelompok) return 0;
+      if (nama !== "Lainnya") return d.kelompok[nama] || 0;
+      const utama = (lap.kolomKelompok || []).slice(0, 5);
+      return Math.round(Object.entries(d.kelompok).filter(([n]) => !utama.includes(n)).reduce((a, [, v]) => a + v, 0) * 1000) / 1000;
+    }
+    const lapDetail = reactive({});
+    function toggleLapDetail(tanggal) { lapDetail[tanggal] = !lapDetail[tanggal]; }
     const lapDays = computed(() => {
       if (!lap.report) return [];
       const ada = new Map(lap.report.days.map((d) => [d.tanggal, d]));
@@ -222,29 +308,13 @@ createApp({
     });
     const rataHari = computed(() => { if (!lap.report) return 0; const jumlahHari = lapDays.value.length || 1; return Math.round(lap.report.totals.hasil / jumlahHari * 1000) / 1000; });
     function catatanGabung(d) { if (!d.catatan || !d.catatan.length) return ""; return d.catatan.map((c) => (lap.team_id === "all" && c.team_nama ? c.team_nama + " " : "") + "S" + c.shift + ": " + c.teks).join(" | "); }
-    const cetak = ref(null); const cetakMode = ref("rentang");
     const timestampCetak = computed(() => {
       const parts = {};
       new Intl.DateTimeFormat("id-ID", { timeZone: settings.zona_waktu, day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date()).forEach((p) => { parts[p.type] = p.value; });
       return parts.day + " " + parts.month + " " + parts.year + " - pukul " + parts.hour + "." + parts.minute + "." + parts.second + " " + settings.zona_label;
     });
-    async function cetakLaporan(harian) {
-      if (!lap.report) return;
-      const teamNama = lap.team_id === "all" ? "Semua Team - Satu Perusahaan" : ((teams.value.find((t) => t.id === lap.team_id) || {}).nama || "");
-      if (harian) {
-        cetakMode.value = "harian";
-        const det = await api(`/api/entries?team_id=${lap.team_id}&from=${lap.from}&to=${lap.to}&per=1&page=1`);
-        const shifts = det.days.length ? det.days[0].shifts : [];
-        cetak.value = { judul: "Laporan Hasil Harian", subjudul: teamNama + " - " + tglPanjang(lap.from) + " - Shift 1 dan Shift 2", shifts, staffNama: user.value.nama };
-      } else {
-        cetakMode.value = "rentang";
-        const rentangLabel = lap.from === lap.to ? tglPanjang(lap.from) : tglPanjang(lap.from) + " sampai " + tglPanjang(lap.to);
-        cetak.value = { judul: "Laporan Hasil " + lapDays.value.length + " Hari", subjudul: teamNama + " - " + rentangLabel + " - Shift 1 dan Shift 2", staffNama: user.value.nama };
-      }
-      await nextTick(); window.print();
-    }
 
-    // ===== Unduh PDF langsung (generator otomatis jsPDF, tanpa pratinjau cetak) =====
+    // ===== Unduh PDF langsung (generator otomatis jsPDF) =====
     function pdfDocBaru(orientasi) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: orientasi, unit: "mm", format: "a4" });
@@ -338,37 +408,94 @@ createApp({
           doc.text(k[1], x + 3, y + 10);
         });
         doc.setTextColor(0, 0, 0); y += 17;
-        const body = [];
-        for (const blok of blokLaporan.value) {
-          for (const d of blok.rows) {
-            body.push([String(d.no), tglSingkat(d.tanggal), d.s1 ? fmt(d.s1.hasil) : "-", d.s2 ? fmt(d.s2.hasil) : "-", fmt(d.total), fmt(d.terbagi), fmt(d.sisa), catatanGabung(d) || "-"]);
-          }
-          if (blok.subtotal) {
-            const st = { fillColor: [254, 243, 199], fontStyle: "bold" };
-            body.push([{ content: "Subtotal Hari " + blok.dari + "-" + blok.ke + " (" + blok.label + ")", colSpan: 4, styles: st }, { content: fmt(blok.subtotal.total), styles: st }, { content: fmt(blok.subtotal.terbagi), styles: st }, { content: fmt(blok.subtotal.sisa), styles: st }, { content: "", styles: st }]);
-          }
-        }
+        const bedaMap = new Map(lapDays.value.map((d) => {
+          const sr = d.shift_rows || {}; const a = sr["1"], b = sr["2"];
+          if (!a || !b) return [d.tanggal, new Set()];
+          const m1 = {}, m2 = {};
+          a.forEach((r) => { m1[r.nama] = r.persentase; }); b.forEach((r) => { m2[r.nama] = r.persentase; });
+          const out = new Set();
+          for (const n of new Set([...Object.keys(m1), ...Object.keys(m2)])) { if ((n in m1 ? m1[n] : null) !== (n in m2 ? m2[n] : null)) out.add(n); }
+          return [d.tanggal, out];
+        }));
+        const gabung = (lap.kolomKelompok || []).length > 0;
         const gst = { fillColor: [219, 234, 254], fontStyle: "bold" };
-        body.push([{ content: "TOTAL (" + lap.from + " s/d " + lap.to + ")", colSpan: 4, styles: gst }, { content: fmt(t.hasil), styles: gst }, { content: fmt(t.terbagi), styles: gst }, { content: fmt(t.sisa), styles: gst }, { content: "", styles: gst }]);
-        doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [["No", "Tanggal", "Shift 1", "Shift 2", "Total Hari", "Terbagi", "Pendapatan Usaha", "Catatan"]], body, styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: { 0: { font: "fira" }, 2: { font: "fira", halign: "right" }, 3: { font: "fira", halign: "right" }, 4: { font: "fira", halign: "right" }, 5: { font: "fira", halign: "right" }, 6: { font: "fira", halign: "right" } } });
-        y = doc.lastAutoTable.finalY + 7;
-        const kolomM = lap.kolomKelompok || [];
-        if (kolomM.length && kolomM.length <= 6) {
+        let headUtama, colStyles, body = [];
+        if (gabung) {
+          const KG = [...lap.kolomKelompok];
+          const persenEf = (gram, basis) => basis > 0 ? Math.round((gram / basis) * 100 * 1000) / 1000 : 0;
+          headUtama = [
+            [{ content: "No", rowSpan: 2 }, { content: "Tanggal", rowSpan: 2 }, { content: "Shift 1", rowSpan: 2 }, { content: "Shift 2", rowSpan: 2 }, { content: "Total Pendapatan", rowSpan: 2 }, ...KG.map((k) => ({ content: k, colSpan: 2 })), { content: "Terbagi", rowSpan: 2 }, { content: "Pendapatan Usaha", rowSpan: 2 }, { content: "Catatan", rowSpan: 2 }],
+            [...KG.flatMap(() => ["%", "Hasil Bagi"])],
+          ];
+          for (const blok of blokLaporan.value) {
+            for (const d of blok.rows) {
+              body.push([String(d.no), tglSingkat(d.tanggal), d.s1 ? fmt(d.s1.hasil) : "-", d.s2 ? fmt(d.s2.hasil) : "-", fmt(d.total),
+                ...KG.flatMap((k) => { const g = (d.kelompok && d.kelompok[k]) || 0; return g ? [fmtPct(persenEf(g, d.total)) + "%" + (bedaMap.get(d.tanggal).has(k) ? "*" : ""), fmt(g)] : ["-", "-"]; }),
+                fmt(d.terbagi), fmt(d.sisa), catatanGabung(d) || "-"]);
+            }
+            if (blok.subtotal) {
+              const st = { fillColor: [254, 243, 199], fontStyle: "bold" };
+              const sumK = (k) => blok.rows.reduce((a, d) => a + ((d.kelompok && d.kelompok[k]) || 0), 0);
+              body.push([{ content: "Subtotal Hari " + blok.dari + "-" + blok.ke + " (" + blok.label + ")", colSpan: 5, styles: st },
+                ...KG.flatMap((k) => { const g = sumK(k); return [{ content: fmtPct(persenEf(g, blok.subtotal.total)) + "%", styles: st }, { content: fmt(g), styles: st }]; }),
+                { content: fmt(blok.subtotal.terbagi), styles: st }, { content: fmt(blok.subtotal.sisa), styles: st }, { content: "", styles: st }]);
+            }
+          }
+          const rataMap = Object.fromEntries(lap.report.per_kelompok.map((g) => [g.nama, g]));
+          body.push([{ content: "TOTAL (" + lap.from + " s/d " + lap.to + ")", colSpan: 5, styles: gst },
+            ...KG.flatMap((k) => [{ content: fmtPct(rataMap[k] ? rataMap[k].persen_rata : 0) + "%", styles: gst }, { content: fmt(rataMap[k] ? rataMap[k].total : 0), styles: gst }]),
+            { content: fmt(t.terbagi), styles: gst }, { content: fmt(t.sisa), styles: gst }, { content: "", styles: gst }]);
+          colStyles = { 0: { font: "fira", cellWidth: 8 }, 1: { cellWidth: 23 } };
+          for (let i = 2; i < 5 + KG.length * 2 + 2; i++) colStyles[i] = { font: "fira", halign: "right" };
+        } else {
+          for (const blok of blokLaporan.value) {
+            for (const d of blok.rows) {
+              body.push([String(d.no), tglSingkat(d.tanggal), d.s1 ? fmt(d.s1.hasil) : "-", d.s2 ? fmt(d.s2.hasil) : "-", fmt(d.total), fmt(d.terbagi), fmt(d.sisa), catatanGabung(d) || "-"]);
+            }
+            if (blok.subtotal) {
+              const st = { fillColor: [254, 243, 199], fontStyle: "bold" };
+              body.push([{ content: "Subtotal Hari " + blok.dari + "-" + blok.ke + " (" + blok.label + ")", colSpan: 4, styles: st }, { content: fmt(blok.subtotal.total), styles: st }, { content: fmt(blok.subtotal.terbagi), styles: st }, { content: fmt(blok.subtotal.sisa), styles: st }, { content: "", styles: st }]);
+            }
+          }
+          body.push([{ content: "TOTAL (" + lap.from + " s/d " + lap.to + ")", colSpan: 4, styles: gst }, { content: fmt(t.hasil), styles: gst }, { content: fmt(t.terbagi), styles: gst }, { content: fmt(t.sisa), styles: gst }, { content: "", styles: gst }]);
+          headUtama = [["No", "Tanggal", "Shift 1", "Shift 2", "Total Hari", "Terbagi", "Pendapatan Usaha", "Catatan"]];
+          colStyles = { 0: { font: "fira" }, 2: { font: "fira", halign: "right" }, 3: { font: "fira", halign: "right" }, 4: { font: "fira", halign: "right" }, 5: { font: "fira", halign: "right" }, 6: { font: "fira", halign: "right" } };
+        }
+        const sempit = gabung && lap.kolomKelompok.length > 4;
+        doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: headUtama, body, styles: sempit ? { ...pdfTabelStyle, fontSize: 7.5 } : pdfTabelStyle, headStyles: sempit ? { ...pdfHeadStyle, fontSize: 7.5 } : pdfHeadStyle, columnStyles: colStyles });
+        y = doc.lastAutoTable.finalY + 4;
+        if (gabung && [...bedaMap.values()].some((s) => s.size)) {
+          doc.setFont("pjs", "normal"); doc.setFontSize(8.5); doc.setTextColor(100, 116, 139);
+          doc.text("* Persen setelan kelompok berbeda antara Shift 1 dan Shift 2 pada hari itu - rincian per shift ada di Lampiran.", 12, y);
+          doc.setTextColor(15, 23, 42); y += 5;
+        }
+        y += 3;
+        const kolomM = [...(lap.kolomKelompok || [])];
+        if (kolomM.length && !gabung) {
+          if (y > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); y = 16; }
           doc.setFont("pjs", "bold"); doc.setFontSize(10.5); doc.text("Terbagi Per Hari Per Kelompok", 12, y); y += 2;
+          const selM = (d, k) => {
+            const g = (d.kelompok && d.kelompok[k]) || 0;
+            if (!g) return "-";
+            const p = d.total > 0 ? Math.round((g / d.total) * 100 * 1000) / 1000 : 0;
+            return fmt(g) + "\n(" + fmtPct(p) + "%" + (bedaMap.get(d.tanggal).has(k) ? "*" : "") + ")";
+          };
           const mHead = ["Tanggal", ...kolomM, "Total Terbagi", "Sisa"];
-          const mBody = lapDays.value.map((d) => [tglSingkat(d.tanggal), ...kolomM.map((k) => (d.kelompok && d.kelompok[k]) ? fmt(d.kelompok[k]) : "-"), fmt(d.terbagi), fmt(d.sisa)]);
+          const mBody = lapDays.value.map((d) => [tglSingkat(d.tanggal), ...kolomM.map((k) => selM(d, k)), fmt(d.terbagi), fmt(d.sisa)]);
           const fst = { fillColor: [219, 234, 254], fontStyle: "bold" };
           mBody.push([{ content: "Total", styles: fst }, ...kolomM.map((k) => ({ content: fmt(totalKolom(k)), styles: fst })), { content: fmt(t.terbagi), styles: fst }, { content: fmt(t.sisa), styles: fst }]);
-          const mStyles = { 0: { cellWidth: 32 } };
+          const mStyles = { 0: { cellWidth: 26 } };
           kolomM.forEach((k, i) => { mStyles[i + 1] = { font: "fira", halign: "right" }; });
-          mStyles[kolomM.length + 1] = { font: "fira", halign: "right", cellWidth: 28 };
-          mStyles[kolomM.length + 2] = { font: "fira", halign: "right", cellWidth: 28 };
-          doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [mHead], body: mBody, styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: mStyles });
-          y = doc.lastAutoTable.finalY + 7;
-        } else if (kolomM.length > 6) {
-          doc.setFont("pjs", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
-          doc.text("Rincian terbagi per hari per kelompok tidak ditampilkan karena jumlah kelompok lebih dari 6 - lihat Total Per Kelompok.", 12, y);
-          doc.setTextColor(15, 23, 42); y += 5;
+          mStyles[kolomM.length + 1] = { font: "fira", halign: "right", cellWidth: 26 };
+          mStyles[kolomM.length + 2] = { font: "fira", halign: "right", cellWidth: 26 };
+          doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [mHead], body: mBody, styles: { ...pdfTabelStyle, fontSize: 8.5 }, headStyles: pdfHeadStyle, columnStyles: mStyles });
+          y = doc.lastAutoTable.finalY + 4;
+          if ([...bedaMap.values()].some((s) => s.size)) {
+            doc.setFont("pjs", "normal"); doc.setFontSize(8.5); doc.setTextColor(100, 116, 139);
+            doc.text("* Persen setelan kelompok berbeda antara Shift 1 dan Shift 2 pada hari itu - rincian per shift ada di Lampiran.", 12, y);
+            doc.setTextColor(15, 23, 42); y += 5;
+          }
+          y += 2;
         }
         doc.setFont("pjs", "bold"); doc.setFontSize(10.5); doc.text("Total Per Kelompok - Periode Ini", 12, y); y += 2;
         const kelBody = [];
@@ -387,6 +514,26 @@ createApp({
           ptBody.push([{ content: "Total Perusahaan", styles: ptSt }, { content: fmt(t.hasil), styles: ptSt }, { content: fmt(t.terbagi), styles: ptSt }, { content: fmt(t.sisa), styles: ptSt }, { content: "", styles: ptSt }, { content: "", styles: ptSt }]);
           doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [["Team", "Total Hasil", "Terbagi", "Pendapatan Usaha", "Hari Aktif", "Shift"]], body: ptBody, styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: { 1: { font: "fira", halign: "right" }, 2: { font: "fira", halign: "right" }, 3: { font: "fira", halign: "right" }, 4: { font: "fira", halign: "right" }, 5: { font: "fira", halign: "right" } } });
           y = doc.lastAutoTable.finalY + 7;
+        }
+        const hariBeda = lapDays.value.filter((d) => bedaMap.get(d.tanggal) && bedaMap.get(d.tanggal).size);
+        if (hariBeda.length) {
+          if (y > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); y = 16; }
+          doc.setFont("pjs", "bold"); doc.setFontSize(10.5); doc.text("Lampiran - Rincian Per Shift untuk Persen Berbeda", 12, y); y += 5;
+          doc.setFont("pjs", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+          doc.text("Hari-hari berikut memiliki persen setelan kelompok yang berbeda antara Shift 1 dan Shift 2.", 12, y);
+          doc.setTextColor(15, 23, 42); y += 3;
+          for (const d of hariBeda) {
+            const sr = d.shift_rows || {};
+            const barisDari = (sh) => { const m = {}; (sr[sh] || []).forEach((r) => { m[r.nama] = r; }); return m; };
+            const m1 = barisDari("1"), m2 = barisDari("2");
+            const selL = (m, n) => (n in m ? fmtPct(m[n].persentase) + "% - " + fmt(m[n].total_gram) + " gr" : "-");
+            const lBody = [...bedaMap.get(d.tanggal)].map((n) => [n, selL(m1, n), selL(m2, n)]);
+            if (y > doc.internal.pageSize.getHeight() - 45) { doc.addPage(); y = 16; }
+            doc.setFont("pjs", "bold"); doc.setFontSize(9.5);
+            doc.text(tglPanjang(d.tanggal) + " - Shift 1: " + fmt(d.s1 ? d.s1.hasil : 0) + " gr, Shift 2: " + fmt(d.s2 ? d.s2.hasil : 0) + " gr", 12, y + 4);
+            doc.autoTable({ startY: y + 6, margin: { left: 12, right: 12 }, head: [["Kelompok", "Shift 1 (persen - gram)", "Shift 2 (persen - gram)"]], body: lBody, styles: { ...pdfTabelStyle, fontSize: 8.5 }, headStyles: pdfHeadStyle, columnStyles: { 1: { font: "fira", halign: "right" }, 2: { font: "fira", halign: "right" } }, tableWidth: 170 });
+            y = doc.lastAutoTable.finalY + 7;
+          }
         }
         pdfKakiDanTtd(doc, staffNama, y + 2);
         namaFile = "laporan-" + lap.from + "-sd-" + lap.to + ".pdf";
@@ -408,6 +555,7 @@ createApp({
         const [t, u, s] = await Promise.all([api("/api/admin/teams"), api("/api/admin/users"), api("/api/admin/settings")]);
         teamsAll.value = t.teams; users.value = u.users;
         settingsForm.nama_perusahaan = s.settings.nama_perusahaan; settingsForm.nama_pimpinan = s.settings.nama_pimpinan; settingsForm.zona_waktu = s.settings.zona_waktu;
+        if (!tplAdmin.team_id && teamsAll.value.length) { tplAdmin.team_id = teamsAll.value[0].id; await muatTplAdmin(); }
         await muatAdminStatus();
       } catch (e) { setFlash(e.message, "err"); }
     }
@@ -453,6 +601,14 @@ createApp({
       } catch (e) { return false; }
     }
     async function clearCache() {
+      // Guard antrian offline: membersihkan penyimpanan akan menghapus input yang belum terkirim.
+      let antriMentah = [];
+      try { antriMentah = JSON.parse(localStorage.getItem(ANTRI_KEY) || "[]"); } catch (e) {}
+      if (antriMentah.length) {
+        const pesan = "Ada " + antriMentah.length + " input yang belum terkirim dari HP ini. Kirim dulu saat ada sinyal sebelum memperbaiki aplikasi, supaya input itu tidak hilang.";
+        if (user.value) setFlash(pesan, "err"); else loginError.value = pesan;
+        return;
+      }
       // Guard offline (keputusan diskusi 9router): cache dibersihkan saat offline = aplikasi tidak bisa dimuat ulang.
       if (!(await daringTersedia())) {
         const pesan = "Tidak bisa memperbaiki aplikasi saat offline. Sambungkan internet dulu, karena setelah dibersihkan aplikasi harus dimuat ulang dari server. Data tersimpan tidak akan hilang.";
@@ -479,13 +635,19 @@ createApp({
       if (!userBaru.team_id) userBaru.team_id = defaultTeam;
       if (resetTanggal) {
         form.tanggal = b.today;
+        form.shift = new Date().getHours() >= 15 ? 2 : 1;
         riw.from = addDays(b.today, -29); riw.to = b.today;
         lap.from = b.today; lap.to = b.today;
       }
       await cekModeEdit(); await muatRiwayat(true); await muatLaporan(); await muatAdmin();
+      muatAntrian(); kirimAntrian();
       if (user.value && user.value.role === "admin") jadwalPrefetchPDF();
     }
     onMounted(async () => {
+      const fieldSel = "input, textarea, select";
+      document.addEventListener("focusin", (e) => { if (e.target.closest && e.target.closest(fieldSel)) document.body.classList.add("kb"); });
+      document.addEventListener("focusout", () => { setTimeout(() => { const a = document.activeElement; if (!a || !a.closest || !a.closest(fieldSel)) document.body.classList.remove("kb"); }, 60); });
+      window.addEventListener("online", () => { kirimAntrian(); });
       try { const d = await api("/api/me"); user.value = d.user; await muatBootstrap(true); }
       catch (e) { user.value = null; }
     });
@@ -493,9 +655,9 @@ createApp({
 
     return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
-      form, modeEdit, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, simpanTemplate, simpan, teamLabelAktif,
+      form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
       presets, setPreset, riw, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
-      lap, muatLaporan, totalKolom, lapDays, blokLaporan, rataHari, catatanGabung, cetak, cetakMode, cetakLaporan, timestampCetak, unduhPDF,
+      lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
       adminStatus, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }

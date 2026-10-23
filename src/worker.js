@@ -2,6 +2,7 @@
 // Binding: DB (D1 inputin-db). Semua aturan bisnis sesuai DESAIN.md yang terkunci.
 import FRONTEND_HTML from "./frontend.js";
 import PDF_ASSETS from "./pdfassets.js";
+import ICON_ASSETS from "./iconassets.js";
 
 const JSON_CT = { "content-type": "application/json; charset=utf-8" };
 
@@ -325,7 +326,7 @@ async function handleApi(request, env, url) {
     for (const h of heads || []) {
       const rows = rowsByResult[h.id] || [];
       const terbagi = round3(rows.reduce((a, r) => a + r.total_gram, 0));
-      if (!dayMap.has(h.tanggal)) dayMap.set(h.tanggal, { tanggal: h.tanggal, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, catatan: [], kelompok: {} });
+      if (!dayMap.has(h.tanggal)) dayMap.set(h.tanggal, { tanggal: h.tanggal, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, catatan: [], kelompok: {}, shift_rows: {} });
       const d = dayMap.get(h.tanggal);
       const key = h.shift === 1 ? "s1" : "s2";
       if (!d[key]) d[key] = { hasil: 0, terbagi: 0, tanpa_hasil: false, id: h.id };
@@ -341,6 +342,7 @@ async function handleApi(request, env, url) {
         g.perPersen.set(r.persentase, round3((g.perPersen.get(r.persentase) || 0) + r.total_gram));
         g.shiftIds.add(h.id);
         d.kelompok[r.nama] = round3((d.kelompok[r.nama] || 0) + r.total_gram);
+        (d.shift_rows[h.shift] = d.shift_rows[h.shift] || []).push({ nama: r.nama, persentase: r.persentase, total_gram: r.total_gram });
       }
       if (allTeams) {
         if (!perTeamMap.has(h.team_id)) perTeamMap.set(h.team_id, { team_id: h.team_id, team_nama: h.team_nama, hasil: 0, terbagi: 0, sisa: 0, tanggal_set: new Set(), shift_tercatat: 0 });
@@ -452,8 +454,8 @@ async function handleApi(request, env, url) {
 }
 
 const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#1E40AF"/><path d="M128 336 L224 176 L288 272 L336 208 L384 336 Z" fill="#D97706"/><circle cx="256" cy="384" r="26" fill="#F8FAFC"/></svg>`;
-const MANIFEST = JSON.stringify({ name: "Inputin - Pencatatan Hasil Usaha", short_name: "Inputin", start_url: "/", display: "standalone", background_color: "#F8FAFC", theme_color: "#1E40AF", icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }] });
-const SW_JS = `const CACHE='inputin-v2';const SHELL=['/','/manifest.webmanifest','/icon.svg'];
+const MANIFEST = JSON.stringify({ name: "Inputin - Pencatatan Hasil Usaha", short_name: "Inputin", start_url: "/", display: "standalone", background_color: "#F8FAFC", theme_color: "#1E40AF", icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }, { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" }, { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" }, { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }] });
+const SW_JS = `const CACHE='inputin-v3';const SHELL=['/','/manifest.webmanifest','/icon.svg','/icon-192.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.pathname.startsWith('/api/'))return;e.respondWith(fetch(e.request).then(r=>{const cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match('/'))))});`;
@@ -467,6 +469,7 @@ export default {
     }
     if (url.pathname === "/manifest.webmanifest") return new Response(MANIFEST, { headers: { "content-type": "application/manifest+json" } });
     if (url.pathname === "/icon.svg") return new Response(ICON_SVG, { headers: { "content-type": "image/svg+xml" } });
+    if (ICON_ASSETS[url.pathname]) { const bin = Uint8Array.from(atob(ICON_ASSETS[url.pathname]), (c) => c.charCodeAt(0)); return new Response(bin, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } }); }
     if (url.pathname === "/sw.js") return new Response(SW_JS, { headers: { "content-type": "application/javascript" } });
     if (url.pathname.startsWith("/assets/")) {
       const nama = url.pathname.split("/").pop();
