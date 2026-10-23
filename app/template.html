@@ -374,7 +374,7 @@
               <div class="dist" v-for="(d, i) in form.rows" :key="d.uid || i">
                 <div class="dhead">
                   <input :value="d.nama" @input="d.nama=$event.target.value; prefillInfo=''" :placeholder="'Nama kelompok ' + (i+1)" :aria-label="'Nama kelompok ' + (i+1)">
-                  <button type="button" class="icon-btn" @click="form.rows.splice(i,1)" aria-label="Hapus kelompok">x</button>
+                  <button type="button" class="icon-btn" @click="mintaHapusBaris(i)" aria-label="Hapus kelompok">x</button>
                 </div>
                 <div class="grid2">
                   <div><label class="fl" :for="'pct'+i">Persentase (%)</label>
@@ -677,6 +677,33 @@
       <div class="actions">
         <button class="btn red" @click="konfirmasiHapus">Ya, Hapus</button>
         <button class="btn ghost" @click="hapusTarget=null">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL HAPUS BARIS KELOMPOK -->
+  <div class="modal-bg no-print" v-if="hapusBarisTarget">
+    <div class="modal">
+      <h3 style="margin-top:0">Hapus kelompok ini?</h3>
+      <p>Kelompok <b>{{ hapusBarisTarget.nama }}</b> akan dihapus dari pembagian shift ini. Data yang sudah tersimpan tidak berubah sampai kamu menekan Simpan.</p>
+      <div class="actions">
+        <button class="btn red" @click="konfirmasiHapusBaris">Ya, Hapus</button>
+        <button class="btn ghost" @click="hapusBarisTarget=null">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL KONFIRMASI SIMPAN PERUBAHAN -->
+  <div class="modal-bg no-print" v-if="ubahTarget">
+    <div class="modal">
+      <h3 style="margin-top:0">Simpan perubahan ini?</h3>
+      <p>Kamu mengubah data yang sudah tersimpan untuk <b>{{ ubahTarget.label }}</b>:</p>
+      <ul style="margin:4px 0 0; padding-left:18px; line-height:1.65">
+        <li v-for="(p, i) in ubahTarget.perubahan" :key="i">{{ p }}</li>
+      </ul>
+      <div class="actions">
+        <button class="btn" @click="konfirmasiUbah">Ya, Simpan Perubahan</button>
+        <button class="btn ghost" @click="ubahTarget=null">Batal</button>
       </div>
     </div>
   </div>

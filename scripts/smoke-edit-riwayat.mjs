@@ -80,7 +80,9 @@ try {
   cek("edit memuat team entri (Team 2)", formState.team === "Team 2", JSON.stringify(formState));
   cek("edit memuat tanggal + hasil entri (20 Okt, 250)", formState.tanggal === "2026-10-20" && formState.hasil === "250" && formState.modeEdit, JSON.stringify(formState));
   await setVal("#f-hasil", "260", "HTMLInputElement");
-  await ev2("document.querySelector('.savebar .btn').click(); 'ok'"); await wait(2500);
+  await ev2("document.querySelector('.savebar .btn').click(); 'ok'"); await wait(1000);
+  // Sejak v3.4.5, simpan Mode Edit wajib melewati modal daftar perubahan.
+  await ev2("(()=>{ const b=[...document.querySelectorAll('.modal .btn')].find(x=>x.innerText.trim()==='Ya, Simpan Perubahan'); if (b) b.click(); return 'ok'; })()"); await wait(2500);
   const flash = await ev2("document.querySelector('.banner.toast')?.innerText || ''");
   cek("simpan hasil edit berhasil (bukan 'Team tidak valid')", flash.includes("Perubahan tersimpan") && !flash.includes("tidak valid"), flash);
   const t2 = await api("/api/entries/one?team_id=2&tanggal=2026-10-20&shift=1");
