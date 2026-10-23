@@ -160,15 +160,48 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
+    const APP_VERSION = "3.2.0";
+    // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
+    const pdfState = ref("idle");
+    function muatScript(url, integrity) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = url; if (integrity) { s.integrity = integrity; s.crossOrigin = "anonymous"; }
+        const timer = setTimeout(() => { s.remove(); reject(new Error("timeout")); }, 20000);
+        s.onload = () => { clearTimeout(timer); resolve(); };
+        s.onerror = () => { clearTimeout(timer); s.remove(); reject(new Error("gagal memuat " + url)); };
+        document.head.appendChild(s);
+      });
+    }
+    async function pastikanPDF() {
+      if (window.jspdf && window.__PDF_FONTS__ && window.__PDF_REPORT_SIAP__) return;
+      if (!window.__PDF_CFG__) throw new Error("Konfigurasi PDF tidak ada.");
+      pdfState.value = "loading";
+      try {
+        await muatScript(window.__PDF_CFG__.vendor, window.__PDF_CFG__.vi);
+        await muatScript(window.__PDF_CFG__.fonts, window.__PDF_CFG__.fi);
+        const kunci = ["pjs-400.ttf", "pjs-700.ttf", "fira-400.ttf", "fira-600.ttf"];
+        if (!window.jspdf || !kunci.every((k) => window.__PDF_FONTS__ && window.__PDF_FONTS__[k])) throw new Error("Bundle PDF tidak lengkap.");
+        window.__PDF_REPORT_SIAP__ = true;
+        pdfState.value = "ready";
+      } catch (e) { pdfState.value = "error"; throw e; }
+    }
+    function jadwalPrefetchPDF() {
+      const c = navigator.connection || {};
+      if (c.saveData || (c.effectiveType && c.effectiveType !== "4g")) return;
+      setTimeout(() => { pastikanPDF().catch(() => { pdfState.value = "idle"; }); }, 6000);
+    }
+
     // ===== Laporan + cetak =====
-    const lap = reactive({ team_id: null, from: "", to: "", report: null, loading: false });
+    const lap = reactive({ team_id: null, from: "", to: "", report: null, loading: false, kolomKelompok: [] });
     async function muatLaporan() {
       if (!lap.team_id || !lap.from || !lap.to) return;
       lap.loading = true;
-      try { const d = await api(`/api/report?team_id=${lap.team_id}&from=${lap.from}&to=${lap.to}`); lap.report = d; }
+      try { const d = await api(`/api/report?team_id=${lap.team_id}&from=${lap.from}&to=${lap.to}`); lap.report = d; lap.kolomKelompok = d.kelompok_kolom || []; }
       catch (e) { setFlash(e.message, "err"); }
       lap.loading = false;
     }
+    function totalKolom(nama) { if (!lap.report) return 0; return Math.round(lap.report.days.reduce((a, d) => a + ((d.kelompok && d.kelompok[nama]) || 0), 0) * 1000) / 1000; }
     const lapDays = computed(() => {
       if (!lap.report) return [];
       const ada = new Map(lap.report.days.map((d) => [d.tanggal, d]));
@@ -211,6 +244,159 @@ createApp({
       await nextTick(); window.print();
     }
 
+    // ===== Unduh PDF langsung (generator otomatis jsPDF, tanpa pratinjau cetak) =====
+    function pdfDocBaru(orientasi) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: orientasi, unit: "mm", format: "a4" });
+      const F = window.__PDF_FONTS__ || {};
+      const reg = (file, fam, style) => { if (F[file]) { doc.addFileToVFS(file, F[file]); doc.addFont(file, fam, style); } };
+      reg("pjs-400.ttf", "pjs", "normal"); reg("pjs-700.ttf", "pjs", "bold");
+      reg("fira-400.ttf", "fira", "normal"); reg("fira-600.ttf", "fira", "bold");
+      doc.setFont("pjs", "normal");
+      return doc;
+    }
+    function pdfKepala(doc, judul, subjudul) {
+      const W = doc.internal.pageSize.getWidth();
+      doc.setFont("pjs", "bold"); doc.setFontSize(13); doc.setTextColor(15, 23, 42);
+      doc.text((settings.nama_perusahaan || "Pencatatan Usaha").toUpperCase(), W / 2, 14, { align: "center" });
+      doc.setFontSize(15.5); doc.text(judul, W / 2, 21.5, { align: "center" });
+      doc.setFont("pjs", "normal"); doc.setFontSize(9.5); doc.setTextColor(90, 90, 90);
+      doc.text(subjudul, W / 2, 27, { align: "center" });
+      doc.setTextColor(0, 0, 0); doc.setDrawColor(15, 23, 42); doc.setLineWidth(0.7);
+      doc.line(12, 30, W - 12, 30); doc.setLineWidth(0.25); doc.line(12, 31.1, W - 12, 31.1);
+      return 36;
+    }
+    function pdfKakiDanTtd(doc, staffNama, yTtd) {
+      const W = doc.internal.pageSize.getWidth(); const H = doc.internal.pageSize.getHeight();
+      if (yTtd > H - 45) { doc.addPage(); yTtd = 18; }
+      doc.setFont("pjs", "normal"); doc.setFontSize(9.5); doc.setTextColor(15, 23, 42);
+      doc.text("Diinput oleh,", 22, yTtd); doc.text("Mengetahui,", W - 66, yTtd);
+      doc.setDrawColor(15, 23, 42); doc.setLineWidth(0.3);
+      doc.line(22, yTtd + 17, 64, yTtd + 17); doc.line(W - 66, yTtd + 17, W - 24, yTtd + 17);
+      doc.setFont("pjs", "bold");
+      doc.text(staffNama || "-", 22, yTtd + 21.5); doc.text(settings.nama_pimpinan || "Pimpinan", W - 66, yTtd + 21.5);
+      const pages = doc.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
+        doc.setPage(i); doc.setFont("pjs", "normal"); doc.setFontSize(8); doc.setTextColor(120, 120, 120);
+        doc.text("Dicetak pada " + timestampCetak.value, 12, H - 8);
+        doc.text("Inputin - Pencatatan Hasil Usaha", W / 2, H - 8, { align: "center" });
+        doc.text("Halaman " + i + " dari " + pages, W - 12, H - 8, { align: "right" });
+      }
+      doc.setTextColor(0, 0, 0);
+    }
+    const pdfTabelStyle = { font: "pjs", fontSize: 9, cellPadding: 1.8, lineColor: [226, 232, 240], lineWidth: 0.2, textColor: [15, 23, 42] };
+    const pdfHeadStyle = { fillColor: [30, 58, 138], textColor: [255, 255, 255], font: "pjs", fontStyle: "bold", fontSize: 9 };
+    async function unduhPDF(harian) {
+      if (!lap.report) return;
+      try { await pastikanPDF(); }
+      catch (e) { setFlash("Gagal menyiapkan PDF (komponen sekitar " + (window.__PDF_CFG__ ? window.__PDF_CFG__.kb : "?") + " KB, hanya diunduh sekali). Periksa koneksi lalu tekan Unduh lagi.", "err"); return; }
+      const teamNama = lap.team_id === "all" ? "Semua Team - Satu Perusahaan" : ((teams.value.find((t) => t.id === lap.team_id) || {}).nama || "");
+      const staffNama = user.value.nama;
+      let doc, namaFile;
+      if (harian) {
+        const det = await api(`/api/entries?team_id=${lap.team_id}&from=${lap.from}&to=${lap.to}&per=1&page=1`);
+        const shifts = det.days.length ? det.days[0].shifts : [];
+        doc = pdfDocBaru("portrait");
+        const W = doc.internal.pageSize.getWidth(); const H = doc.internal.pageSize.getHeight();
+        let y = pdfKepala(doc, "Laporan Hasil Harian", teamNama + " - " + tglPanjang(lap.from) + " - Shift 1 dan Shift 2");
+        if (!shifts.length) { doc.setFontSize(10); doc.text("Tidak ada data pada tanggal ini.", 12, y + 4); y += 10; }
+        for (const e of shifts) {
+          if (y > H - 70) { doc.addPage(); y = 16; }
+          doc.setFont("pjs", "bold"); doc.setFontSize(11.5);
+          doc.text("Shift " + e.shift + (e.tanpa_hasil ? " - Tanpa Hasil" : ""), 12, y);
+          doc.setFont("pjs", "normal"); doc.setFontSize(10);
+          doc.text("Hasil shift: " + fmt(e.hasil_gram) + " gr", 12, y + 5.5); y += 8.5;
+          if (e.rows && e.rows.length) {
+            doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [["Kelompok", "%", "Orang", "Total (gr)", "Per Orang (gr)"]], body: e.rows.map((r) => [r.nama, fmtPct(r.persentase), String(r.jumlah_orang), fmt(r.total_gram), fmt(r.per_orang_gram)]), styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: { 1: { font: "fira", halign: "right" }, 2: { font: "fira", halign: "right" }, 3: { font: "fira", halign: "right" }, 4: { font: "fira", halign: "right" } } });
+            y = doc.lastAutoTable.finalY + 3.5;
+          }
+          doc.setFont("pjs", "bold"); doc.setFontSize(10);
+          doc.text("Total terbagi: " + fmt(e.total_terbagi) + " gr    |    Pendapatan Usaha: " + fmt(e.sisa) + " gr", 12, y); y += 6;
+          if (e.catatan) {
+            doc.setFont("pjs", "normal"); doc.setFontSize(9.5);
+            const lines = doc.splitTextToSize("Catatan: " + e.catatan, W - 24);
+            doc.text(lines, 12, y); y += lines.length * 4.4 + 2;
+          }
+          y += 5;
+        }
+        pdfKakiDanTtd(doc, staffNama, y + 4);
+        namaFile = "laporan-harian-" + lap.from + ".pdf";
+      } else {
+        const t = lap.report.totals;
+        const rentangLabel = lap.from === lap.to ? tglPanjang(lap.from) : tglPanjang(lap.from) + " sampai " + tglPanjang(lap.to);
+        doc = pdfDocBaru("landscape");
+        const W = doc.internal.pageSize.getWidth();
+        let y = pdfKepala(doc, "Laporan Hasil " + lapDays.value.length + " Hari", teamNama + " - " + rentangLabel + " - Shift 1 dan Shift 2");
+        const kpis = [["Total Hasil", fmt(t.hasil) + " gr"], ["Pendapatan Usaha", fmt(t.sisa) + " gr"], ["Rata-Rata Per Hari", fmt(rataHari.value) + " gr"], ["Hari Aktif / Shift", t.hari_aktif + " hari / " + t.shift_tercatat + " shift"]];
+        const bw = (W - 24 - 9) / 4;
+        kpis.forEach((k, i) => {
+          const x = 12 + i * (bw + 3);
+          doc.setDrawColor(203, 213, 225); doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, bw, 13, 1.5, 1.5, "FD");
+          doc.setFont("pjs", "normal"); doc.setFontSize(7.5); doc.setTextColor(100, 116, 139);
+          doc.text(k[0].toUpperCase(), x + 3, y + 4.6);
+          doc.setFont("fira", "bold"); doc.setFontSize(10.5); doc.setTextColor(15, 23, 42);
+          doc.text(k[1], x + 3, y + 10);
+        });
+        doc.setTextColor(0, 0, 0); y += 17;
+        const body = [];
+        for (const blok of blokLaporan.value) {
+          for (const d of blok.rows) {
+            body.push([String(d.no), tglSingkat(d.tanggal), d.s1 ? fmt(d.s1.hasil) : "-", d.s2 ? fmt(d.s2.hasil) : "-", fmt(d.total), fmt(d.terbagi), fmt(d.sisa), catatanGabung(d) || "-"]);
+          }
+          if (blok.subtotal) {
+            const st = { fillColor: [254, 243, 199], fontStyle: "bold" };
+            body.push([{ content: "Subtotal Hari " + blok.dari + "-" + blok.ke + " (" + blok.label + ")", colSpan: 4, styles: st }, { content: fmt(blok.subtotal.total), styles: st }, { content: fmt(blok.subtotal.terbagi), styles: st }, { content: fmt(blok.subtotal.sisa), styles: st }, { content: "", styles: st }]);
+          }
+        }
+        const gst = { fillColor: [219, 234, 254], fontStyle: "bold" };
+        body.push([{ content: "TOTAL (" + lap.from + " s/d " + lap.to + ")", colSpan: 4, styles: gst }, { content: fmt(t.hasil), styles: gst }, { content: fmt(t.terbagi), styles: gst }, { content: fmt(t.sisa), styles: gst }, { content: "", styles: gst }]);
+        doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [["No", "Tanggal", "Shift 1", "Shift 2", "Total Hari", "Terbagi", "Pendapatan Usaha", "Catatan"]], body, styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: { 0: { font: "fira" }, 2: { font: "fira", halign: "right" }, 3: { font: "fira", halign: "right" }, 4: { font: "fira", halign: "right" }, 5: { font: "fira", halign: "right" }, 6: { font: "fira", halign: "right" } } });
+        y = doc.lastAutoTable.finalY + 7;
+        const kolomM = lap.kolomKelompok || [];
+        if (kolomM.length && kolomM.length <= 6) {
+          doc.setFont("pjs", "bold"); doc.setFontSize(10.5); doc.text("Terbagi Per Hari Per Kelompok", 12, y); y += 2;
+          const mHead = ["Tanggal", ...kolomM, "Total Terbagi", "Sisa"];
+          const mBody = lapDays.value.map((d) => [tglSingkat(d.tanggal), ...kolomM.map((k) => (d.kelompok && d.kelompok[k]) ? fmt(d.kelompok[k]) : "-"), fmt(d.terbagi), fmt(d.sisa)]);
+          const fst = { fillColor: [219, 234, 254], fontStyle: "bold" };
+          mBody.push([{ content: "Total", styles: fst }, ...kolomM.map((k) => ({ content: fmt(totalKolom(k)), styles: fst })), { content: fmt(t.terbagi), styles: fst }, { content: fmt(t.sisa), styles: fst }]);
+          const mStyles = { 0: { cellWidth: 32 } };
+          kolomM.forEach((k, i) => { mStyles[i + 1] = { font: "fira", halign: "right" }; });
+          mStyles[kolomM.length + 1] = { font: "fira", halign: "right", cellWidth: 28 };
+          mStyles[kolomM.length + 2] = { font: "fira", halign: "right", cellWidth: 28 };
+          doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [mHead], body: mBody, styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: mStyles });
+          y = doc.lastAutoTable.finalY + 7;
+        } else if (kolomM.length > 6) {
+          doc.setFont("pjs", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+          doc.text("Rincian terbagi per hari per kelompok tidak ditampilkan karena jumlah kelompok lebih dari 6 - lihat Total Per Kelompok.", 12, y);
+          doc.setTextColor(15, 23, 42); y += 5;
+        }
+        doc.setFont("pjs", "bold"); doc.setFontSize(10.5); doc.text("Total Per Kelompok - Periode Ini", 12, y); y += 2;
+        const kelBody = [];
+        for (const k of lap.report.per_kelompok) {
+          const hs = { fontStyle: "bold", fillColor: [241, 245, 249] };
+          kelBody.push([{ content: k.nama + " (rata-rata tertimbang)", styles: hs }, { content: fmtPct(k.persen_rata) + "%", styles: hs }, { content: fmt(k.total) + " gr", styles: hs }]);
+          for (const r of k.rincian) kelBody.push(["   dengan persen", fmtPct(r.persentase) + "%", fmt(r.total) + " gr"]);
+        }
+        kelBody.push([{ content: "Pendapatan Usaha (sisa)", styles: { fontStyle: "bold" } }, { content: "-", styles: { fontStyle: "bold" } }, { content: fmt(t.sisa) + " gr", styles: { fontStyle: "bold" } }]);
+        doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [["Kelompok", "Persen", "Total Terbagi"]], body: kelBody, styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: { 0: { cellWidth: 85 }, 1: { font: "fira", halign: "right", cellWidth: 25 }, 2: { font: "fira", halign: "right", cellWidth: 40 } }, tableWidth: 150 });
+        y = doc.lastAutoTable.finalY + 7;
+        if (lap.report.per_team && lap.report.per_team.length) {
+          doc.setFont("pjs", "bold"); doc.setFontSize(10.5); doc.text("Rekap Per Team - Satu Perusahaan", 12, y); y += 2;
+          const ptBody = lap.report.per_team.map((x) => [x.team_nama, fmt(x.hasil), fmt(x.terbagi), fmt(x.sisa), String(x.hari_aktif), String(x.shift_tercatat)]);
+          const ptSt = { fontStyle: "bold", fillColor: [219, 234, 254] };
+          ptBody.push([{ content: "Total Perusahaan", styles: ptSt }, { content: fmt(t.hasil), styles: ptSt }, { content: fmt(t.terbagi), styles: ptSt }, { content: fmt(t.sisa), styles: ptSt }, { content: "", styles: ptSt }, { content: "", styles: ptSt }]);
+          doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: [["Team", "Total Hasil", "Terbagi", "Pendapatan Usaha", "Hari Aktif", "Shift"]], body: ptBody, styles: pdfTabelStyle, headStyles: pdfHeadStyle, columnStyles: { 1: { font: "fira", halign: "right" }, 2: { font: "fira", halign: "right" }, 3: { font: "fira", halign: "right" }, 4: { font: "fira", halign: "right" }, 5: { font: "fira", halign: "right" } } });
+          y = doc.lastAutoTable.finalY + 7;
+        }
+        pdfKakiDanTtd(doc, staffNama, y + 2);
+        namaFile = "laporan-" + lap.from + "-sd-" + lap.to + ".pdf";
+      }
+      if (window.__PDF_TEST__) return doc;
+      doc.save(namaFile);
+      setFlash("PDF terunduh: " + namaFile);
+    }
+    window.__unduhPDF = unduhPDF;
+
     // ===== Admin =====
     const adminStatus = ref([]); const teamsAll = ref([]); const users = ref([]);
     const settingsForm = reactive({ nama_perusahaan: "", nama_pimpinan: "", zona_waktu: "Asia/Jakarta" });
@@ -248,7 +434,31 @@ createApp({
       busy.value = false;
     }
     async function doLogout() { try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {} user.value = null; location.replace("/"); }
+    // ===== Sheet profil =====
+    const sheetOpen = ref(false); const konfirmasiKeluar = ref(false);
+    const inisial = computed(() => { const n = (user.value && user.value.nama ? user.value.nama : "?").trim().split(/\s+/); return ((n[0] || "?")[0] + (n.length > 1 ? n[1][0] : "")).toUpperCase(); });
+    function bukaSheet() { konfirmasiKeluar.value = false; sheetOpen.value = true; try { history.pushState({ profilSheet: 1 }, ""); } catch (e) {} }
+    function tutupSheet(dariBack) {
+      if (!sheetOpen.value) return;
+      sheetOpen.value = false; konfirmasiKeluar.value = false;
+      if (!dariBack) { try { if (history.state && history.state.profilSheet) history.back(); } catch (e) {} }
+    }
+    window.addEventListener("popstate", () => { if (sheetOpen.value) tutupSheet(true); });
+    async function daringTersedia() {
+      if (!navigator.onLine) return false;
+      try {
+        const c = new AbortController(); const t = setTimeout(() => c.abort(), 3500);
+        const r = await fetch("/icon.svg?cek=" + Date.now(), { signal: c.signal, cache: "no-store" });
+        clearTimeout(t); return r.ok;
+      } catch (e) { return false; }
+    }
     async function clearCache() {
+      // Guard offline (keputusan diskusi 9router): cache dibersihkan saat offline = aplikasi tidak bisa dimuat ulang.
+      if (!(await daringTersedia())) {
+        const pesan = "Tidak bisa memperbaiki aplikasi saat offline. Sambungkan internet dulu, karena setelah dibersihkan aplikasi harus dimuat ulang dari server. Data tersimpan tidak akan hilang.";
+        if (user.value) setFlash(pesan, "err"); else loginError.value = pesan;
+        return;
+      }
       // Jalan keluar darurat: akhiri sesi semampunya, cabut service worker, hapus semua cache dan penyimpanan lokal, lalu muat ulang bersih.
       try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {}
       try {
@@ -273,6 +483,7 @@ createApp({
         lap.from = b.today; lap.to = b.today;
       }
       await cekModeEdit(); await muatRiwayat(true); await muatLaporan(); await muatAdmin();
+      if (user.value && user.value.role === "admin") jadwalPrefetchPDF();
     }
     onMounted(async () => {
       try { const d = await api("/api/me"); user.value = d.user; await muatBootstrap(true); }
@@ -281,9 +492,10 @@ createApp({
     watch(view, (v) => { if (v === "riwayat") muatRiwayat(); if (v === "laporan") muatLaporan(); if (v === "admin") muatAdmin(); });
 
     return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
+      APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, simpanTemplate, simpan, teamLabelAktif,
       presets, setPreset, riw, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
-      lap, muatLaporan, blokLaporan, rataHari, catatanGabung, cetak, cetakMode, cetakLaporan, timestampCetak,
+      lap, muatLaporan, totalKolom, lapDays, blokLaporan, rataHari, catatanGabung, cetak, cetakMode, cetakLaporan, timestampCetak, unduhPDF,
       adminStatus, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }

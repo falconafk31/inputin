@@ -9,11 +9,11 @@
 <meta name="theme-color" content="#1E40AF">
 <style>
 /*__FONT_FACE__*/
-  :root{ --navy:#1E40AF; --navy-dark:#1E3A8A; --blue:#3B82F6; --amber:#D97706; --amber-soft:#FEF3C7; --bg:#F8FAFC; --card:#FFFFFF; --surface2:#E9EEF6; --ink:#0F172A; --muted:#64748B; --muted2:#475569; --line:#E2E8F0; --green:#15803D; --red:#DC2626; --ring:#DBEAFE; --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px rgba(15,23,42,.06); --shadow-lg:0 12px 40px rgba(15,23,42,.16); --radius:16px; }
+  :root{ --navy:#1E40AF; --navy-dark:#1E3A8A; --blue:#3B82F6; --amber:#D97706; --amber-soft:#FEF3C7; --bg:#F8FAFC; --card:#FFFFFF; --surface2:#E9EEF6; --ink:#0F172A; --muted:#64748B; --muted2:#475569; --line:#E2E8F0; --green:#15803D; --red:#DC2626; --ring:#DBEAFE; --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px rgba(15,23,42,.06); --shadow-lg:0 12px 40px rgba(15,23,42,.16); --radius:20px; }
   *{box-sizing:border-box} html,body{margin:0;padding:0}
   body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
   ::selection{background:var(--ring)}
-  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .mono{font-family:"Fira Code",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;font-variant-ligatures:none}
   button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
   input,select,textarea{font:inherit;color:inherit}
   .btn,.chip,.seg button,.topnav button,.bottomnav button,.icon-btn,.pager button,.ubtn,.add-btn{transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .12s ease}
@@ -33,7 +33,7 @@
   .topnav button:hover{background:rgba(255,255,255,.24)}
   .topnav button.active{background:#fff;color:var(--navy-dark);box-shadow:0 2px 8px rgba(15,23,42,.18)}
   .wrap{max-width:860px;margin:0 auto;padding:18px 14px 96px}
-  h1.page{font-size:1.3rem;margin:4px 0 2px;letter-spacing:-.01em;font-weight:800} .sub{color:var(--muted);margin:0 0 16px;font-size:.93rem}
+  h1.page{font-size:1.24rem;margin:4px 0 2px;letter-spacing:-.01em;font-weight:800} .sub{color:var(--muted);margin:0 0 16px;font-size:.93rem}
   .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid var(--line)}
   .card h3{margin:0 0 12px;font-size:.99rem;font-weight:700}
   .card-head{display:flex;align-items:center;gap:9px;margin-bottom:13px}
@@ -41,23 +41,23 @@
   .step{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:8px;background:var(--navy);color:#fff;font-size:.78rem;font-weight:800;flex:none}
   label.fl{display:block;font-weight:600;margin:0 0 6px;font-size:.93rem}
   .hint{color:var(--muted);font-size:.88rem;margin-top:6px;line-height:1.45}
-  .txt{width:100%;min-height:46px;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;background:#fff}
-  .txt:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--ring)}
+  .txt{width:100%;min-height:46px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:#F8FAFC}
+  .txt:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--ring);background:#fff}
   textarea.txt{min-height:84px;resize:vertical}
-  .big{font-size:1.32rem;font-weight:600}
-  .seg{display:flex;gap:8px;flex-wrap:wrap}
-  .seg button{flex:1;min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-weight:700;padding:8px}
-  .seg button:hover{border-color:var(--blue)}
-  .seg button.active{border-color:var(--navy);background:#EFF6FF;color:var(--navy-dark);box-shadow:inset 0 0 0 1px var(--navy)}
-  .seg button.warn.active{border-color:var(--amber);background:var(--amber-soft);color:#92400E;box-shadow:inset 0 0 0 1px var(--amber)}
+  .big{font-size:20px;font-weight:600}
+  .seg{display:flex;gap:4px;flex-wrap:wrap;background:var(--surface2);padding:4px;border-radius:999px}
+  .seg button{flex:1;min-height:44px;border-radius:999px;border:none;background:transparent;font-weight:700;padding:8px;color:var(--muted2)}
+  .seg button:hover{color:var(--navy-dark)}
+  .seg button.active{background:#fff;color:var(--navy-dark);box-shadow:0 2px 10px rgba(15,23,42,.14)}
+  .seg button.warn.active{background:#fff;color:#92400E;box-shadow:0 2px 10px rgba(15,23,42,.14),inset 0 0 0 1.5px var(--amber)}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:.9rem}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:.9rem}
   .chip:hover{border-color:var(--amber);color:#92400E;background:#FFFBEB}
-  .dist{border:1.5px solid var(--line);border-left:4px solid var(--navy);border-radius:14px;padding:14px;margin-bottom:12px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .dist{border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:18px;padding:14px;margin-bottom:12px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.05)}
   .dist .dhead{display:flex;gap:8px;align-items:center}
   .dist .dhead input{flex:1;min-height:44px;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:700;background:#F8FAFC}
   .dist .dhead input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--ring);background:#fff}
-  .icon-btn{min-width:42px;min-height:42px;border-radius:12px;background:#FEF2F2;color:var(--red);font-size:1.15rem;font-weight:800}
+  .icon-btn{min-width:42px;min-height:42px;border-radius:999px;background:#FEF2F2;color:var(--red);font-size:1.15rem;font-weight:800}
   .icon-btn:hover{background:#FEE2E2}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
   .grid2 .txt{min-height:44px}
@@ -72,9 +72,9 @@
   .summary tr.sisa td{background:var(--amber-soft);color:#92400E;font-weight:800}
   .alloc{height:9px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-top:14px}
   .alloc-fill{height:100%;border-radius:99px;background:var(--amber);transition:width .3s ease}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:8px 18px;border-radius:12px;font-weight:700;background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.22)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:8px 20px;border-radius:999px;font-weight:700;background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.22)}
   .btn:hover{background:var(--navy-dark)}
-  .btn.amber{background:var(--amber)} .btn.amber:hover{background:#B45309}
+  .btn.amber{background:var(--amber);color:#1F2937} .btn.amber:hover{background:#B45309;color:#fff}
   .btn.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--navy);box-shadow:none}
   .btn.ghost:hover{background:#EFF6FF}
   .btn.red{background:var(--red)} .btn.small{min-height:38px;padding:5px 12px;font-size:.9rem}
@@ -95,7 +95,7 @@
   .shiftbox .srow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.79rem;font-weight:800;background:#DBEAFE;color:var(--navy-dark)}
   .badge.amber{background:var(--amber-soft);color:#92400E}
-  table.data{width:100%;border-collapse:collapse;margin-top:10px}
+  table.data{width:100%;border-collapse:collapse;margin-top:10px;font-size:.94rem}
   table.data th{background:#F1F5F9;text-align:left;padding:8px 10px;font-size:.87rem;color:var(--muted2)}
   table.data td{padding:8px 10px;border-bottom:1px solid var(--line)}
   table.data tbody tr:hover td{background:#F8FAFC}
@@ -107,10 +107,10 @@
   .pager button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pager button:disabled{opacity:.4}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-  .kpi{background:#fff;border:1px solid var(--line);border-top:3px solid var(--navy);border-radius:12px;padding:13px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+  .kpi{background:#fff;border:1px solid var(--line);border-top:3px solid var(--navy);border-radius:16px;padding:13px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
   .kpi .lbl{color:var(--muted);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-  .kpi .val{font-size:1.18rem;font-weight:800;margin-top:3px}
-  .rep-table{width:100%;border-collapse:collapse;background:#fff}
+  .kpi .val{font-size:20px;font-weight:800;margin-top:3px}
+  .rep-table{width:100%;border-collapse:collapse;background:#fff;font-size:.93rem}
   .rep-table th{background:var(--navy-dark);color:#fff;text-align:left;padding:9px 8px}
   .rep-table td{padding:8px;border-bottom:1px solid var(--line)}
   .rep-table td.r,.rep-table th.r{text-align:right}
@@ -121,29 +121,47 @@
   .status-card{border:1.5px solid var(--line);border-radius:14px;padding:14px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.04)}
   .ok-t{color:var(--green);font-weight:800}.no-t{color:var(--red);font-weight:800}
   .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;background-color:var(--navy-dark);background-image:radial-gradient(rgba(255,255,255,.13) 1.5px,transparent 1.6px),linear-gradient(140deg,var(--navy-dark),var(--navy));background-size:22px 22px,cover}
-  .login-card{background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);padding:30px 28px;width:100%;max-width:420px;border-top:5px solid var(--amber)}
+  .login-card{background:#fff;border-radius:26px;box-shadow:var(--shadow-lg);padding:30px 28px;width:100%;max-width:420px;border-top:5px solid var(--amber)}
   .login-card h1{margin:0 0 4px;font-size:1.45rem;display:flex;align-items:center;gap:9px}
   .login-card h1::before{content:"in";background:var(--amber);color:#fff;font-size:.85rem;font-weight:800;border-radius:8px;padding:2px 7px}
-  .login-card h1 span{color:var(--amber)}
+  .login-card h1 span{color:#B45309}
   .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
   .modal{background:#fff;border-radius:18px;padding:22px;max-width:460px;width:100%;box-shadow:var(--shadow-lg)}
-  .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.97);border-top:1px solid var(--line);display:none;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 18px rgba(15,23,42,.06)}
-  .bottomnav button{flex:1;min-height:57px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.72rem}
+  .bottomnav{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:40;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;display:none;padding:4px;box-shadow:0 12px 32px rgba(15,23,42,.16)}
+  .bottomnav button{flex:1;min-height:54px;border-radius:18px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.72rem}
   .nav-ic{display:inline-flex;border-radius:10px;padding:2px 10px}
   .nav-ic svg{width:21px;height:21px}
   .topnav .nav-ic{padding:0}.topnav .nav-ic svg{width:16px;height:16px}
   .bottomnav button.active{color:var(--navy);font-weight:700}
   .bottomnav button.active .nav-ic{background:#EFF6FF}
   .savebar{display:none}
-  @media (max-width:640px){ .bottomnav{display:flex} .topnav{display:none} .wrap{padding-bottom:180px} .grid2{grid-template-columns:1fr 1fr}
-    .savebar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:35;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);padding:10px 12px;gap:10px;align-items:center}
+  @media (max-width:640px){ .bottomnav{display:flex} .topnav{display:none} .wrap{padding-bottom:200px} .grid2{grid-template-columns:1fr 1fr}
+    .savebar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:35;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);padding:10px 12px;gap:10px;align-items:center}
     .savebar .sb-info{flex:1;font-size:.8rem;color:var(--muted);line-height:1.35}
     .savebar .sb-info b{color:var(--ink);font-size:.9rem}
     .savebar .btn{min-height:48px;padding:8px 16px;flex:none}
-    .banner.toast{bottom:calc(150px + env(safe-area-inset-bottom))} }
+    .banner.toast{bottom:calc(168px + env(safe-area-inset-bottom))} }
   @media (min-width:641px){ .wrap{max-width:960px} .banner.toast{bottom:26px} }
   @media (min-width:1025px){ .wrap{max-width:1180px} .form-grid{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start} .form-grid .sticky{position:sticky;top:86px} }
   @media (prefers-reduced-motion: reduce){ *{transition:none !important;animation:none !important} }
+  .avatar{width:42px;height:42px;border-radius:50%;background:#fff;color:var(--navy-dark);font-weight:800;font-size:.95rem;display:inline-flex;align-items:center;justify-content:center;flex:none;border:2px solid rgba(255,255,255,.5)}
+  .avatar.big{width:52px;height:52px;font-size:1.1rem;background:var(--navy);color:#fff;border:none}
+  .sheet-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:65;display:flex;align-items:flex-end;justify-content:center}
+  .psheet{background:#fff;width:100%;max-width:520px;border-radius:24px 24px 0 0;padding:10px 18px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--shadow-lg);animation:sheet-up .22s ease}
+  @keyframes sheet-up{from{transform:translateY(26px);opacity:.4}to{transform:translateY(0);opacity:1}}
+  .psheet .grab{width:42px;height:5px;border-radius:99px;background:var(--line);margin:2px auto 12px}
+  .phead{display:flex;align-items:center;gap:13px;padding:2px 2px 14px}
+  .pname{font-weight:800;font-size:1.05rem;line-height:1.25}
+  .prole{color:var(--muted);font-size:.88rem}
+  .pitem{display:flex;align-items:center;gap:13px;width:100%;min-height:56px;padding:9px 8px;border-radius:14px;text-align:left;font-weight:600}
+  .pitem:hover{background:#F8FAFC}
+  .pitem svg{width:21px;height:21px;flex:none;color:var(--navy)}
+  .pitem small{display:block;font-weight:500;color:var(--muted);font-size:.8rem;margin-top:1px}
+  .pitem.danger{color:var(--red)} .pitem.danger svg{color:var(--red)}
+  .pdiv{height:1px;background:var(--line);margin:7px 0}
+  .pconfirm{padding:10px 8px;font-weight:700}
+  .pconfirm .prow{display:flex;gap:9px;margin-top:10px}
+  .pfoot{text-align:center;color:var(--muted);font-size:.78rem;margin-top:13px}
   /* ===== Lembar cetak ===== */
   .sheet{display:none}
   @media print{
@@ -152,7 +170,7 @@
     @page land{size:A4 landscape;margin:10mm}
     .sheet.land{page:land}
   }
-  .sheet{font-size:13px;color:#0F172A}
+  .sheet{font-size:12.5px;color:#0F172A}
   .sheet .usaha{text-align:center;font-weight:800;letter-spacing:1px;font-size:1.02rem;text-transform:uppercase}
   .sheet h2{text-align:center;margin:2px 0 4px;font-size:1.35rem}
   .sheet .meta{text-align:center;color:#475569;margin-bottom:10px}
@@ -191,8 +209,8 @@
         <input class="txt" id="lg-pass" type="password" v-model="loginForm.password" autocomplete="current-password" required>
         <button class="btn save-btn" :disabled="busy">{{ busy ? 'Memproses...' : 'Masuk' }}</button>
       </form>
-      <button class="btn ghost" style="width:100%;margin-top:12px" @click="clearCache">Bersihkan Cache</button>
-      <div class="hint" style="text-align:center;margin-top:8px">Gunakan bila aplikasi macet, tidak bisa keluar, atau tampilan tidak berubah setelah pembaruan.</div>
+      <button class="btn ghost" style="width:100%;margin-top:12px" @click="clearCache">Perbaiki Aplikasi (Bersihkan Cache)</button>
+      <div class="hint" style="text-align:center;margin-top:8px">Gunakan bila aplikasi macet, tidak bisa keluar, atau tampilan tidak berubah setelah pembaruan. Data tersimpan tidak hilang. Butuh internet.</div>
     </div>
   </div>
 
@@ -204,11 +222,45 @@
         <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id"><span class="nav-ic" v-html="t.icon"></span>{{ t.label }}</button>
       </nav>
       <div class="sp"></div>
-      <div class="meta">{{ user.nama }} - {{ user.role==='admin' ? 'Admin' : 'Staff ' + (user.team_nama||'') }}</div>
-      <button class="ubtn" @click="clearCache"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.36-6.36L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.36 6.36L3 16"/><path d="M3 21v-5h5"/></svg>Bersihkan Cache</button>
-      <button class="ubtn" @click="showPw=true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.8 12.2 9.7-9.7"/><path d="m16 6 3 3"/></svg>Ganti Password</button>
-      <button class="ubtn" @click="doLogout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Keluar</button>
+      <button class="avatar" @click="bukaSheet" :aria-label="'Menu profil ' + user.nama">{{ inisial }}</button>
     </header>
+
+    <!-- SHEET PROFIL -->
+    <div v-if="sheetOpen" class="sheet-bg no-print" @click="tutupSheet(false)">
+      <div class="psheet" @click.stop role="dialog" aria-label="Menu profil">
+        <div class="grab"></div>
+        <div class="phead">
+          <div class="avatar big">{{ inisial }}</div>
+          <div>
+            <div class="pname">{{ user.nama }}</div>
+            <div class="prole">{{ user.role==='admin' ? 'Admin - Semua Team' : 'Staff - ' + (user.team_nama||'') }}</div>
+          </div>
+        </div>
+        <button class="pitem" @click="tutupSheet(false); showPw=true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.8 12.2 9.7-9.7"/><path d="m16 6 3 3"/></svg>
+          <span>Ganti Password</span>
+        </button>
+        <button class="pitem" @click="tutupSheet(false); clearCache()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.36-6.36L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.36 6.36L3 16"/><path d="M3 21v-5h5"/></svg>
+          <span>Perbaiki Aplikasi (Bersihkan Cache)<small>Data tersimpan tidak hilang. Butuh internet.</small></span>
+        </button>
+        <div class="pdiv"></div>
+        <template v-if="!konfirmasiKeluar">
+          <button class="pitem danger" @click="konfirmasiKeluar=true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Keluar</span>
+          </button>
+        </template>
+        <div v-else class="pconfirm">
+          <div>Yakin mau keluar?</div>
+          <div class="prow">
+            <button class="btn ghost small" @click="konfirmasiKeluar=false">Batal</button>
+            <button class="btn red small" @click="doLogout">Ya, Keluar</button>
+          </div>
+        </div>
+        <div class="pfoot">Inputin - Pencatatan Hasil Usaha - Versi {{ APP_VERSION }}</div>
+      </div>
+    </div>
 
     <nav class="bottomnav no-print">
       <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id"><span class="nav-ic" v-html="t.icon"></span>{{ t.label }}</button>
@@ -382,8 +434,9 @@
             <div><label class="fl" for="l-sampai">Sampai</label><input class="txt" type="date" id="l-sampai" v-model="lap.to" @change="muatLaporan"></div>
           </div>
           <div class="actions">
-            <button class="btn amber" @click="cetakLaporan(false)">Unduh PDF Rentang Ini</button>
-            <button class="btn ghost" @click="cetakLaporan(true)" v-if="lap.from===lap.to">PDF Harian (Rincian Per Shift)</button>
+            <button class="btn amber" :disabled="pdfState==='loading'" @click="unduhPDF(false)">{{ pdfState==='loading' ? 'Menyiapkan PDF...' : 'Unduh PDF Rentang Ini' }}</button>
+            <button class="btn ghost" :disabled="pdfState==='loading'" @click="unduhPDF(true)" v-if="lap.from===lap.to">PDF Harian (Rincian Per Shift)</button>
+            <button class="btn ghost small" @click="cetakLaporan(false)">Pratinjau Cetak</button>
           </div>
         </div>
         <div v-if="lap.loading" class="card">Memuat...</div>
@@ -414,12 +467,31 @@
             </tbody>
           </table>
           </div>
+          <div class="card" style="margin-top:16px" v-if="lap.kolomKelompok.length">
+            <h3>Terbagi Per Hari Per Kelompok</h3>
+            <div class="tscroll" v-if="lap.kolomKelompok.length <= 6">
+            <table class="data">
+              <thead><tr><th>Tanggal</th><th class="r" v-for="k in lap.kolomKelompok" :key="k">{{ k }}</th><th class="r">Total Terbagi</th><th class="r">Sisa</th></tr></thead>
+              <tbody>
+                <tr v-for="d in lapDays" :key="'m' + d.tanggal"><td>{{ tglIndo(d.tanggal) }}</td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k">{{ d.kelompok && d.kelompok[k] ? fmt(d.kelompok[k]) + ' gr' : '-' }}</td><td class="r mono">{{ fmt(d.terbagi) }} gr</td><td class="r mono">{{ fmt(d.sisa) }} gr</td></tr>
+                <tr style="background:#EFF6FF"><td><b>Total</b></td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k"><b>{{ fmt(totalKolom(k)) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.terbagi) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+              </tbody>
+            </table>
+            </div>
+            <div class="hint" v-else>Rincian per hari per kelompok tidak ditampilkan karena jumlah kelompok pada periode ini lebih dari 6. Lihat Total Per Kelompok di bawah.</div>
+          </div>
           <div class="card" style="margin-top:16px">
             <h3>Total Per Kelompok - Periode Ini</h3>
-            <table class="data"><tbody>
-              <tr v-for="k in lap.report.per_kelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
-              <tr><td><b>Pendapatan Usaha</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
-            </tbody></table>
+            <table class="data">
+              <thead><tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Total Terbagi</th></tr></thead>
+              <tbody>
+              <template v-for="k in lap.report.per_kelompok" :key="k.nama">
+                <tr style="background:#F1F5F9"><td><b>{{ k.nama }}</b> <span style="color:var(--muted);font-weight:500">(rata-rata tertimbang)</span></td><td class="r mono"><b>{{ fmtPct(k.persen_rata) }}%</b></td><td class="r mono"><b>{{ fmt(k.total) }} gr</b></td></tr>
+                <tr v-for="r in k.rincian" :key="k.nama + '-' + r.persentase"><td style="padding-left:24px;color:var(--muted2)">dengan persen</td><td class="r mono">{{ fmtPct(r.persentase) }}%</td><td class="r mono">{{ fmt(r.total) }} gr</td></tr>
+              </template>
+              <tr><td><b>Pendapatan Usaha</b> <span style="color:var(--muted);font-weight:500">(sisa)</span></td><td class="r mono">-</td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+              </tbody>
+            </table>
             <div class="hint">Catatan harian tidak diulang di sini karena sudah tampil di kolom Catatan tabel utama.</div>
           </div>
           <div class="card" style="margin-top:16px" v-if="lap.report.per_team">
@@ -550,11 +622,24 @@
           <tr class="grand"><td colspan="4">TOTAL ({{ lap.from }} s/d {{ lap.to }})</td><td class="r mono">{{ fmt(lap.report.totals.hasil) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.terbagi) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.sisa) }} gr</td><td></td></tr>
         </tbody>
       </table>
+      <div class="box" v-if="lap.kolomKelompok.length">
+        <b>Terbagi Per Hari Per Kelompok</b>
+        <table v-if="lap.kolomKelompok.length <= 6">
+          <tr><th>Tanggal</th><th class="r" v-for="k in lap.kolomKelompok" :key="k">{{ k }}</th><th class="r">Total Terbagi</th><th class="r">Sisa</th></tr>
+          <tr v-for="d in lapDays" :key="'mp' + d.tanggal"><td>{{ tglIndo(d.tanggal) }}</td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k">{{ d.kelompok && d.kelompok[k] ? fmt(d.kelompok[k]) + ' gr' : '-' }}</td><td class="r mono">{{ fmt(d.terbagi) }} gr</td><td class="r mono">{{ fmt(d.sisa) }} gr</td></tr>
+          <tr style="background:#EFF6FF"><td><b>Total</b></td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k"><b>{{ fmt(totalKolom(k)) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.terbagi) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+        </table>
+        <div v-else style="color:#64748B;font-size:.85rem;margin-top:6px">Rincian per hari per kelompok tidak ditampilkan karena jumlah kelompok lebih dari 6 - lihat Total Per Kelompok.</div>
+      </div>
       <div class="box">
         <b>Total Per Kelompok - Periode Ini</b>
         <table>
-          <tr v-for="k in lap.report.per_kelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
-          <tr><td><b>Pendapatan Usaha</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+          <tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Total Terbagi</th></tr>
+          <template v-for="k in lap.report.per_kelompok" :key="k.nama">
+            <tr style="background:#F1F5F9"><td><b>{{ k.nama }}</b> (rata-rata tertimbang)</td><td class="r mono"><b>{{ fmtPct(k.persen_rata) }}%</b></td><td class="r mono"><b>{{ fmt(k.total) }} gr</b></td></tr>
+            <tr v-for="r in k.rincian" :key="k.nama + '-' + r.persentase"><td style="padding-left:18px">dengan persen</td><td class="r mono">{{ fmtPct(r.persentase) }}%</td><td class="r mono">{{ fmt(r.total) }} gr</td></tr>
+          </template>
+          <tr><td><b>Pendapatan Usaha</b> (sisa)</td><td class="r mono">-</td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
         </table>
         <div style="color:#64748B;font-size:.85rem;margin-top:6px">Catatan harian tidak diulang di bagian ini karena sudah tampil di kolom Catatan pada tabel utama di atas.</div>
       </div>
@@ -589,6 +674,7 @@
     <div class="foot"><span>Dicetak pada {{ timestampCetak }}</span><span>Inputin - {{ cetakMode==='rentang' ? 'Format A4 Landscape' : 'Format A4 Portrait' }}</span></div>
   </div>
 </div>
+<script>/*__PDFCFG__*/</script>
 <script>/*__VUE__*/</script>
 <script>/*__APP__*/</script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}</script>

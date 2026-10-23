@@ -1,6 +1,7 @@
 // Inputin - Worker API + penyaji frontend (single file HTML digenerate ke frontend.js)
 // Binding: DB (D1 inputin-db). Semua aturan bisnis sesuai DESAIN.md yang terkunci.
 import FRONTEND_HTML from "./frontend.js";
+import PDF_ASSETS from "./pdfassets.js";
 
 const JSON_CT = { "content-type": "application/json; charset=utf-8" };
 
@@ -324,7 +325,7 @@ async function handleApi(request, env, url) {
     for (const h of heads || []) {
       const rows = rowsByResult[h.id] || [];
       const terbagi = round3(rows.reduce((a, r) => a + r.total_gram, 0));
-      if (!dayMap.has(h.tanggal)) dayMap.set(h.tanggal, { tanggal: h.tanggal, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, catatan: [] });
+      if (!dayMap.has(h.tanggal)) dayMap.set(h.tanggal, { tanggal: h.tanggal, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, catatan: [], kelompok: {} });
       const d = dayMap.get(h.tanggal);
       const key = h.shift === 1 ? "s1" : "s2";
       if (!d[key]) d[key] = { hasil: 0, terbagi: 0, tanpa_hasil: false, id: h.id };
@@ -333,7 +334,14 @@ async function handleApi(request, env, url) {
       d.total = round3(d.total + h.hasil_gram); d.terbagi = round3(d.terbagi + terbagi); d.sisa = round3(d.total - d.terbagi);
       if (h.catatan) d.catatan.push({ shift: h.shift, teks: h.catatan, team_nama: h.team_nama });
       totHasil = round3(totHasil + h.hasil_gram); totTerbagi = round3(totTerbagi + terbagi); shiftCount++;
-      for (const r of rows) perKelompokMap.set(r.nama, round3((perKelompokMap.get(r.nama) || 0) + r.total_gram));
+      for (const r of rows) {
+        let g = perKelompokMap.get(r.nama);
+        if (!g) { g = { nama: r.nama, total: 0, perPersen: new Map(), shiftIds: new Set() }; perKelompokMap.set(r.nama, g); }
+        g.total = round3(g.total + r.total_gram);
+        g.perPersen.set(r.persentase, round3((g.perPersen.get(r.persentase) || 0) + r.total_gram));
+        g.shiftIds.add(h.id);
+        d.kelompok[r.nama] = round3((d.kelompok[r.nama] || 0) + r.total_gram);
+      }
       if (allTeams) {
         if (!perTeamMap.has(h.team_id)) perTeamMap.set(h.team_id, { team_id: h.team_id, team_nama: h.team_nama, hasil: 0, terbagi: 0, sisa: 0, tanggal_set: new Set(), shift_tercatat: 0 });
         const pt = perTeamMap.get(h.team_id);
@@ -342,7 +350,13 @@ async function handleApi(request, env, url) {
       }
     }
     const days = [...dayMap.values()];
-    const resp = { ok: true, days, totals: { hasil: totHasil, terbagi: totTerbagi, sisa: round3(totHasil - totTerbagi), hari_aktif: days.length, shift_tercatat: shiftCount }, per_kelompok: [...perKelompokMap.entries()].map(([nama, total]) => ({ nama, total })) };
+    const hasilById = new Map((heads || []).map((h) => [h.id, h.hasil_gram]));
+    const perKelompok = [...perKelompokMap.values()].map((g) => {
+      const basis = [...g.shiftIds].reduce((a, id) => a + (hasilById.get(id) || 0), 0);
+      const rata = basis > 0 ? Math.round((g.total / basis) * 100 * 1000) / 1000 : 0;
+      return { nama: g.nama, total: g.total, persen_rata: rata, rincian: [...g.perPersen.entries()].map(([persentase, total]) => ({ persentase, total })).sort((a, b) => a.persentase - b.persentase) };
+    });
+    const resp = { ok: true, days, totals: { hasil: totHasil, terbagi: totTerbagi, sisa: round3(totHasil - totTerbagi), hari_aktif: days.length, shift_tercatat: shiftCount }, per_kelompok: perKelompok, kelompok_kolom: perKelompok.slice().sort((a, b) => b.total - a.total).map((g) => g.nama) };
     if (allTeams) resp.per_team = [...perTeamMap.values()].map((pt) => ({ team_id: pt.team_id, team_nama: pt.team_nama, hasil: pt.hasil, terbagi: pt.terbagi, sisa: pt.sisa, hari_aktif: pt.tanggal_set.size, shift_tercatat: pt.shift_tercatat }));
     return json(resp);
   }
@@ -439,9 +453,9 @@ async function handleApi(request, env, url) {
 
 const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#1E40AF"/><path d="M128 336 L224 176 L288 272 L336 208 L384 336 Z" fill="#D97706"/><circle cx="256" cy="384" r="26" fill="#F8FAFC"/></svg>`;
 const MANIFEST = JSON.stringify({ name: "Inputin - Pencatatan Hasil Usaha", short_name: "Inputin", start_url: "/", display: "standalone", background_color: "#F8FAFC", theme_color: "#1E40AF", icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }] });
-const SW_JS = `const CACHE='inputin-v1';const SHELL=['/','/manifest.webmanifest','/icon.svg'];
+const SW_JS = `const CACHE='inputin-v2';const SHELL=['/','/manifest.webmanifest','/icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(clients.claim())});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.pathname.startsWith('/api/'))return;e.respondWith(fetch(e.request).then(r=>{const cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match('/'))))});`;
 
 export default {
@@ -454,6 +468,12 @@ export default {
     if (url.pathname === "/manifest.webmanifest") return new Response(MANIFEST, { headers: { "content-type": "application/manifest+json" } });
     if (url.pathname === "/icon.svg") return new Response(ICON_SVG, { headers: { "content-type": "image/svg+xml" } });
     if (url.pathname === "/sw.js") return new Response(SW_JS, { headers: { "content-type": "application/javascript" } });
+    if (url.pathname.startsWith("/assets/")) {
+      const nama = url.pathname.split("/").pop();
+      const isi = PDF_ASSETS[nama];
+      if (isi) return new Response(isi, { headers: { "content-type": "application/javascript; charset=utf-8", "cache-control": "public, max-age=31536000, immutable" } });
+      return new Response("Tidak ditemukan.", { status: 404 });
+    }
     return new Response(FRONTEND_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" } });
   },
 };

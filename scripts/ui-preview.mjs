@@ -69,15 +69,22 @@ try {
   cek("login staff masuk form Input", (await ev2("!!document.querySelector('input.big')")) === true);
   const dbg = await ev2("JSON.stringify({topnavBtns:document.querySelectorAll('.topnav button').length, bottomBtns:document.querySelectorAll('.bottomnav button').length, inputs:document.querySelectorAll('input').length, big:!!document.querySelector('input.big'), sections:[...document.querySelectorAll('section')].length, innerW:innerWidth, appLen:document.querySelector('#app').innerHTML.length})");
   console.log('DEBUG', dbg);
-  cek("tombol Bersihkan Cache ada di topbar (semua role)", (await ev2("[...document.querySelectorAll('.topbar .ubtn')].some(b=>b.innerText.includes('Bersihkan Cache'))")) === true);
-  const fontCheck = await ev2("Promise.all([document.fonts.load('700 16px \"Plus Jakarta Sans\"'),document.fonts.load('600 16px \"IBM Plex Mono\"')]).then(()=>document.fonts.check('700 16px \"Plus Jakarta Sans\"') + '/' + document.fonts.check('600 16px \"IBM Plex Mono\"'))");
-  cek("font asli termuat (document.fonts)", fontCheck === "true/true", fontCheck);
+  cek("tombol avatar profil ada di topbar", (await ev2("!!document.querySelector('.topbar .avatar')")) === true);
+  await ev2("document.querySelector('.topbar .avatar').click(); 'ok'");
+  await wait(500);
+  const sheetIsi = await ev2("document.querySelector('.psheet') ? document.querySelector('.psheet').innerText : ''");
+  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.2.0"), sheetIsi.slice(0, 90));
+  await ev2("document.querySelector('.sheet-bg').dispatchEvent(new MouseEvent('click',{bubbles:true})); 'ok'");
+  await wait(400);
+  cek("sheet profil tertutup lagi", (await ev2("!!document.querySelector('.psheet')")) === false);
+  const fontCheck = await ev2("Promise.all([document.fonts.load('700 16px \"Plus Jakarta Sans\"'),document.fonts.load('600 16px \"Fira Code\"')]).then(()=>document.fonts.check('700 16px \"Plus Jakarta Sans\"') + '/' + document.fonts.check('600 16px \"Fira Code\"'))");
+  cek("font asli termuat: PJS + Fira Code (document.fonts)", fontCheck === "true/true", fontCheck);
   const fontFam = await ev2("getComputedStyle(document.body).fontFamily");
   cek("font-family body = Plus Jakarta Sans", String(fontFam).includes("Plus Jakarta Sans"), String(fontFam).slice(0, 60));
   const iconCount = await ev2("document.querySelectorAll('.bottomnav .nav-ic svg').length");
   cek("ikon SVG navigasi bawah tampil", iconCount >= 3, "jumlah svg: " + iconCount + " | html: " + (iconCount ? "" : await ev2("document.querySelector('.bottomnav button') ? document.querySelector('.bottomnav button').innerHTML.slice(0,120) : 'no-btn'")));
   const baseSize = await ev2("getComputedStyle(document.body).fontSize");
-  cek("font dasar 15px", baseSize === "15px", baseSize);
+  cek("font dasar 15px (paket final)", baseSize === "15px", baseSize);
   await ev2(`document.querySelector('input.big').value='100'; document.querySelector('input.big').dispatchEvent(new Event('input',{bubbles:true})); 'ok'`);
   await wait(600);
   const ringkasan = await ev2("document.body.innerText.includes('90,000')");
@@ -91,6 +98,11 @@ try {
   await wait(2200);
   const shotLap = await send("Page.captureScreenshot", { format: "png" });
   fs.writeFileSync(new URL("../smoke-test/ui-v2-laporan.png", import.meta.url), Buffer.from(shotLap.result.data, "base64"));
+  const lazyOk = await ev2("typeof window.jspdf === 'undefined'");
+  cek("bundle PDF belum dimuat sebelum unduh pertama (lazy)", lazyOk === true);
+  const pdfInfo = await ev2("window.__PDF_TEST__=true; window.__unduhPDF(false).then(doc=>{ const b = doc.output('blob'); return JSON.stringify({pages: doc.getNumberOfPages(), size: b.size, type: b.type}); })");
+  const pi = JSON.parse(pdfInfo);
+  cek("PDF unduh langsung ter-generate (jsPDF)", pi.type === "application/pdf" && pi.size > 4000 && pi.pages >= 1, pdfInfo);
   cek("tanpa error JS relevan", errs.filter((e) => !e.includes("favicon")).length === 0, errs.slice(0, 2).join(" ;; "));
   ws.close();
 } finally { chrome.kill("SIGKILL"); }
