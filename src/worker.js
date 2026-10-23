@@ -447,6 +447,25 @@ async function handleApi(request, env, url) {
       }
       return json({ ok: true });
     }
+    if (path === "/api/admin/backup" && method === "GET") {
+      const { results: sr } = await db.prepare("SELECT * FROM shift_results ORDER BY tanggal, team_id, shift").all();
+      const { results: dr } = await db.prepare("SELECT * FROM distribution_rows ORDER BY result_id, id").all();
+      const byId = new Map();
+      for (const r of dr || []) { if (!byId.has(r.result_id)) byId.set(r.result_id, []); byId.get(r.result_id).push({ nama: r.nama, persentase: r.persentase, jumlah_orang: r.jumlah_orang, total_gram: r.total_gram, per_orang_gram: r.per_orang_gram }); }
+      const entries = (sr || []).map((h) => ({ id: h.id, team_id: h.team_id, tanggal: h.tanggal, shift: h.shift, tanpa_hasil: !!h.tanpa_hasil, hasil_gram: h.hasil_gram, catatan: h.catatan, deleted_at: h.deleted_at, created_at: h.created_at, updated_at: h.updated_at, rows: byId.get(h.id) || [] }));
+      return json({ ok: true, aplikasi: "Inputin - Pencatatan Hasil Usaha", diekspor: nowIso(), jumlah_entri: entries.length, entries });
+    }
+    if (path === "/api/admin/reset" && method === "POST") {
+      if (String(body.konfirmasi || "") !== "RESET") return err("Ketik RESET untuk melanjutkan.", 400);
+      const me = await db.prepare("SELECT password_hash FROM users WHERE id = ?").bind(user.id).first();
+      if (!me || !(await verifyPassword(String(body.password || ""), me.password_hash))) return err("Password Admin salah.", 403);
+      const c1 = await db.prepare("SELECT COUNT(*) AS n FROM shift_results").first();
+      const c2 = await db.prepare("SELECT COUNT(*) AS n FROM distribution_rows").first();
+      await db.prepare("DELETE FROM distribution_rows").run();
+      await db.prepare("DELETE FROM shift_results").run();
+      await audit(db, { user_id: user.id, aksi: "reset", detail: { entri_terhapus: c1 ? c1.n : 0, baris_terhapus: c2 ? c2.n : 0 } });
+      return json({ ok: true, terhapus: { entri: c1 ? c1.n : 0, baris: c2 ? c2.n : 0 } });
+    }
     return err("Endpoint admin tidak dikenal.", 404);
   }
 

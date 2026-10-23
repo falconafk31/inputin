@@ -25,6 +25,7 @@
   body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
   ::selection{background:var(--ring)}
   .mono{font-family:"Fira Code",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;font-variant-ligatures:none}
+  .num{font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
   input,select,textarea{font:inherit;color:inherit}
   .btn,.chip,.seg button,.topnav button,.bottomnav button,.icon-btn,.pager button,.ubtn,.add-btn{transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .12s ease}
@@ -54,7 +55,7 @@
   .hint{color:var(--muted);font-size:.88rem;margin-top:6px;line-height:1.45}
   .txt{width:100%;min-height:46px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:#F8FAFC;font-size:16px}
   .chip.on{border-color:var(--amber);background:var(--amber-soft);color:#92400E}
-  .kpi.k-sm .val{font-size:17px}
+  .kpi.k-sm .val{font-size:19px}
   .rep-table th:nth-child(1),.rep-table td:nth-child(1){position:sticky;left:0;z-index:2}
   .rep-table th:nth-child(2),.rep-table td:nth-child(2){position:sticky;left:38px;z-index:2}
   .rep-table td:nth-child(1),.rep-table td:nth-child(2){background:#fff}
@@ -62,7 +63,7 @@
   @media (max-width:640px){ .card.sticky .save-btn{display:none} }
   .txt:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--ring);background:#fff}
   textarea.txt{min-height:84px;resize:vertical}
-  .big{font-size:20px;font-weight:600}
+  .big{font-size:26px;font-weight:700}
   .seg{display:flex;gap:4px;flex-wrap:wrap;background:var(--surface2);padding:4px;border-radius:999px}
   .seg button{flex:1;min-height:44px;border-radius:999px;border:none;background:transparent;font-weight:700;padding:8px;color:var(--muted2)}
   .seg button:hover{color:var(--navy-dark)}
@@ -193,7 +194,7 @@
   .kpi.k-teal{border-left-color:#0F766E}.kpi.k-teal .ic{color:#0F766E}
   .kpi.k-biru{border-left-color:#2563EB}.kpi.k-biru .ic{color:#2563EB}
   .kpi .lbl{color:var(--muted);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-  .kpi .val{font-size:20px;font-weight:800;margin-top:3px}
+  .kpi .val{font-size:24px;font-weight:700;margin-top:3px}
   .rep-table{width:100%;border-collapse:collapse;background:#fff;font-size:.93rem}
   .rep-table th{background:var(--navy-dark);color:#fff;text-align:left;padding:9px 8px}
   .rep-table td{padding:8px;border-bottom:1px solid var(--line)}
@@ -378,7 +379,7 @@
               <template v-if="!form.tanpa_hasil">
                 <div style="height:14px"></div>
                 <label class="fl" for="f-hasil">Hasil Shift Ini (gram)</label>
-                <input class="txt big mono" id="f-hasil" inputmode="decimal" placeholder="Contoh: 12,5" v-model="form.hasilStr">
+                <input class="txt big num" id="f-hasil" inputmode="decimal" placeholder="Contoh: 12,5" v-model="form.hasilStr">
                 <div class="hint">Boleh pakai koma atau titik: 12,5 atau 12.5 sama. Ribuan pakai titik: 1.250,5 terbaca 1250,5.</div>
               </template>
             </div>
@@ -524,9 +525,9 @@
           <p v-if="graf.loading" class="hint" style="text-align:center;padding:18px 0">Memuat grafik...</p>
           <template v-else-if="grafKpi && grafKpi.hasil > 0">
             <div class="kpis" style="margin-bottom:16px">
-              <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span><div><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(grafKpi.hasil) }} gr</div></div></div>
-              <div class="kpi k-hijau"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span><div><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(grafKpi.sisa) }} gr</div></div></div>
-              <div class="kpi k-teal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span><div><div class="lbl">Rata-Rata / Hari Aktif</div><div class="val mono">{{ fmt(grafKpi.rata) }} gr</div></div></div>
+              <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span><div><div class="lbl">Total Hasil</div><div class="val num">{{ fmt(grafKpi.hasil) }} gr</div></div></div>
+              <div class="kpi k-hijau"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span><div><div class="lbl">Pendapatan Usaha</div><div class="val num">{{ fmt(grafKpi.sisa) }} gr</div></div></div>
+              <div class="kpi k-teal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span><div><div class="lbl">Rata-Rata / Hari Aktif</div><div class="val num">{{ fmt(grafKpi.rata) }} gr</div></div></div>
             </div>
 
             <div class="card" v-if="grafHarian">
@@ -575,7 +576,7 @@
                 <svg class="donat-svg" viewBox="0 0 128 128" role="img" aria-label="Donat komposisi terbagi per kelompok">
                   <circle cx="64" cy="64" :r="grafDonat.R" fill="none" stroke="#E2E8F0" stroke-width="17"/>
                   <circle v-for="(p, i) in grafDonat.potong" :key="i" cx="64" cy="64" :r="grafDonat.R" fill="none" :stroke="p.warna" stroke-width="17" :stroke-dasharray="p.dash" :stroke-dashoffset="p.offset" transform="rotate(-90 64 64)"/>
-                  <text x="64" y="61" text-anchor="middle" font-size="14" font-weight="800" class="mono">{{ fmt(grafDonat.total) }}</text>
+                  <text x="64" y="61" text-anchor="middle" font-size="14" font-weight="700" class="num">{{ fmt(grafDonat.total) }}</text>
                   <text x="64" y="77" text-anchor="middle" font-size="9.5" fill="#64748B">gr terbagi</text>
                 </svg>
                 <div class="donat-legend">
@@ -611,10 +612,10 @@
           <div v-if="lapKosong" class="card empty-state"><span class="es-icon">🗂️</span><b>Belum ada catatan di rentang ini.</b><span>Coba ubah tanggal.</span></div>
           <template v-else>
           <div class="kpis" style="margin-bottom:16px">
-            <div class="kpi k-hijau"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span><div><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(lap.report.totals.hasil) }} gr</div></div></div>
-            <div class="kpi k-teal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M10 21v-6h4v6"/></svg></span><div><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(lap.report.totals.sisa) }} gr</div></div></div>
-            <div class="kpi k-biru"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span><div><div class="lbl">Rata-Rata Per Hari</div><div class="val mono">{{ fmt(rataHari) }} gr</div></div></div>
-            <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><div><div class="lbl">Hari Aktif / Shift</div><div class="val mono" style="font-size:17px">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div></div>
+            <div class="kpi k-hijau"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span><div><div class="lbl">Total Hasil</div><div class="val num">{{ fmt(lap.report.totals.hasil) }} gr</div></div></div>
+            <div class="kpi k-teal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M10 21v-6h4v6"/></svg></span><div><div class="lbl">Pendapatan Usaha</div><div class="val num">{{ fmt(lap.report.totals.sisa) }} gr</div></div></div>
+            <div class="kpi k-biru"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span><div><div class="lbl">Rata-Rata Per Hari</div><div class="val num">{{ fmt(rataHari) }} gr</div></div></div>
+            <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><div><div class="lbl">Hari Aktif / Shift</div><div class="val num" style="font-size:17px">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div></div>
           </div>
           <div style="overflow-x:auto">
           <table class="rep-table">
@@ -718,6 +719,25 @@
           </select>
           <button class="btn" style="margin-top:14px" @click="simpanSettings">Simpan Pengaturan</button>
         </div>
+        <div class="card" style="border-color:#FECACA;margin-top:16px">
+          <div class="acc-head"><h3><span class="ic" style="color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>Reset Data Transaksi</h3></div>
+          <p class="hint" style="margin-top:8px">Menghapus <b>semua</b> data hasil dan pembagian dari semua team, termasuk yang sudah dihapus sebelumnya. Team, akun pengguna, dan pengaturan <b>tidak</b> ikut terhapus. Riwayat perubahan tetap disimpan dan reset ini tercatat di dalamnya. Tindakan ini <b>tidak bisa dibatalkan</b> - unduh backup dulu.</p>
+          <div style="margin-top:12px">
+            <label class="fl">Langkah 1 - Unduh backup data (JSON)</label>
+            <button class="btn ghost" @click="unduhBackup">Unduh Backup JSON</button>
+            <span v-if="resetState.backup" class="hint" style="color:#15803D;font-weight:700;margin-left:8px">Backup sudah diunduh.</span>
+          </div>
+          <div style="margin-top:14px">
+            <label class="fl" for="rs-teks">Langkah 2 - Ketik RESET</label>
+            <input class="txt" id="rs-teks" v-model="resetState.teks" placeholder="RESET" autocomplete="off">
+          </div>
+          <div style="margin-top:12px">
+            <label class="fl" for="rs-pass">Langkah 3 - Password Admin kamu</label>
+            <input class="txt" id="rs-pass" type="password" v-model="resetState.password" autocomplete="current-password" placeholder="Password Admin saat ini">
+          </div>
+          <button class="btn red" style="margin-top:16px" :disabled="!resetSiap || resetState.busy" @click="mintaReset">Reset Semua Data Transaksi</button>
+          <p class="hint" v-if="!resetSiap" style="margin-top:8px">Tombol aktif setelah backup diunduh, kata RESET diketik, dan password diisi.</p>
+        </div>
         <div class="card acc" :class="{open: acc.team}">
           <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Team</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.team=!acc.team">{{ acc.team ? 'Tutup' : 'Buka' }}</button></div>
           <div class="tscroll">
@@ -794,6 +814,18 @@
       <div class="actions">
         <button class="btn red" @click="konfirmasiHapusBaris">Ya, Hapus</button>
         <button class="btn ghost" @click="hapusBarisTarget=null">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL KONFIRMASI RESET DATA -->
+  <div class="modal-bg no-print" v-if="resetState.modal">
+    <div class="modal">
+      <h3 style="margin-top:0">Reset semua data transaksi?</h3>
+      <p>Semua data hasil dan pembagian dari <b>semua team</b> akan dihapus permanen. Team, akun, dan pengaturan tetap aman. Pastikan file backup JSON sudah tersimpan.</p>
+      <div class="actions">
+        <button class="btn red" :disabled="resetState.busy" @click="lakukanReset">{{ resetState.busy ? 'Mereset...' : 'Ya, Reset Semua' }}</button>
+        <button class="btn ghost" :disabled="resetState.busy" @click="resetState.modal=false">Batal</button>
       </div>
     </div>
   </div>
@@ -1147,7 +1179,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.5.0";
+    const APP_VERSION = "3.6.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -1635,6 +1667,34 @@ createApp({
     const settingsForm = reactive({ nama_perusahaan: "", nama_pimpinan: "", zona_waktu: "Asia/Jakarta" });
     const teamBaru = ref(""); const userBaru = reactive({ nama: "", username: "", password: "", role: "staff", team_id: null }); const lihatPassUser = ref(false);
     async function muatAdminStatus() { if (!user.value || user.value.role !== "admin") return; try { const d = await api("/api/admin/status"); adminStatus.value = d.status; } catch (e) {} }
+
+    // ===== Reset Data Transaksi (khusus Admin, tiga pengaman) =====
+    const resetState = reactive({ backup: false, teks: "", password: "", busy: false, modal: false });
+    const resetSiap = computed(() => resetState.backup && resetState.teks === "RESET" && resetState.password.length > 0);
+    async function unduhBackup() {
+      try {
+        const d = await api("/api/admin/backup");
+        const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "inputin-backup-" + today.value + ".json";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        resetState.backup = true;
+        setFlash("Backup terunduh (" + d.jumlah_entri + " entri). Simpan file ini baik-baik sebelum reset.");
+      } catch (e) { setFlash(e.message, "err"); }
+    }
+    function mintaReset() { if (resetSiap.value) resetState.modal = true; }
+    async function lakukanReset() {
+      resetState.busy = true;
+      try {
+        const d = await api("/api/admin/reset", { method: "POST", body: JSON.stringify({ konfirmasi: resetState.teks, password: resetState.password }) });
+        resetState.modal = false; resetState.teks = ""; resetState.password = ""; resetState.backup = false;
+        setFlash("Data transaksi berhasil di-reset: " + d.terhapus.entri + " entri dan " + d.terhapus.baris + " baris pembagian terhapus.");
+        await muatAdmin();
+      } catch (e) { setFlash(e.message, "err"); }
+      resetState.busy = false;
+    }
     const WARNA_TEAM = [{ bg: "#DBEAFE", fg: "#1D4ED8" }, { bg: "#FEF3C7", fg: "#B45309" }, { bg: "#DCFCE7", fg: "#15803D" }, { bg: "#FCE7F3", fg: "#BE185D" }, { bg: "#E0E7FF", fg: "#4338CA" }, { bg: "#FFEDD5", fg: "#C2410C" }];
     function warnaTeam(id) { return WARNA_TEAM[Math.abs((Number(id) || 1) - 1) % WARNA_TEAM.length]; }
     function inisialTeam(nama) { const w = String(nama || "").trim().split(/\s+/).filter(Boolean); if (w.length > 1) return (w[0][0] + w[1][0]).toUpperCase(); return (w[0] || "?").slice(0, 2).toUpperCase(); }
@@ -1755,7 +1815,7 @@ createApp({
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
       presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, hapusBarisTarget, mintaHapusBaris, konfirmasiHapusBaris, ubahTarget, konfirmasiUbah, auditFor, auditList, lihatAudit,
       lap, muatLaporan, lapTab, graf, bukaTabGrafik, setModeGrafik, muatGrafik, grafKpi, grafHarian, grafBulanan, grafDonat, grafAnalisa, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
-      adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
+      adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser, resetState, resetSiap, unduhBackup, mintaReset, lakukanReset,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }
 }).mount("#app");
