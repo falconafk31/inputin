@@ -1,3 +1,19 @@
 node_modules/
 .DS_Store
 credentials-awal.txt
+
+# Hasil build (dibuat ulang oleh scripts/build.mjs saat deploy)
+public/
+src/frontend.js
+src/pdfassets.js
+src/iconassets.js
+
+# Artefak pengujian lokal
+smoke-test/
+smoke-test-v2/
+smoke-test-v3/
+smoke-test-v4/
+prototype/
+prototype-v2/
+prototype-v3/
+prototype-v4/

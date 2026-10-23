@@ -1,55 +1,69 @@
 # Inputin - App Pencatatan Hasil Usaha
 
-App pencatatan hasil usaha per team dan per shift, dengan pembagian hasil per kelompok, laporan harian sampai 30 hari, dan PDF teks siap cetak.
+Aplikasi web (PWA) untuk mencatat hasil usaha harian per team dan per shift, lengkap dengan pembagian hasil per kelompok, laporan tabel dan grafik, serta PDF teks yang siap dicetak. Dibangun untuk dipakai dari HP di lapangan: cepat, bisa offline, dan angkanya selalu konsisten.
 
-**Status: LIVE** di https://inputin.hadesxyz.workers.dev (Cloudflare Workers + D1 + Vue 3). Uji end-to-end live 19/19 PASS dan uji UI 7/7 PASS. CI/CD jangka panjang: Cloudflare Workers Builds dari repo ini (push ke main = build + deploy otomatis).
+**Demo yang berjalan:** https://inputin.hadesxyz.workers.dev (Cloudflare Workers + D1 + Vue 3)
 
-## Struktur versi produksi
+## Fitur
 
-- `src/worker.js` - Worker API (auth PBKDF2, sesi, CRUD shift, laporan, admin, audit trail) + penyaji frontend
-- `app/` - sumber frontend Vue (`template.html`, `app.js`, `vendor/`)
-- `scripts/build.mjs` - rakit frontend satu file ke `public/index.html` dan `src/frontend.js`
-- `migrations/` - skema database D1 (dijalankan Pax lewat API, bukan oleh deploy)
-- `scripts/seed.py` - seed awal database, `scripts/deploy-api.py` - deploy darurat via API, `scripts/e2e-live.py` + `scripts/ui-live.mjs` - pengujian live
-- `wrangler.toml` - konfigurasi Worker + binding D1 (database_id bukan rahasia)
+- **Input hasil per team dan shift** - 2 shift per hari, satuan gram dengan format desimal Indonesia (koma desimal, titik ribuan, selalu 3 angka di belakang koma).
+- **Pembagian per kelompok** - tiap kelompok diatur persen dan jumlah orangnya; aplikasi menghitung total terbagi dan jatah per orang. Sisa pembagian tercatat sebagai **Pendapatan Usaha**. Total persen di atas 100% ditolak.
+- **Mode Tanpa Hasil** - hari/shift tanpa hasil tetap tercatat dengan alasan wajib di catatan.
+- **Mode Edit aman** - mengubah data yang sudah tersimpan memunculkan konfirmasi berisi daftar perubahan; menghapus baris kelompok juga berkonfirmasi. Semua buat/edit/hapus tercatat di **riwayat perubahan (audit trail)**.
+- **Riwayat** - daftar per hari dengan filter team, tanggal, dan kata kunci, plus rincian per shift.
+- **Laporan** - dua tab:
+  - **Grafik (dashboard)**: KPI, grafik hasil harian (batang bertumpuk per shift + garis Pendapatan Usaha), grafik bulanan, donat komposisi per kelompok, dan Analisa Singkat otomatis (hari terbaik, hari paling produktif, pekerja, jatah per orang, tren, konsistensi). Periode 30 hari, 12 bulan, atau tahun berjalan.
+  - **Tabel & PDF**: tabel gabungan per hari dengan subtotal mingguan, total per kelompok, rekap per team, dan unduh **PDF Harian** serta **PDF Rentang** (teks asli yang bisa diseleksi/dicari, bukan gambar). Struktur resmi PDF didokumentasikan di [RINCIAN-PDF.md](RINCIAN-PDF.md).
+- **Multi-team dan peran** - Admin melihat dan mengelola semua team; Staff terkunci di team-nya sendiri (dijaga di server). Admin mengelola team, akun pengguna, template pembagian, dan pengaturan usaha (nama perusahaan, nama pimpinan, zona waktu WIB/WITA/WIT).
+- **PWA offline** - bisa di-install ke layar utama HP. Input saat tidak ada sinyal masuk antrian lokal dan terkirim otomatis saat kembali online (aman dari duplikat).
+- **Backup dan Reset (Admin)** - unduh backup seluruh data transaksi sebagai JSON. Reset Data Transaksi menghapus semua data hasil dan pembagian dengan tiga pengaman: backup diunduh dulu, mengetik kata RESET, dan verifikasi ulang password Admin. Team, akun, pengaturan, dan audit trail tidak ikut terhapus.
 
-Workers Builds: build command `npm run build`, deploy command `npx wrangler deploy`.
+Aturan bisnis lengkap ada di [DESAIN.md](DESAIN.md).
 
-## Dokumen utama
+## Teknologi
 
-- `DESAIN.md` - dokumen desain master: aturan bisnis, skema data, UI/UX, shift, laporan, desimal, zona waktu, pengaturan Admin, dan semua keputusan yang sudah dikunci.
+- **Cloudflare Workers** - satu Worker melayani PWA, API, dan data PDF.
+- **Cloudflare D1** (SQLite) - penyimpanan data.
+- **Vue 3** - frontend satu file hasil rakitan `scripts/build.mjs` (tanpa CDN, semua aset lokal agar tetap jalan offline).
+- **jsPDF** - PDF dibuat di perangkat pengguna dari data laporan.
+- Password di-hash PBKDF2 (100.000 iterasi), sesi berbasis token hash, validasi dan perhitungan persen dilakukan di server.
 
-## Prototype (buka file HTML-nya di browser)
+## Struktur repo
 
-| Folder | Isi | Hasil smoke test |
-|---|---|---|
-| `prototype/` | Prototype pertama (vanilla JS) | 20/20 PASS |
-| `prototype-v2/` | Vue 3 + CRUD staff lengkap | 20/20 PASS |
-| `prototype-v3/` | Vue 3 + 2 shift + laporan rentang + pagination + responsif tablet/PC | 29/29 PASS, uji desimal 6/6 PASS |
-| `prototype-v4/` | Design ulang tabel rincian transaksi + PDF 30 hari landscape | 24/24 PASS |
+```
+app/            Sumber frontend Vue (template.html, app.js, fonts.css, vendor/, fonts-pdf/, icons/)
+src/worker.js   Worker: API + penyaji frontend (file lain di src/ adalah hasil build, tidak di-commit)
+migrations/     Skema database D1 (0001_schema.sql)
+scripts/
+  build.mjs     Merakit frontend ke public/index.html + src/frontend.js dan aset PDF/ikon
+  seed.py       Membuat skema + data awal (2 team, akun admin/staff) di D1 lewat API Cloudflare
+wrangler.toml   Konfigurasi Worker + binding D1
+DESAIN.md       Dokumen desain master: aturan bisnis, skema data, UI/UX, keputusan yang dikunci
+RINCIAN-PDF.md  Spesifikasi resmi isi PDF Harian dan PDF Rentang
+```
 
-Folder `smoke-test*/` berisi script pengujian otomatis (Puppeteer), screenshot hasil, dan contoh PDF.
+## Memasang di Cloudflare Anda sendiri
 
-## Aturan bisnis inti (ringkasan, detail di DESAIN.md)
+Prasyarat: akun Cloudflare, Node.js, dan Wrangler (`npm i -g wrangler`) atau Bun.
 
-- Role Admin (semua team) dan Staff (terkunci di team sendiri). Awal 2 team.
-- Satuan satu-satunya gram, tanpa konversi Rupiah. Sisa pembagian berlabel Pendapatan Usaha.
-- 2 shift per hari, label tetap Shift 1 / Shift 2 (bukan hitungan jam). Setiap shift berdiri sendiri: hasil, pembagian, dan catatan sendiri.
-- Pembagian per kelompok (persen x jumlah orang). Total persen maksimal 100%.
-- Catatan wajib tampil di PDF dan tidak boleh tampil dua kali dalam satu laporan. Kolom terakhir tabel PDF bernama Catatan.
-- Desimal resmi koma, titik untuk ribuan, input toleran keduanya. Tampilan selalu format Indonesia 3 angka di belakang koma.
-- Zona waktu usaha diatur Admin (WIB / WITA / WIT). Footer PDF memuat timestamp cetak sesuai zona itu.
-- PDF adalah teks asli (bisa diseleksi dan dicari), bukan gambar.
-- Nama perusahaan, nama pimpinan, dan nama staff untuk kop dan tanda tangan PDF bisa di-custom Admin dari database.
+1. **Buat database D1** baru (dashboard Cloudflare atau `wrangler d1 create inputin-db`), lalu salin UUID-nya ke `wrangler.toml`: ganti `database_id` pada binding produksi (dan binding preview bila dipakai).
+2. **Isi data awal** dengan seed (membuat skema, 2 team, settings, dan akun admin + 2 staff dengan password acak yang ditulis ke `credentials-awal.txt`):
+   ```sh
+   CF_ACCOUNT_ID=<id-akun> CF_API_TOKEN=<token-izin-d1-edit> INPUTIN_DB_ID=<uuid-d1> python3 scripts/seed.py
+   ```
+   Alternatif: jalankan `migrations/0001_schema.sql` sendiri lewat `wrangler d1 execute`, lalu buat akun admin pertama secara manual (format hash: `saltHex:hashHex` PBKDF2-SHA256 100.000 iterasi).
+3. **Deploy**:
+   - Cara otomatis: hubungkan repo ini ke **Cloudflare Workers Builds** - build command `npm run build`, deploy command `npx wrangler deploy`. Setiap push ke `main` ter-deploy otomatis.
+   - Cara manual: `node scripts/build.mjs` lalu `npx wrangler deploy`.
+4. **Login pertama** memakai akun dari `credentials-awal.txt`, lalu ganti password semua akun dari menu Profil/Admin.
+5. **Preview (opsional)**: aktifkan Worker Previews dengan perintah `npx wrangler versions upload`. Arahkan binding preview di `wrangler.toml` ke database D1 terpisah agar pengujian tidak menyentuh data produksi.
 
-## Rencana stack produksi
+Catatan: `database_id` di `wrangler.toml` bukan rahasia (hanya penunjuk database), sedangkan token API tidak pernah disimpan di repo.
 
-- Cloudflare Workers (1 Worker untuk PWA + API + halaman PDF) + database D1
-- Frontend Vue 3, PWA ready, login per akun dengan role
-- Password hash PBKDF2, audit trail setiap edit dan hapus
+## Pengembangan lokal
 
-## Alur deploy dan preview
+```sh
+node scripts/build.mjs   # menghasilkan public/index.html dan aset di src/
+```
 
-- Branch `main` adalah produksi: Workers Builds menjalankan `npm run build` lalu `npx wrangler deploy`.
-- Branch lain adalah preview: perintah preview `npx wrangler versions upload`, alamatnya `<branch>-inputin.hadesxyz.workers.dev`, tidak mengganggu produksi.
-- Preview memakai database D1 terpisah (`inputin-db-preview`, seed akun sama dengan kredensial awal produksi), terisolasi penuh dari data produksi - aman untuk menguji fitur apa pun, termasuk yang destruktif.
+File hasil build (`public/`, `src/frontend.js`, `src/pdfassets.js`, `src/iconassets.js`) sengaja tidak di-commit; semuanya dibuat ulang oleh `build.mjs` dari sumber di `app/` setiap kali deploy.

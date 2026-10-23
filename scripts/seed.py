@@ -1,37 +1,45 @@
 #!/usr/bin/env python3
-"""Seed awal Inputin: jalankan skema + data awal ke D1 lewat cf.py.
+"""Seed awal Inputin: jalankan skema + data awal ke database D1 lewat API Cloudflare.
 
 Membuat: 2 team, settings default, akun admin + staff Team 1 + staff Team 2
 dengan password acak. Password ditulis ke credentials-awal.txt (tidak di-commit).
+
+Konfigurasi lewat environment variable:
+  CF_ACCOUNT_ID  - ID akun Cloudflare
+  CF_API_TOKEN   - API token Cloudflare dengan izin D1 Edit
+  INPUTIN_DB_ID  - UUID database D1 tujuan
+
+Contoh:
+  CF_ACCOUNT_ID=xxx CF_API_TOKEN=yyy INPUTIN_DB_ID=zzz python3 scripts/seed.py
 """
 import hashlib
 import json
 import os
 import secrets
 import string
-import subprocess
 import sys
+import urllib.request
+from datetime import datetime, timezone
 
-ACCOUNT = "d0efa75b9b53fbce00665c28f31a319c"
-DB_ID = "7dc53776-ebab-417d-be8f-18d5f2942782"
-BASE = os.path.expanduser("~/workspace/app-tambang-emas")
-CF = os.path.expanduser("~/workspace/custom-skills/local-cloudflare/bin/cf.py")
-ENV = dict(os.environ, PYTHONPATH=os.path.expanduser("~/workspace/skills/_shared/bin"))
+ACCOUNT = os.environ.get("CF_ACCOUNT_ID", "")
+DB_ID = os.environ.get("INPUTIN_DB_ID", "")
+TOKEN = os.environ.get("CF_API_TOKEN", "")
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def cf_query(sql):
-    body = {"sql": sql}
-    path = f"/tmp/seed-body-{os.getpid()}.json"
-    with open(path, "w") as f:
-        json.dump(body, f)
-    out = subprocess.run(
-        [sys.executable, CF, "POST", f"/accounts/{ACCOUNT}/d1/database/{DB_ID}/query", "--body", path],
-        capture_output=True, text=True, env=ENV,
+    if not (ACCOUNT and DB_ID and TOKEN):
+        raise SystemExit("Env CF_ACCOUNT_ID, CF_API_TOKEN, dan INPUTIN_DB_ID wajib diisi. Lihat docstring file ini.")
+    req = urllib.request.Request(
+        f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/d1/database/{DB_ID}/query",
+        data=json.dumps({"sql": sql}).encode(),
+        method="POST",
+        headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
     )
-    os.unlink(path)
-    data = json.loads(out.stdout)
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read().decode())
     if not data.get("success"):
-        raise SystemExit(f"Query gagal: {out.stdout[:500]} {out.stderr[:200]}")
+        raise SystemExit(f"Query gagal: {json.dumps(data)[:500]}")
     return data
 
 
@@ -52,7 +60,7 @@ def main():
     cf_query(schema)
     print("Skema OK")
 
-    now = "2026-10-22T13:00:00.000Z"
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
     pw_admin = gen_password("Adm-")
     pw_staff1 = gen_password("Stf-")
     pw_staff2 = gen_password("Stf-")
