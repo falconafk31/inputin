@@ -93,6 +93,35 @@
   .save-btn{width:100%;min-height:50px;font-size:1rem;margin-top:12px}
   .banner{border-radius:12px;padding:12px 14px;margin-bottom:14px;font-weight:600;border:1.5px solid transparent}
   .banner.edit{background:#FFFBEB;border-color:#F59E0B;color:#92400E}
+  .banner.info{background:#EFF6FF;border-color:#60A5FA;color:#1E40AF}
+  .banner.warn{background:#FFFBEB;border-color:#F59E0B;color:#92400E}
+  .riw-toggle{display:none}
+  .empty-state{text-align:center;padding:28px 16px;color:var(--muted)}
+  .empty-state .es-icon{font-size:1.7rem;display:block;margin-bottom:6px}
+  .empty-state b{display:block;color:var(--ink);font-size:1rem;margin-bottom:2px}
+  .st-chips{display:flex;gap:6px;margin-top:8px}
+  .st-chip{font-size:.74rem;font-weight:700;border-radius:999px;padding:3px 10px}
+  .st-chip.on{background:#DCFCE7;color:#15803D}
+  .st-chip.off{background:#FEE2E2;color:#B91C1C}
+  .st-sum{color:var(--muted);font-size:.85rem;margin:2px 0 8px}
+  .st-bar{height:6px;background:#E2E8F0;border-radius:99px;overflow:hidden;margin-bottom:12px}
+  .st-bar span{display:block;height:100%;background:#16A34A;border-radius:99px;transition:width .3s}
+  .ic{display:inline-flex;flex:none;align-items:center}
+  .ic svg{width:19px;height:19px}
+  .btn .ic svg{width:16px;height:16px}
+  .acc-head h3{display:flex;gap:8px;align-items:center}
+  .acc-head h3 .ic,.card-head .ic{color:var(--navy)}
+  .card.tinted{padding:0;overflow:hidden}
+  .card.tinted .thead{background:#EFF6FF;padding:12px 16px;border-bottom:1px solid #DBEAFE;display:flex;gap:9px;align-items:center;color:var(--navy)}
+  .card.tinted .thead h3{margin:0;color:var(--ink)}
+  .card.tinted .tbody{padding:14px 16px}
+  .ava{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;flex:none}
+  .stepper{display:flex;align-items:center;margin:2px 0 14px;padding:0 6px}
+  .stepper .dot{width:30px;height:30px;border-radius:50%;border:2px solid #CBD5E1;color:#94A3B8;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;background:#fff;flex:none}
+  .stepper .dot.act{border-color:var(--navy);background:var(--navy);color:#fff}
+  .stepper .dot.done{border-color:#16A34A;background:#DCFCE7;color:#15803D}
+  .stepper .ln{flex:1;height:2px;background:var(--line)}
+  .stepper .ln.done{background:#16A34A}
   .banner.ok{background:#F0FDF4;border-color:#22C55E;color:#166534}
   .banner.err{background:#FEF2F2;border-color:#F87171;color:#991B1B}
   .banner.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;z-index:70;width:max-content;max-width:92vw;box-shadow:var(--shadow-lg);margin:0;animation:toast-in .25s ease}
@@ -120,6 +149,10 @@
   .acc-toggle{display:none}
   @media (max-width:640px){
     body.kb .bottomnav{transform:translateY(150%);opacity:0;pointer-events:none}
+    .riw-toggle{display:inline-flex}
+    .riw-detail{display:none}
+    .riw-detail.open{display:block}
+    section.pad-b{padding-bottom:110px}
     .col-cat{display:none}
     .detail-mobile{display:table-row;background:#F8FAFC}
     .lap-row{cursor:pointer}
@@ -134,7 +167,11 @@
   .pager button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pager button:disabled{opacity:.4}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-  .kpi{background:#fff;border:1px solid var(--line);border-top:3px solid var(--navy);border-radius:16px;padding:13px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+  .kpi{background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:16px;padding:13px;box-shadow:0 1px 3px rgba(15,23,42,.04);display:flex;gap:10px;align-items:flex-start}
+  .kpi .ic{margin-top:2px;color:var(--navy)}
+  .kpi.k-hijau{border-left-color:#16A34A}.kpi.k-hijau .ic{color:#16A34A}
+  .kpi.k-teal{border-left-color:#0F766E}.kpi.k-teal .ic{color:#0F766E}
+  .kpi.k-biru{border-left-color:#2563EB}.kpi.k-biru .ic{color:#2563EB}
   .kpi .lbl{color:var(--muted);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
   .kpi .val{font-size:20px;font-weight:800;margin-top:3px}
   .rep-table{width:100%;border-collapse:collapse;background:#fff;font-size:.93rem}
@@ -271,10 +308,10 @@
       <div v-if="flash" class="banner toast" :class="flash.type" role="status">{{ flash.text }}</div>
 
       <!-- INPUT -->
-      <section v-if="view==='input'">
+      <section v-if="view==='input'" class="pad-b">
         <h1 class="page">Input Hasil</h1>
         <p class="sub">{{ teamLabelAktif }} - 2 shift per hari, label tetap Shift 1 dan Shift 2.</p>
-        <div v-if="modeEdit" class="banner edit">Mode Edit: {{ tglPanjang(form.tanggal) }} - Shift {{ form.shift }} sudah terisi. Menyimpan akan memperbarui data ini, bukan membuat duplikat.</div>
+        <div v-if="modeEdit" class="banner info">Mode Edit: {{ tglPanjang(form.tanggal) }} - Shift {{ form.shift }} sudah terisi. Menyimpan akan memperbarui data ini, bukan membuat duplikat.</div>
         <div class="card" v-if="antrianTampil.length" style="border-color:#F59E0B;background:#FFFBEB">
           <h3 style="margin-top:0">Menunggu Terkirim ({{ antrianTampil.length }})</h3>
           <div class="hint">Input di bawah ini tersimpan aman di HP ini dan terkirim otomatis saat ada sinyal. Jangan perbaiki aplikasi atau bersihkan cache sebelum semuanya terkirim.</div>
@@ -287,10 +324,15 @@
           </div>
           <button type="button" class="btn small" style="margin-top:10px" @click="kirimAntrian">Kirim Sekarang</button>
         </div>
+        <div class="stepper" aria-hidden="true">
+          <span class="dot" :class="{act: langkahAktif===1, done: langkahSelesai[1]}">{{ langkahSelesai[1] ? '✓' : '1' }}</span><span class="ln" :class="{done: langkahSelesai[1]}"></span>
+          <span class="dot" :class="{act: langkahAktif===2, done: langkahSelesai[2]}">{{ langkahSelesai[2] ? '✓' : '2' }}</span><span class="ln" :class="{done: langkahSelesai[2]}"></span>
+          <span class="dot" :class="{act: langkahAktif===3}">3</span>
+        </div>
         <div class="form-grid">
           <div>
             <div class="card">
-              <div class="card-head"><span class="step">1</span><h3>Waktu, Shift, dan Hasil</h3></div>
+              <div class="card-head"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><h3>Waktu, Shift, dan Hasil</h3></div>
               <div v-if="user.role==='admin'" style="margin-bottom:14px">
                 <label class="fl" for="f-team">Team</label>
                 <select class="txt" id="f-team" v-model.number="form.team_id" @change="cekModeEdit">
@@ -322,12 +364,12 @@
             </div>
 
             <div class="card">
-              <div class="card-head"><span class="step">2</span><h3>Pembagian Hasil Shift Ini</h3></div>
+              <div class="card-head"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></span><h3>Pembagian Hasil Shift Ini</h3></div>
               <div class="chips" style="margin:0 0 12px">
                 <button type="button" class="chip" @click="pakaiSumber('kemarin')">Pakai Pembagian Terakhir</button>
                 <button type="button" class="chip" @click="pakaiSumber('template')">Pakai Template Team</button>
               </div>
-              <div v-if="prefillInfo" class="banner edit" style="margin:0 0 12px">{{ prefillInfo }}</div>
+              <div v-if="prefillInfo" class="banner info" style="margin:0 0 12px">{{ prefillInfo }}</div>
               <div class="dist" v-for="(d, i) in form.rows" :key="i">
                 <div class="dhead">
                   <input :value="d.nama" @input="d.nama=$event.target.value; prefillInfo=''" :placeholder="'Nama kelompok ' + (i+1)" :aria-label="'Nama kelompok ' + (i+1)">
@@ -345,7 +387,7 @@
             </div>
 
             <div class="card">
-              <div class="card-head"><span class="step">3</span><label class="fl" for="f-catatan" style="margin:0">Catatan / Keterangan</label></div>
+              <div class="card-head"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span><label class="fl" for="f-catatan" style="margin:0">Catatan / Keterangan</label></div>
               <textarea class="txt" id="f-catatan" v-model="form.catatan" placeholder="Tulis catatan shift ini. Catatan tampil di PDF."></textarea>
               <div class="chips">
                 <button type="button" class="chip" v-for="c in chipCatatan" :key="c" @click="tambahChip(c)">{{ c }}</button>
@@ -363,15 +405,15 @@
             </table></div>
             <div class="alloc" aria-hidden="true"><div class="alloc-fill" :style="{width: Math.min(100,totalPersenForm)+'%', background: totalPersenForm>100 ? 'var(--red)' : 'var(--amber)'}"></div></div>
             <div class="hint">Terbagi {{ fmtPct(totalPersenForm) }}% untuk kelompok - Pendapatan Usaha {{ fmtPct(sisaPersen) }}%.</div>
-            <div v-if="peringatanForm.length" class="banner edit" style="margin-top:12px"><b>Periksa dulu:</b><div v-for="(w,i) in peringatanForm" :key="i" style="font-weight:500;margin-top:4px">{{ w }}</div></div>
+            <div v-if="peringatanForm.length" class="banner warn" style="margin-top:12px"><b>Periksa dulu:</b><div v-for="(w,i) in peringatanForm" :key="i" style="font-weight:500;margin-top:4px">{{ w }}</div></div>
             <div v-if="totalPersenForm > 100" class="banner err" style="margin-top:12px">Total persentase {{ fmtPct(totalPersenForm) }}% melebihi 100%. Simpan ditolak, kurangi dulu persentasenya.</div>
             <button class="btn save-btn" :disabled="busy || totalPersenForm > 100" @click="simpan">{{ busy ? 'Menyimpan...' : (modeEdit ? 'Simpan Perubahan' : 'Simpan Hasil') }}</button>
             <div class="hint">Pastikan ringkasan sudah benar sebelum menyimpan.</div>
           </div>
         </div>
         <div class="savebar no-print">
-          <div class="sb-info">Terbagi <b class="mono">{{ fmt(totalHasilForm - sisaGram) }} gr</b><br>Sisa usaha <b class="mono">{{ fmt(sisaGram) }} gr</b></div>
-          <button class="btn" :disabled="busy || totalPersenForm > 100" @click="simpan">{{ busy ? 'Menyimpan...' : (modeEdit ? 'Simpan Perubahan' : 'Simpan Hasil') }}</button>
+          <div class="sb-info">Terbagi <b class="mono">{{ fmt(totalHasilForm - sisaGram) }} gr</b><br>Pendapatan Usaha <b class="mono">{{ fmt(sisaGram) }} gr</b></div>
+          <button class="btn" :disabled="busy || totalPersenForm > 100" @click="simpan"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>{{ busy ? 'Menyimpan...' : (modeEdit ? 'Simpan Perubahan' : 'Simpan Hasil') }}</button>
         </div>
       </section>
 
@@ -380,12 +422,14 @@
         <h1 class="page">Riwayat Transaksi</h1>
         <p class="sub">Dikelompokkan per tanggal. Buka rincian untuk melihat pembagian per kelompok, catatan, edit, dan hapus.</p>
         <div class="card">
+          <div class="chips" style="margin:0 0 12px">
+            <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('riw', p.id); muatRiwayat(true)">{{ p.label }}</button>
+            <button type="button" class="chip riw-toggle" @click="riwFilter=!riwFilter">{{ riwFilter ? 'Tutup Filter' : 'Filter' }}</button>
+          </div>
+          <div class="riw-detail" :class="{open: riwFilter}">
           <div v-if="user.role==='admin'" style="margin-bottom:12px">
             <label class="fl" for="r-team">Team</label>
             <select class="txt" id="r-team" v-model="riw.team_id" @change="muatRiwayat(true)"><option value="all">Semua Team (Satu Perusahaan)</option><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
-          </div>
-          <div class="chips" style="margin:0 0 12px">
-            <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('riw', p.id); muatRiwayat(true)">{{ p.label }}</button>
           </div>
           <div class="filters">
             <div><label class="fl" for="r-dari">Dari</label><input class="txt" type="date" id="r-dari" v-model="riw.from" @change="muatRiwayat(true)"></div>
@@ -394,15 +438,16 @@
             <div><label class="fl" for="r-q">Cari</label><input class="txt" id="r-q" v-model="riw.q" placeholder="Kata di catatan / kelompok" @change="muatRiwayat(true)"></div>
             <div><label class="fl" for="r-per">Per Halaman</label><select class="txt" id="r-per" v-model.number="riw.per" @change="muatRiwayat(true)"><option :value="5">5 hari</option><option :value="10">10 hari</option><option :value="30">30 hari</option></select></div>
           </div>
+          </div>
         </div>
         <div v-if="riw.loading" class="card">Memuat...</div>
-        <div v-else-if="!riw.days.length" class="card">Tidak ada data pada rentang ini.</div>
+        <div v-else-if="!riw.days.length" class="card empty-state"><span class="es-icon">🗂️</span><b>Belum ada catatan di rentang ini.</b><span>Coba ubah tanggal atau shift.</span></div>
         <div class="day" v-for="d in riw.days" :key="d.tanggal">
           <div class="day-head"><span>{{ tglPanjang(d.tanggal) }}</span><span>Total hari: <span class="mono">{{ fmt(d.total_hasil) }} gr</span> - <span class="pu">Pendapatan Usaha {{ fmt(d.sisa) }} gr</span></span></div>
           <div class="shiftbox" v-for="s in d.shifts" :key="s.id">
             <div class="srow">
               <span><span class="badge">Shift {{ s.shift }}</span> <span v-if="riw.team_id==='all'" class="badge amber">{{ s.team_nama }}</span> <b class="mono" style="margin-left:8px">{{ fmt(s.hasil_gram) }} gr</b> <span v-if="s.tanpa_hasil" class="badge amber">Tanpa Hasil</span></span>
-              <span class="hint" style="margin:0">Terbagi <b class="mono">{{ fmt(s.total_terbagi) }} gr</b> - Sisa <b class="mono">{{ fmt(s.sisa) }} gr</b></span>
+              <span class="hint" style="margin:0">Terbagi <b class="mono">{{ fmt(s.total_terbagi) }} gr</b> - Pendapatan Usaha <b class="mono">{{ fmt(s.sisa) }} gr</b></span>
               <button class="btn ghost small" @click="toggleExpand(s.id)">{{ expanded[s.id] ? 'Tutup Rincian' : 'Buka Rincian' }}</button>
             </div>
             <div v-if="expanded[s.id]">
@@ -451,17 +496,17 @@
             <div><label class="fl" for="l-sampai">Sampai</label><input class="txt" type="date" id="l-sampai" v-model="lap.to" @change="muatLaporan"></div>
           </div>
           <div class="actions">
-            <button class="btn amber" :disabled="pdfState==='loading'" @click="unduhPDF(false)">{{ pdfState==='loading' ? 'Menyiapkan PDF...' : 'Unduh PDF Rentang Ini' }}</button>
-            <button class="btn ghost" :disabled="pdfState==='loading'" @click="unduhPDF(true)" v-if="lap.from===lap.to">PDF Harian (Rincian Per Shift)</button>
+            <button class="btn amber" :disabled="pdfState==='loading'" @click="unduhPDF(false)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg></span>{{ pdfState==='loading' ? 'Menyiapkan PDF...' : 'Unduh PDF Rentang Ini' }}</button>
+            <button class="btn ghost" :disabled="pdfState==='loading'" @click="unduhPDF(true)" v-if="lap.from===lap.to"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>PDF Harian (Rincian Per Shift)</button>
           </div>
         </div>
         <div v-if="lap.loading" class="card">Memuat...</div>
         <template v-else-if="lap.report">
           <div class="kpis" style="margin-bottom:16px">
-            <div class="kpi"><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(lap.report.totals.hasil) }} gr</div></div>
-            <div class="kpi"><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(lap.report.totals.sisa) }} gr</div></div>
-            <div class="kpi"><div class="lbl">Rata-Rata Per Hari</div><div class="val mono">{{ fmt(rataHari) }} gr</div></div>
-            <div class="kpi"><div class="lbl">Hari Aktif / Shift</div><div class="val mono">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div>
+            <div class="kpi k-hijau"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span><div><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(lap.report.totals.hasil) }} gr</div></div></div>
+            <div class="kpi k-teal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M10 21v-6h4v6"/></svg></span><div><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(lap.report.totals.sisa) }} gr</div></div></div>
+            <div class="kpi k-biru"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span><div><div class="lbl">Rata-Rata Per Hari</div><div class="val mono">{{ fmt(rataHari) }} gr</div></div></div>
+            <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><div><div class="lbl">Hari Aktif / Shift</div><div class="val mono">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div></div>
           </div>
           <div style="overflow-x:auto">
           <table class="rep-table">
@@ -487,10 +532,10 @@
           </table>
           </div>
           <div class="card acc" :class="{open: acc.matriks}" style="margin-top:16px" v-if="lap.kolomKelompok.length">
-            <div class="acc-head"><h3>Terbagi Per Hari Per Kelompok</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.matriks=!acc.matriks">{{ acc.matriks ? 'Tutup' : 'Buka' }}</button></div>
+            <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>Terbagi Per Hari Per Kelompok</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.matriks=!acc.matriks">{{ acc.matriks ? 'Tutup' : 'Buka' }}</button></div>
             <div class="tscroll">
             <table class="data">
-              <thead><tr><th>Tanggal</th><th class="r" v-for="k in kolomTampil" :key="k">{{ k }}</th><th class="r">Total Terbagi</th><th class="r">Sisa</th></tr></thead>
+              <thead><tr><th>Tanggal</th><th class="r" v-for="k in kolomTampil" :key="k">{{ k }}</th><th class="r">Total Terbagi</th><th class="r">Pendapatan Usaha</th></tr></thead>
               <tbody>
                 <tr v-for="d in lapDays" :key="'m' + d.tanggal"><td>{{ tglSingkat(d.tanggal) }}</td><td class="r mono" v-for="k in kolomTampil" :key="k">{{ nilaiKolom(d, k) ? fmt(nilaiKolom(d, k)) + ' gr' : '-' }}</td><td class="r mono">{{ fmt(d.terbagi) }} gr</td><td class="r mono">{{ fmt(d.sisa) }} gr</td></tr>
                 <tr style="background:#EFF6FF"><td><b>Total</b></td><td class="r mono" v-for="k in kolomTampil" :key="k"><b>{{ fmt(totalKolom(k)) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.terbagi) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
@@ -500,7 +545,7 @@
             <div class="hint" v-if="lap.kolomKelompok.length > 6">Kelompok di luar 5 terbesar digabung ke kolom Lainnya. Rincian lengkap per kelompok ada di Total Per Kelompok.</div>
           </div>
           <div class="card acc" :class="{open: acc.kelompok}" style="margin-top:16px">
-            <div class="acc-head"><h3>Total Per Kelompok - Periode Ini</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.kelompok=!acc.kelompok">{{ acc.kelompok ? 'Tutup' : 'Buka' }}</button></div>
+            <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span>Total Per Kelompok - Periode Ini</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.kelompok=!acc.kelompok">{{ acc.kelompok ? 'Tutup' : 'Buka' }}</button></div>
             <div class="tscroll">
             <table class="data">
               <thead><tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Total Terbagi</th></tr></thead>
@@ -516,7 +561,7 @@
             <div class="hint">Catatan harian tidak diulang di sini karena sudah tampil di kolom Catatan tabel utama.</div>
           </div>
           <div class="card acc" :class="{open: acc.perteam}" style="margin-top:16px" v-if="lap.report.per_team">
-            <div class="acc-head"><h3>Rekap Per Team - Satu Perusahaan</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.perteam=!acc.perteam">{{ acc.perteam ? 'Tutup' : 'Buka' }}</button></div>
+            <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Rekap Per Team - Satu Perusahaan</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.perteam=!acc.perteam">{{ acc.perteam ? 'Tutup' : 'Buka' }}</button></div>
             <div class="tscroll">
             <table class="data">
               <thead><tr><th>Team</th><th class="r">Total Hasil</th><th class="r">Terbagi</th><th class="r">Pendapatan Usaha</th><th class="r">Hari Aktif</th><th class="r">Shift</th></tr></thead>
@@ -534,18 +579,21 @@
       <section v-if="view==='admin' && user.role==='admin'">
         <h1 class="page">Admin</h1>
         <p class="sub">Status input, team, user, template, dan pengaturan usaha.</p>
-        <div class="card">
-          <h3>Status Input Hari Ini ({{ tglPanjang(today) }})</h3>
+        <div class="card tinted">
+          <div class="thead"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></span><h3>Status Input Hari Ini ({{ tglPanjang(today) }})</h3></div>
+          <div class="tbody">
+          <p class="st-sum" style="margin-top:0">{{ statusRingkasan.teks }}</p>
+          <div class="st-bar"><span :style="{width: statusRingkasan.persen + '%'}"></span></div>
           <div class="status-grid">
             <div class="status-card" v-for="s in adminStatus" :key="s.team_id">
-              <b>{{ s.team_nama }}</b>
-              <div>Shift 1: <span :class="s.s1?'ok-t':'no-t'">{{ s.s1 ? 'Sudah input' : 'Belum input' }}</span></div>
-              <div>Shift 2: <span :class="s.s2?'ok-t':'no-t'">{{ s.s2 ? 'Sudah input' : 'Belum input' }}</span></div>
+              <div style="display:flex;gap:10px;align-items:flex-start"><span class="ava" :style="{background: warnaTeam(s.team_id).bg, color: warnaTeam(s.team_id).fg}">{{ inisialTeam(s.team_nama) }}</span><div><b>{{ s.team_nama }}</b>
+              <div class="st-chips"><span class="st-chip" :class="s.s1?'on':'off'">S1 {{ s.s1 ? 'Sudah' : 'Belum' }}</span><span class="st-chip" :class="s.s2?'on':'off'">S2 {{ s.s2 ? 'Sudah' : 'Belum' }}</span></div></div></div>
             </div>
+          </div>
           </div>
         </div>
         <div class="card acc" :class="{open: acc.pengaturan}">
-          <div class="acc-head"><h3>Pengaturan Usaha (tersimpan di database, berlaku ke kop dan tanda tangan PDF)</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.pengaturan=!acc.pengaturan">{{ acc.pengaturan ? 'Tutup' : 'Buka' }}</button></div>
+          <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Pengaturan Usaha (tersimpan di database, berlaku ke kop dan tanda tangan PDF)</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.pengaturan=!acc.pengaturan">{{ acc.pengaturan ? 'Tutup' : 'Buka' }}</button></div>
           <label class="fl" for="s-usaha">Nama Perusahaan</label>
           <input class="txt" id="s-usaha" v-model="settingsForm.nama_perusahaan">
           <div style="height:10px"></div>
@@ -561,7 +609,7 @@
           <button class="btn" style="margin-top:14px" @click="simpanSettings">Simpan Pengaturan</button>
         </div>
         <div class="card acc" :class="{open: acc.team}">
-          <div class="acc-head"><h3>Team</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.team=!acc.team">{{ acc.team ? 'Tutup' : 'Buka' }}</button></div>
+          <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Team</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.team=!acc.team">{{ acc.team ? 'Tutup' : 'Buka' }}</button></div>
           <div class="tscroll">
           <table class="data"><thead><tr><th>Nama</th><th>Status</th><th></th></tr></thead>
           <tbody><tr v-for="t in teamsAll" :key="t.id"><td>{{ t.nama }}</td><td>{{ t.aktif ? 'Aktif' : 'Nonaktif' }}</td><td class="r"><button class="btn ghost small" @click="toggleTeam(t)">{{ t.aktif ? 'Nonaktifkan' : 'Aktifkan' }}</button></td></tr></tbody></table>
@@ -572,7 +620,7 @@
           </div>
         </div>
         <div class="card acc" :class="{open: acc.user}">
-          <div class="acc-head"><h3>User</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.user=!acc.user">{{ acc.user ? 'Tutup' : 'Buka' }}</button></div>
+          <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>User</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.user=!acc.user">{{ acc.user ? 'Tutup' : 'Buka' }}</button></div>
           <div class="tscroll">
           <table class="data"><thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Team</th><th>Status</th><th></th></tr></thead>
           <tbody><tr v-for="u in users" :key="u.id"><td>{{ u.nama }}</td><td class="mono">{{ u.username }}</td><td>{{ u.role }}</td><td>{{ u.team_nama || '-' }}</td><td>{{ u.aktif ? 'Aktif' : 'Nonaktif' }}</td><td class="r"><button class="btn ghost small" @click="toggleUser(u)">{{ u.aktif ? 'Nonaktifkan' : 'Aktifkan' }}</button></td></tr></tbody></table>
@@ -588,7 +636,7 @@
           <button class="btn" style="margin-top:12px" @click="tambahUser">Tambah User</button>
         </div>
         <div class="card acc" :class="{open: acc.template}">
-          <div class="acc-head"><h3>Template Pembagian Per Team</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.template=!acc.template">{{ acc.template ? 'Tutup' : 'Buka' }}</button></div>
+          <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></span>Template Pembagian Per Team</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.template=!acc.template">{{ acc.template ? 'Tutup' : 'Buka' }}</button></div>
           <div class="hint" style="margin-bottom:10px">Template dipakai lewat tombol Pakai Template Team di form Input. Mengaturnya cukup dari sini.</div>
           <label class="fl" for="tpl-team">Team</label>
           <select class="txt" id="tpl-team" v-model.number="tplAdmin.team_id" @change="muatTplAdmin">
@@ -855,6 +903,7 @@ createApp({
       else if (id === "bulan") { o.from = t.slice(0, 8) + "01"; o.to = t; }
     }
     const riw = reactive({ team_id: null, from: "", to: "", shift: "", q: "", per: 10, page: 1, days: [], total_hari: 0, total_page: 1, loading: false });
+    const riwFilter = ref(false);
     const expanded = reactive({});
     const toggleExpand = (id) => { expanded[id] = !expanded[id]; };
     const halamanList = computed(() => { const out = []; const max = riw.total_page; for (let i = 1; i <= max; i++) { if (max <= 7 || i === 1 || i === max || Math.abs(i - riw.page) <= 1) out.push(i); } return out; });
@@ -892,7 +941,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.3.0";
+    const APP_VERSION = "3.4.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -1208,6 +1257,17 @@ createApp({
     const settingsForm = reactive({ nama_perusahaan: "", nama_pimpinan: "", zona_waktu: "Asia/Jakarta" });
     const teamBaru = ref(""); const userBaru = reactive({ nama: "", username: "", password: "", role: "staff", team_id: null });
     async function muatAdminStatus() { if (!user.value || user.value.role !== "admin") return; try { const d = await api("/api/admin/status"); adminStatus.value = d.status; } catch (e) {} }
+    const WARNA_TEAM = [{ bg: "#DBEAFE", fg: "#1D4ED8" }, { bg: "#FEF3C7", fg: "#B45309" }, { bg: "#DCFCE7", fg: "#15803D" }, { bg: "#FCE7F3", fg: "#BE185D" }, { bg: "#E0E7FF", fg: "#4338CA" }, { bg: "#FFEDD5", fg: "#C2410C" }];
+    function warnaTeam(id) { return WARNA_TEAM[Math.abs((Number(id) || 1) - 1) % WARNA_TEAM.length]; }
+    function inisialTeam(nama) { const w = String(nama || "").trim().split(/\s+/).filter(Boolean); if (w.length > 1) return (w[0][0] + w[1][0]).toUpperCase(); return (w[0] || "?").slice(0, 2).toUpperCase(); }
+    const langkahSelesai = computed(() => { const s1 = form.tanpa_hasil || totalHasilForm.value > 0; const s2 = s1 && (form.tanpa_hasil || (totalPersenForm.value > 0 && totalPersenForm.value <= 100)); return { 1: s1, 2: s2 }; });
+    const langkahAktif = computed(() => !langkahSelesai.value[1] ? 1 : !langkahSelesai.value[2] ? 2 : 3);
+    const statusRingkasan = computed(() => {
+      const st = adminStatus.value; if (!st.length) return { teks: "", persen: 0 };
+      const selesai = st.filter((s) => s.s1 && s.s2).length;
+      const slot = st.length * 2, terisi = st.reduce((a, s) => a + (s.s1 ? 1 : 0) + (s.s2 ? 1 : 0), 0);
+      return { teks: selesai + " dari " + st.length + " team selesai - " + terisi + " dari " + slot + " shift terisi", persen: slot ? Math.round(terisi / slot * 100) : 0 };
+    });
     async function muatAdmin() {
       if (!user.value || user.value.role !== "admin") return;
       try {
@@ -1315,9 +1375,9 @@ createApp({
     return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
-      presets, setPreset, riw, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
+      presets, setPreset, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
       lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
-      adminStatus, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
+      adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }
 }).mount("#app");

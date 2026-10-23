@@ -73,7 +73,7 @@ try {
   await ev2("document.querySelector('.topbar .avatar').click(); 'ok'");
   await wait(500);
   const sheetIsi = await ev2("document.querySelector('.psheet') ? document.querySelector('.psheet').innerText : ''");
-  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.3.0"), sheetIsi.slice(0, 90));
+  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.4.0"), sheetIsi.slice(0, 90));
   await ev2("document.querySelector('.sheet-bg').dispatchEvent(new MouseEvent('click',{bubbles:true})); 'ok'");
   await wait(400);
   cek("sheet profil tertutup lagi", (await ev2("!!document.querySelector('.psheet')")) === false);
@@ -89,7 +89,7 @@ try {
   await wait(600);
   const ringkasan = await ev2("document.body.innerText.includes('90,000')");
   cek("ringkasan tetap benar 90,000", ringkasan === true);
-  cek("lencana langkah form v2 tampil (1-2-3)", (await ev2("document.querySelectorAll('.step').length")) >= 3);
+  cek("stepper langkah form tampil (3 titik)", (await ev2("document.querySelectorAll('.stepper .dot').length")) === 3);
   cek("bilah alokasi persen v2 tampil", (await ev2("!!document.querySelector('.alloc-fill')")) === true);
   cek("bilah simpan sticky HP v2 tampil", (await ev2("getComputedStyle(document.querySelector('.savebar')).display")) === "flex");
   const shot = await send("Page.captureScreenshot", { format: "png" });
