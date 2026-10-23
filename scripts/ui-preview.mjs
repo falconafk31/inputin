@@ -73,7 +73,7 @@ try {
   await ev2("document.querySelector('.topbar .avatar').click(); 'ok'");
   await wait(500);
   const sheetIsi = await ev2("document.querySelector('.psheet') ? document.querySelector('.psheet').innerText : ''");
-  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.4.5"), sheetIsi.slice(0, 90));
+  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.5.0"), sheetIsi.slice(0, 90));
   await ev2("document.querySelector('.sheet-bg').dispatchEvent(new MouseEvent('click',{bubbles:true})); 'ok'");
   await wait(400);
   cek("sheet profil tertutup lagi", (await ev2("!!document.querySelector('.psheet')")) === false);
