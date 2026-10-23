@@ -303,7 +303,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.6.0";
+    const APP_VERSION = "3.7.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -849,6 +849,23 @@ createApp({
     async function tambahUser() { try { await api("/api/admin/users", { method: "POST", body: JSON.stringify(userBaru) }); setFlash("User baru ditambahkan."); Object.assign(userBaru, { nama: "", username: "", password: "", role: "staff", team_id: teams.value[0] ? teams.value[0].id : null }); await muatAdmin(); } catch (e) { setFlash(e.message, "err"); } }
     async function toggleUser(u) { try { await api(`/api/admin/users/${u.id}`, { method: "PUT", body: JSON.stringify({ nama: u.nama, role: u.role, team_id: u.team_id, aktif: !u.aktif }) }); await muatAdmin(); } catch (e) { setFlash(e.message, "err"); } }
 
+    // ===== Edit User (nama, username, role, team, password opsional) =====
+    const editUser = reactive({ tampil: false, id: null, nama: "", username: "", role: "staff", team_id: "", password: "", lihat: false, busy: false });
+    function bukaEditUser(u) { editUser.tampil = true; editUser.id = u.id; editUser.nama = u.nama; editUser.username = u.username; editUser.role = u.role; editUser.team_id = u.team_id || ""; editUser.password = ""; editUser.lihat = false; }
+    async function simpanEditUser() {
+      editUser.busy = true;
+      try {
+        const asal = users.value.find((x) => x.id === editUser.id);
+        const payload = { nama: editUser.nama, username: editUser.username, role: editUser.role, team_id: editUser.role === "staff" ? (parseInt(editUser.team_id, 10) || null) : null, aktif: asal ? !!asal.aktif : true };
+        if (editUser.password) payload.password = editUser.password;
+        await api(`/api/admin/users/${editUser.id}`, { method: "PUT", body: JSON.stringify(payload) });
+        editUser.tampil = false;
+        setFlash("User " + editUser.username + " berhasil diperbarui.");
+        await muatAdmin();
+      } catch (e) { setFlash(e.message, "err"); }
+      editUser.busy = false;
+    }
+
     // ===== Auth & bootstrap =====
     const showPw = ref(false); const pwForm = reactive({ old: "", new: "" }); const pwError = ref("");
     async function gantiPassword() {
@@ -939,7 +956,7 @@ createApp({
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
       presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, hapusBarisTarget, mintaHapusBaris, konfirmasiHapusBaris, ubahTarget, konfirmasiUbah, auditFor, auditList, lihatAudit,
       lap, muatLaporan, lapTab, graf, bukaTabGrafik, setModeGrafik, muatGrafik, grafKpi, grafHarian, grafBulanan, grafDonat, grafAnalisa, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
-      adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser, resetState, resetSiap, unduhBackup, mintaReset, lakukanReset,
+      adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser, editUser, bukaEditUser, simpanEditUser, resetState, resetSiap, unduhBackup, mintaReset, lakukanReset,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }
 }).mount("#app");
