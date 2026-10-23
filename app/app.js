@@ -196,6 +196,7 @@ createApp({
       else if (id === "bulan") { o.from = t.slice(0, 8) + "01"; o.to = t; }
     }
     const riw = reactive({ team_id: null, from: "", to: "", shift: "", q: "", per: 10, page: 1, days: [], total_hari: 0, total_page: 1, loading: false });
+    const riwFilter = ref(false);
     const expanded = reactive({});
     const toggleExpand = (id) => { expanded[id] = !expanded[id]; };
     const halamanList = computed(() => { const out = []; const max = riw.total_page; for (let i = 1; i <= max; i++) { if (max <= 7 || i === 1 || i === max || Math.abs(i - riw.page) <= 1) out.push(i); } return out; });
@@ -233,7 +234,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.3.0";
+    const APP_VERSION = "3.4.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -549,6 +550,17 @@ createApp({
     const settingsForm = reactive({ nama_perusahaan: "", nama_pimpinan: "", zona_waktu: "Asia/Jakarta" });
     const teamBaru = ref(""); const userBaru = reactive({ nama: "", username: "", password: "", role: "staff", team_id: null });
     async function muatAdminStatus() { if (!user.value || user.value.role !== "admin") return; try { const d = await api("/api/admin/status"); adminStatus.value = d.status; } catch (e) {} }
+    const WARNA_TEAM = [{ bg: "#DBEAFE", fg: "#1D4ED8" }, { bg: "#FEF3C7", fg: "#B45309" }, { bg: "#DCFCE7", fg: "#15803D" }, { bg: "#FCE7F3", fg: "#BE185D" }, { bg: "#E0E7FF", fg: "#4338CA" }, { bg: "#FFEDD5", fg: "#C2410C" }];
+    function warnaTeam(id) { return WARNA_TEAM[Math.abs((Number(id) || 1) - 1) % WARNA_TEAM.length]; }
+    function inisialTeam(nama) { const w = String(nama || "").trim().split(/\s+/).filter(Boolean); if (w.length > 1) return (w[0][0] + w[1][0]).toUpperCase(); return (w[0] || "?").slice(0, 2).toUpperCase(); }
+    const langkahSelesai = computed(() => { const s1 = form.tanpa_hasil || totalHasilForm.value > 0; const s2 = s1 && (form.tanpa_hasil || (totalPersenForm.value > 0 && totalPersenForm.value <= 100)); return { 1: s1, 2: s2 }; });
+    const langkahAktif = computed(() => !langkahSelesai.value[1] ? 1 : !langkahSelesai.value[2] ? 2 : 3);
+    const statusRingkasan = computed(() => {
+      const st = adminStatus.value; if (!st.length) return { teks: "", persen: 0 };
+      const selesai = st.filter((s) => s.s1 && s.s2).length;
+      const slot = st.length * 2, terisi = st.reduce((a, s) => a + (s.s1 ? 1 : 0) + (s.s2 ? 1 : 0), 0);
+      return { teks: selesai + " dari " + st.length + " team selesai - " + terisi + " dari " + slot + " shift terisi", persen: slot ? Math.round(terisi / slot * 100) : 0 };
+    });
     async function muatAdmin() {
       if (!user.value || user.value.role !== "admin") return;
       try {
@@ -656,9 +668,9 @@ createApp({
     return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
-      presets, setPreset, riw, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
+      presets, setPreset, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
       lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
-      adminStatus, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
+      adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
   }
 }).mount("#app");
