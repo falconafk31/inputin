@@ -21,7 +21,7 @@ SCRIPT = "inputin"
 BASE = "https://api.cloudflare.com/client/v4"
 ROOT = os.path.expanduser("~/workspace/app-tambang-emas")
 
-modules = ["worker.js", "frontend.js"]
+modules = ["worker.js", "frontend.js", "pdfassets.js", "iconassets.js"]
 metadata = {
     "main_module": "worker.js",
     "bindings": [{"type": "d1", "name": "DB", "id": DB}],
