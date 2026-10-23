@@ -52,4 +52,4 @@ Folder `smoke-test*/` berisi script pengujian otomatis (Puppeteer), screenshot h
 
 - Branch `main` adalah produksi: Workers Builds menjalankan `npm run build` lalu `npx wrangler deploy`.
 - Branch lain adalah preview: perintah preview `npx wrangler versions upload`, alamatnya `<branch>-inputin.hadesxyz.workers.dev`, tidak mengganggu produksi.
-- Preview dan produksi memakai database D1 yang sama, jadi input dari preview masuk ke data asli.
+- Preview memakai database D1 terpisah (`inputin-db-preview`, seed akun sama dengan kredensial awal produksi), terisolasi penuh dari data produksi - aman untuk menguji fitur apa pun, termasuk yang destruktif.
