@@ -54,7 +54,9 @@ createApp({
 
     // ===== Form Input =====
     const chipCatatan = ["Hujan", "Alat rusak", "BBM habis", "Pekerja izin"];
-    const form = reactive({ team_id: null, tanggal: "", shift: 1, tanpa_hasil: false, hasilStr: "", catatan: "", rows: [{ nama: "Operator", persenStr: "6", orangStr: "6" }, { nama: "Helper", persenStr: "4", orangStr: "5" }] });
+    let uidBarisCounter = 0;
+    function barisBaru(nama, persenStr, orangStr) { return { uid: ++uidBarisCounter, nama: nama || "", persenStr: persenStr || "", orangStr: orangStr || "" }; }
+    const form = reactive({ team_id: null, tanggal: "", shift: 1, tanpa_hasil: false, hasilStr: "", catatan: "", rows: [barisBaru("Operator", "6", "6"), barisBaru("Helper", "4", "5")] });
     const modeEdit = ref(false);
     const editingId = ref(null);
     const pernahSimpan = ref(false);
@@ -87,7 +89,7 @@ createApp({
           form.tanpa_hasil = !!d.entry.tanpa_hasil;
           form.hasilStr = d.entry.tanpa_hasil ? "" : String(d.entry.hasil_gram).replace(".", ",");
           form.catatan = d.entry.catatan || "";
-          form.rows = d.entry.rows.length ? d.entry.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) })) : [{ nama: "", persenStr: "", orangStr: "" }];
+          form.rows = d.entry.rows.length ? d.entry.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang))) : [barisBaru("", "", "")];
         } else { modeEdit.value = false; editingId.value = null; await prefillTerakhir(); }
       } catch (e) { /* abaikan */ }
     }
@@ -96,7 +98,7 @@ createApp({
       try {
         const d = await api(`/api/entries/copy-source?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
         if (d.rows && d.rows.length) {
-          form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
+          form.rows = d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang)));
           prefillInfo.value = "Pembagian terisi otomatis dari " + tglPanjang(d.dari_tanggal) + " - periksa dulu sebelum menyimpan.";
         }
       } catch (e) { /* abaikan */ }
@@ -107,12 +109,12 @@ createApp({
         if (jenis === "kemarin") {
           const d = await api(`/api/entries/copy-source?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
           if (!d.rows.length) return setFlash("Belum ada data pembagian sebelumnya untuk disalin.", "err");
-          form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
+          form.rows = d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang)));
           setFlash("Pembagian disalin dari " + tglPanjang(d.dari_tanggal) + ".");
         } else {
           const d = await api(`/api/templates?team_id=${form.team_id}`);
           if (!d.rows.length) return setFlash("Template team masih kosong. Template diatur Admin di halaman Admin.", "err");
-          form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
+          form.rows = d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang)));
           setFlash("Template team dipakai.");
         }
       } catch (e) { setFlash(e.message, "err"); }
@@ -124,7 +126,7 @@ createApp({
       tplAdmin.loading = true;
       try {
         const d = await api(`/api/templates?team_id=${tplAdmin.team_id}`);
-        tplAdmin.rows = d.rows.length ? d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) })) : [{ nama: "", persenStr: "", orangStr: "" }];
+        tplAdmin.rows = d.rows.length ? d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang))) : [barisBaru("", "", "")];
       } catch (e) { setFlash(e.message, "err"); }
       tplAdmin.loading = false;
     }
@@ -188,7 +190,9 @@ createApp({
 
     // ===== Riwayat =====
     const presets = [{ id: "1", label: "1 Hari" }, { id: "7", label: "7 Hari" }, { id: "30", label: "30 Hari" }, { id: "bulan", label: "Bulan Ini" }];
+    const presetAktif = reactive({ riw: "1", lap: "1" });
     function setPreset(target, id) {
+      presetAktif[target] = id;
       const o = target === "riw" ? riw : lap; const t = today.value;
       if (id === "1") { o.from = t; o.to = t; }
       else if (id === "7") { o.from = addDays(t, -6); o.to = t; }
@@ -234,7 +238,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.0";
+    const APP_VERSION = "3.4.1";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -308,6 +312,7 @@ createApp({
       return blok;
     });
     const rataHari = computed(() => { if (!lap.report) return 0; const jumlahHari = lapDays.value.length || 1; return Math.round(lap.report.totals.hasil / jumlahHari * 1000) / 1000; });
+    const lapKosong = computed(() => !!lap.report && lap.report.totals.shift_tercatat === 0);
     function catatanGabung(d) { if (!d.catatan || !d.catatan.length) return ""; return d.catatan.map((c) => (lap.team_id === "all" && c.team_nama ? c.team_nama + " " : "") + "S" + c.shift + ": " + c.teks).join(" | "); }
     const timestampCetak = computed(() => {
       const parts = {};
@@ -548,7 +553,7 @@ createApp({
     // ===== Admin =====
     const adminStatus = ref([]); const teamsAll = ref([]); const users = ref([]);
     const settingsForm = reactive({ nama_perusahaan: "", nama_pimpinan: "", zona_waktu: "Asia/Jakarta" });
-    const teamBaru = ref(""); const userBaru = reactive({ nama: "", username: "", password: "", role: "staff", team_id: null });
+    const teamBaru = ref(""); const userBaru = reactive({ nama: "", username: "", password: "", role: "staff", team_id: null }); const lihatPassUser = ref(false);
     async function muatAdminStatus() { if (!user.value || user.value.role !== "admin") return; try { const d = await api("/api/admin/status"); adminStatus.value = d.status; } catch (e) {} }
     const WARNA_TEAM = [{ bg: "#DBEAFE", fg: "#1D4ED8" }, { bg: "#FEF3C7", fg: "#B45309" }, { bg: "#DCFCE7", fg: "#15803D" }, { bg: "#FCE7F3", fg: "#BE185D" }, { bg: "#E0E7FF", fg: "#4338CA" }, { bg: "#FFEDD5", fg: "#C2410C" }];
     function warnaTeam(id) { return WARNA_TEAM[Math.abs((Number(id) || 1) - 1) % WARNA_TEAM.length]; }
@@ -668,7 +673,7 @@ createApp({
     return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
-      presets, setPreset, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
+      presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
       lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
       adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
