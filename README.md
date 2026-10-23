@@ -47,3 +47,9 @@ Folder `smoke-test*/` berisi script pengujian otomatis (Puppeteer), screenshot h
 - Cloudflare Workers (1 Worker untuk PWA + API + halaman PDF) + database D1
 - Frontend Vue 3, PWA ready, login per akun dengan role
 - Password hash PBKDF2, audit trail setiap edit dan hapus
+
+## Alur deploy dan preview
+
+- Branch `main` adalah produksi: Workers Builds menjalankan `npm run build` lalu `npx wrangler deploy`.
+- Branch lain adalah preview: perintah preview `npx wrangler versions upload`, alamatnya `<branch>-inputin.hadesxyz.workers.dev`, tidak mengganggu produksi.
+- Preview dan produksi memakai database D1 yang sama, jadi input dari preview masuk ke data asli.

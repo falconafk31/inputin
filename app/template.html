@@ -8,100 +8,160 @@
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#1E40AF">
 <style>
-  :root{ --navy:#1E40AF; --navy-dark:#1E3A8A; --amber:#D97706; --amber-soft:#FEF3C7; --bg:#F8FAFC; --card:#FFFFFF; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0; --green:#15803D; --red:#DC2626; --shadow:0 10px 30px rgba(15,23,42,.09); --radius:18px; }
+/*__FONT_FACE__*/
+  :root{ --navy:#1E40AF; --navy-dark:#1E3A8A; --blue:#3B82F6; --amber:#D97706; --amber-soft:#FEF3C7; --bg:#F8FAFC; --card:#FFFFFF; --surface2:#E9EEF6; --ink:#0F172A; --muted:#64748B; --muted2:#475569; --line:#E2E8F0; --green:#15803D; --red:#DC2626; --ring:#DBEAFE; --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px rgba(15,23,42,.06); --shadow-lg:0 12px 40px rgba(15,23,42,.16); --radius:20px; }
   *{box-sizing:border-box} html,body{margin:0;padding:0}
-  body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--ring)}
+  .mono{font-family:"Fira Code",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;font-variant-ligatures:none}
   button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
   input,select,textarea{font:inherit;color:inherit}
-  .topbar{position:sticky;top:0;z-index:30;background:linear-gradient(120deg,var(--navy-dark),var(--navy));color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .topbar .logo{font-weight:800;font-size:1.22rem;letter-spacing:.3px}.topbar .logo span{color:#FBBF24}
-  .topbar .meta{color:#DBEAFE;font-size:.9rem}
+  .btn,.chip,.seg button,.topnav button,.bottomnav button,.icon-btn,.pager button,.ubtn,.add-btn{transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .12s ease}
+  button:active{transform:scale(.98)}
+  :focus-visible{outline:3px solid rgba(30,64,175,.4);outline-offset:1px}
+  .topbar{position:sticky;top:0;z-index:30;background:linear-gradient(120deg,var(--navy-dark),var(--navy));color:#fff;padding:9px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 4px 18px rgba(30,58,138,.28)}
+  .topbar .logo{font-weight:800;font-size:1.08rem;letter-spacing:.2px;display:flex;align-items:center;gap:9px}
+  .topbar .logo::before{content:"in";background:var(--amber);color:#fff;font-size:.82rem;font-weight:800;border-radius:8px;padding:2px 7px;letter-spacing:0}
+  .topbar .logo span{color:#FBBF24}
+  .topbar .meta{color:#DBEAFE;font-size:.85rem}
   .topbar .sp{flex:1}
-  .topbar .ubtn{background:rgba(255,255,255,.14);color:#fff;border-radius:10px;padding:8px 12px;font-weight:600}
+  .topbar .ubtn{background:rgba(255,255,255,.14);color:#fff;border-radius:9px;padding:7px 11px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .topbar .ubtn:hover{background:rgba(255,255,255,.24)}
+  .topbar .ubtn svg{width:15px;height:15px}
   .topnav{display:flex;gap:8px;flex-wrap:wrap}
-  .topnav button{padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.14);color:#E0E7FF;font-weight:600}
-  .topnav button.active{background:#fff;color:var(--navy-dark)}
-  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 96px}
-  h1.page{font-size:1.45rem;margin:6px 0 2px} .sub{color:var(--muted);margin:0 0 16px}
-  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
-  .card h3{margin:0 0 12px;font-size:1.06rem}
-  label.fl{display:block;font-weight:600;margin:0 0 6px}
-  .hint{color:var(--muted);font-size:.9rem;margin-top:6px}
-  .txt{width:100%;min-height:52px;border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#fff}
-  .txt:focus{outline:none;border-color:var(--navy)}
+  .topnav button{padding:7px 12px;display:inline-flex;align-items:center;gap:7px;border-radius:999px;background:rgba(255,255,255,.14);color:#E0E7FF;font-weight:600}
+  .topnav button:hover{background:rgba(255,255,255,.24)}
+  .topnav button.active{background:#fff;color:var(--navy-dark);box-shadow:0 2px 8px rgba(15,23,42,.18)}
+  .wrap{max-width:860px;margin:0 auto;padding:18px 14px 96px}
+  h1.page{font-size:1.24rem;margin:4px 0 2px;letter-spacing:-.01em;font-weight:800} .sub{color:var(--muted);margin:0 0 16px;font-size:.93rem}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;border:1px solid var(--line)}
+  .card h3{margin:0 0 12px;font-size:.99rem;font-weight:700}
+  .card-head{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+  .card-head h3{margin:0}
+  .step{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:8px;background:var(--navy);color:#fff;font-size:.78rem;font-weight:800;flex:none}
+  label.fl{display:block;font-weight:600;margin:0 0 6px;font-size:.93rem}
+  .hint{color:var(--muted);font-size:.88rem;margin-top:6px;line-height:1.45}
+  .txt{width:100%;min-height:46px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:#F8FAFC}
+  .txt:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--ring);background:#fff}
   textarea.txt{min-height:84px;resize:vertical}
-  .big{font-size:1.5rem;font-weight:700}
-  .seg{display:flex;gap:8px;flex-wrap:wrap}
-  .seg button{flex:1;min-height:52px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:700;padding:8px}
-  .seg button.active{border-color:var(--navy);background:#EFF6FF;color:var(--navy-dark)}
-  .seg button.warn.active{border-color:var(--amber);background:var(--amber-soft);color:#92400E}
+  .big{font-size:20px;font-weight:600}
+  .seg{display:flex;gap:4px;flex-wrap:wrap;background:var(--surface2);padding:4px;border-radius:999px}
+  .seg button{flex:1;min-height:44px;border-radius:999px;border:none;background:transparent;font-weight:700;padding:8px;color:var(--muted2)}
+  .seg button:hover{color:var(--navy-dark)}
+  .seg button.active{background:#fff;color:var(--navy-dark);box-shadow:0 2px 10px rgba(15,23,42,.14)}
+  .seg button.warn.active{background:#fff;color:#92400E;box-shadow:0 2px 10px rgba(15,23,42,.14),inset 0 0 0 1.5px var(--amber)}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:.92rem}
-  .chip:hover{border-color:var(--amber);color:#92400E}
-  .dist{border:2px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:.9rem}
+  .chip:hover{border-color:var(--amber);color:#92400E;background:#FFFBEB}
+  .dist{border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:18px;padding:14px;margin-bottom:12px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.05)}
   .dist .dhead{display:flex;gap:8px;align-items:center}
-  .dist .dhead input{flex:1;min-height:50px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:700}
-  .icon-btn{min-width:48px;min-height:48px;border-radius:12px;background:#FEF2F2;color:var(--red);font-size:1.15rem;font-weight:800}
+  .dist .dhead input{flex:1;min-height:44px;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:700;background:#F8FAFC}
+  .dist .dhead input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--ring);background:#fff}
+  .icon-btn{min-width:42px;min-height:42px;border-radius:999px;background:#FEF2F2;color:var(--red);font-size:1.15rem;font-weight:800}
+  .icon-btn:hover{background:#FEE2E2}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-  .grid2 .txt{min-height:50px}
-  .calc{display:flex;justify-content:space-between;gap:10px;margin-top:10px;background:#F8FAFC;border-radius:10px;padding:9px 12px}
-  .add-btn{width:100%;min-height:52px;border:2px dashed var(--navy);color:var(--navy);border-radius:12px;font-weight:700;background:#EFF6FF}
-  .summary{border-radius:14px;overflow:hidden;border:2px solid var(--line)}
+  .grid2 .txt{min-height:44px}
+  .calc{display:flex;justify-content:space-between;gap:10px;margin-top:10px;background:var(--surface2);border-radius:10px;padding:9px 12px;font-size:.93rem}
+  .add-btn{width:100%;min-height:46px;border:2px dashed var(--navy);color:var(--navy);border-radius:12px;font-weight:700;background:#EFF6FF}
+  .add-btn:hover{background:#DBEAFE}
+  .summary{border-radius:14px;overflow:hidden;border:1.5px solid var(--line)}
   .summary table{width:100%;border-collapse:collapse}
   .summary td{padding:9px 12px;border-bottom:1px solid var(--line)}
   .summary tr td:last-child{text-align:right;font-weight:700}
-  .summary tr.total td{background:var(--navy);color:#fff;font-size:1.05rem}
+  .summary tr.total td{background:var(--navy);color:#fff;font-size:.98rem}
   .summary tr.sisa td{background:var(--amber-soft);color:#92400E;font-weight:800}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:10px 20px;border-radius:12px;font-weight:700;background:var(--navy);color:#fff}
-  .btn.amber{background:var(--amber)} .btn.ghost{background:#fff;color:var(--navy);border:2px solid var(--navy)}
-  .btn.red{background:var(--red)} .btn.small{min-height:44px;padding:6px 14px;font-size:.95rem}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
-  .save-btn{width:100%;min-height:56px;font-size:1.05rem;margin-top:14px}
-  .banner{border-radius:12px;padding:12px 14px;margin-bottom:14px;font-weight:600}
-  .banner.edit{background:#FFFBEB;border:2px solid #F59E0B;color:#92400E}
-  .banner.ok{background:#F0FDF4;border:2px solid #22C55E;color:#166534}
-  .banner.err{background:#FEF2F2;border:2px solid #F87171;color:#991B1B}
+  .alloc{height:9px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-top:14px}
+  .alloc-fill{height:100%;border-radius:99px;background:var(--amber);transition:width .3s ease}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:8px 20px;border-radius:999px;font-weight:700;background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.22)}
+  .btn:hover{background:var(--navy-dark)}
+  .btn.amber{background:var(--amber);color:#1F2937} .btn.amber:hover{background:#B45309;color:#fff}
+  .btn.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--navy);box-shadow:none}
+  .btn.ghost:hover{background:#EFF6FF}
+  .btn.red{background:var(--red)} .btn.small{min-height:38px;padding:5px 12px;font-size:.9rem}
+  .btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+  .save-btn{width:100%;min-height:50px;font-size:1rem;margin-top:12px}
+  .banner{border-radius:12px;padding:12px 14px;margin-bottom:14px;font-weight:600;border:1.5px solid transparent}
+  .banner.edit{background:#FFFBEB;border-color:#F59E0B;color:#92400E}
+  .banner.ok{background:#F0FDF4;border-color:#22C55E;color:#166534}
+  .banner.err{background:#FEF2F2;border-color:#F87171;color:#991B1B}
+  .banner.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;z-index:70;width:max-content;max-width:92vw;box-shadow:var(--shadow-lg);margin:0;animation:toast-in .25s ease}
+  @keyframes toast-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
   .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
   .day{margin-bottom:16px}
-  .day-head{background:linear-gradient(120deg,var(--navy-dark),var(--navy));color:#fff;border-radius:14px 14px 0 0;padding:11px 16px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700}
+  .day-head{background:linear-gradient(120deg,var(--navy-dark),var(--navy));color:#fff;border-radius:16px 16px 0 0;padding:11px 16px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700;box-shadow:var(--shadow)}
   .day-head .pu{color:#FDE68A}
-  .shiftbox{background:#fff;border:2px solid var(--line);border-top:none;padding:14px 16px}
-  .shiftbox:last-child{border-radius:0 0 14px 14px}
+  .shiftbox{background:#fff;border:1.5px solid var(--line);border-top:none;padding:14px 16px}
+  .shiftbox:last-child{border-radius:0 0 16px 16px}
   .shiftbox .srow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:800;background:#DBEAFE;color:var(--navy-dark)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.79rem;font-weight:800;background:#DBEAFE;color:var(--navy-dark)}
   .badge.amber{background:var(--amber-soft);color:#92400E}
-  table.data{width:100%;border-collapse:collapse;margin-top:10px}
-  table.data th{background:#F1F5F9;text-align:left;padding:8px 10px;font-size:.88rem}
+  table.data{width:100%;border-collapse:collapse;margin-top:10px;font-size:.94rem}
+  table.data th{background:#F1F5F9;text-align:left;padding:8px 10px;font-size:.87rem;color:var(--muted2)}
   table.data td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  table.data tbody tr:hover td{background:#F8FAFC}
   table.data td.r, table.data th.r{text-align:right}
   .note{background:#FFFBEB;border-left:5px solid var(--amber);border-radius:10px;padding:10px 12px;margin-top:10px}
   .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .pager{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px}
-  .pager button{min-width:46px;min-height:46px;border-radius:10px;border:2px solid var(--line);background:#fff;font-weight:700;padding:6px 10px}
+  .pager button{min-width:42px;min-height:42px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;padding:6px 10px}
   .pager button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pager button:disabled{opacity:.4}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-  .kpi{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px}
-  .kpi .lbl{color:var(--muted);font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
-  .kpi .val{font-size:1.45rem;font-weight:800;margin-top:2px}
-  .rep-table{width:100%;border-collapse:collapse;background:#fff}
-  .rep-table th{background:var(--navy-dark);color:#fff;text-align:left;padding:8px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .kpi{background:#fff;border:1px solid var(--line);border-top:3px solid var(--navy);border-radius:16px;padding:13px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+  .kpi .lbl{color:var(--muted);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:20px;font-weight:800;margin-top:3px}
+  .rep-table{width:100%;border-collapse:collapse;background:#fff;font-size:.93rem}
+  .rep-table th{background:var(--navy-dark);color:#fff;text-align:left;padding:9px 8px}
   .rep-table td{padding:8px;border-bottom:1px solid var(--line)}
   .rep-table td.r,.rep-table th.r{text-align:right}
+  .rep-table tbody tr:not(.sub):not(.grand):hover td{background:#F8FAFC}
   .rep-table tr.sub td{background:#FEF3C7;font-weight:700}
   .rep-table tr.grand td{background:#DBEAFE;font-weight:800;font-size:1.02rem}
   .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-  .status-card{border:2px solid var(--line);border-radius:14px;padding:14px;background:#fff}
+  .status-card{border:1.5px solid var(--line);border-radius:14px;padding:14px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.04)}
   .ok-t{color:var(--green);font-weight:800}.no-t{color:var(--red);font-weight:800}
-  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(140deg,var(--navy-dark),var(--navy))}
-  .login-card{background:#fff;border-radius:22px;box-shadow:var(--shadow);padding:28px;width:100%;max-width:420px}
-  .login-card h1{margin:0 0 4px;font-size:1.6rem}.login-card h1 span{color:var(--amber)}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;background-color:var(--navy-dark);background-image:radial-gradient(rgba(255,255,255,.13) 1.5px,transparent 1.6px),linear-gradient(140deg,var(--navy-dark),var(--navy));background-size:22px 22px,cover}
+  .login-card{background:#fff;border-radius:26px;box-shadow:var(--shadow-lg);padding:30px 28px;width:100%;max-width:420px;border-top:5px solid var(--amber)}
+  .login-card h1{margin:0 0 4px;font-size:1.45rem;display:flex;align-items:center;gap:9px}
+  .login-card h1::before{content:"in";background:var(--amber);color:#fff;font-size:.85rem;font-weight:800;border-radius:8px;padding:2px 7px}
+  .login-card h1 span{color:#B45309}
   .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
-  .modal{background:#fff;border-radius:18px;padding:22px;max-width:460px;width:100%;box-shadow:var(--shadow)}
-  .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:2px solid var(--line);display:none}
-  .bottomnav button{flex:1;min-height:58px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:.82rem}
-  .bottomnav button.active{color:var(--navy)}
+  .modal{background:#fff;border-radius:18px;padding:22px;max-width:460px;width:100%;box-shadow:var(--shadow-lg)}
+  .bottomnav{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:40;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;display:none;padding:4px;box-shadow:0 12px 32px rgba(15,23,42,.16)}
+  .bottomnav button{flex:1;min-height:54px;border-radius:18px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.72rem}
+  .nav-ic{display:inline-flex;border-radius:10px;padding:2px 10px}
+  .nav-ic svg{width:21px;height:21px}
+  .topnav .nav-ic{padding:0}.topnav .nav-ic svg{width:16px;height:16px}
+  .bottomnav button.active{color:var(--navy);font-weight:700}
+  .bottomnav button.active .nav-ic{background:#EFF6FF}
+  .savebar{display:none}
+  @media (max-width:640px){ .bottomnav{display:flex} .topnav{display:none} .wrap{padding-bottom:200px} .grid2{grid-template-columns:1fr 1fr}
+    .savebar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:35;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);padding:10px 12px;gap:10px;align-items:center}
+    .savebar .sb-info{flex:1;font-size:.8rem;color:var(--muted);line-height:1.35}
+    .savebar .sb-info b{color:var(--ink);font-size:.9rem}
+    .savebar .btn{min-height:48px;padding:8px 16px;flex:none}
+    .banner.toast{bottom:calc(168px + env(safe-area-inset-bottom))} }
+  @media (min-width:641px){ .wrap{max-width:960px} .banner.toast{bottom:26px} }
+  @media (min-width:1025px){ .wrap{max-width:1180px} .form-grid{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start} .form-grid .sticky{position:sticky;top:86px} }
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;animation:none !important} }
+  .avatar{width:42px;height:42px;border-radius:50%;background:#fff;color:var(--navy-dark);font-weight:800;font-size:.95rem;display:inline-flex;align-items:center;justify-content:center;flex:none;border:2px solid rgba(255,255,255,.5)}
+  .avatar.big{width:52px;height:52px;font-size:1.1rem;background:var(--navy);color:#fff;border:none}
+  .sheet-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:65;display:flex;align-items:flex-end;justify-content:center}
+  .psheet{background:#fff;width:100%;max-width:520px;border-radius:24px 24px 0 0;padding:10px 18px calc(16px + env(safe-area-inset-bottom));box-shadow:var(--shadow-lg);animation:sheet-up .22s ease}
+  @keyframes sheet-up{from{transform:translateY(26px);opacity:.4}to{transform:translateY(0);opacity:1}}
+  .psheet .grab{width:42px;height:5px;border-radius:99px;background:var(--line);margin:2px auto 12px}
+  .phead{display:flex;align-items:center;gap:13px;padding:2px 2px 14px}
+  .pname{font-weight:800;font-size:1.05rem;line-height:1.25}
+  .prole{color:var(--muted);font-size:.88rem}
+  .pitem{display:flex;align-items:center;gap:13px;width:100%;min-height:56px;padding:9px 8px;border-radius:14px;text-align:left;font-weight:600}
+  .pitem:hover{background:#F8FAFC}
+  .pitem svg{width:21px;height:21px;flex:none;color:var(--navy)}
+  .pitem small{display:block;font-weight:500;color:var(--muted);font-size:.8rem;margin-top:1px}
+  .pitem.danger{color:var(--red)} .pitem.danger svg{color:var(--red)}
+  .pdiv{height:1px;background:var(--line);margin:7px 0}
+  .pconfirm{padding:10px 8px;font-weight:700}
+  .pconfirm .prow{display:flex;gap:9px;margin-top:10px}
+  .pfoot{text-align:center;color:var(--muted);font-size:.78rem;margin-top:13px}
   /* ===== Lembar cetak ===== */
   .sheet{display:none}
   @media print{
@@ -110,7 +170,7 @@
     @page land{size:A4 landscape;margin:10mm}
     .sheet.land{page:land}
   }
-  .sheet{font-size:13px;color:#0F172A}
+  .sheet{font-size:12.5px;color:#0F172A}
   .sheet .usaha{text-align:center;font-weight:800;letter-spacing:1px;font-size:1.02rem;text-transform:uppercase}
   .sheet h2{text-align:center;margin:2px 0 4px;font-size:1.35rem}
   .sheet .meta{text-align:center;color:#475569;margin-bottom:10px}
@@ -149,6 +209,8 @@
         <input class="txt" id="lg-pass" type="password" v-model="loginForm.password" autocomplete="current-password" required>
         <button class="btn save-btn" :disabled="busy">{{ busy ? 'Memproses...' : 'Masuk' }}</button>
       </form>
+      <button class="btn ghost" style="width:100%;margin-top:12px" @click="clearCache">Perbaiki Aplikasi (Bersihkan Cache)</button>
+      <div class="hint" style="text-align:center;margin-top:8px">Gunakan bila aplikasi macet, tidak bisa keluar, atau tampilan tidak berubah setelah pembaruan. Data tersimpan tidak hilang. Butuh internet.</div>
     </div>
   </div>
 
@@ -157,20 +219,55 @@
     <header class="topbar no-print">
       <div class="logo">Input<span>in</span></div>
       <nav class="topnav">
-        <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id">{{ t.label }}</button>
+        <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id"><span class="nav-ic" v-html="t.icon"></span>{{ t.label }}</button>
       </nav>
       <div class="sp"></div>
-      <div class="meta">{{ user.nama }} - {{ user.role==='admin' ? 'Admin' : 'Staff ' + (user.team_nama||'') }}</div>
-      <button class="ubtn" @click="showPw=true">Ganti Password</button>
-      <button class="ubtn" @click="doLogout">Keluar</button>
+      <button class="avatar" @click="bukaSheet" :aria-label="'Menu profil ' + user.nama">{{ inisial }}</button>
     </header>
 
+    <!-- SHEET PROFIL -->
+    <div v-if="sheetOpen" class="sheet-bg no-print" @click="tutupSheet(false)">
+      <div class="psheet" @click.stop role="dialog" aria-label="Menu profil">
+        <div class="grab"></div>
+        <div class="phead">
+          <div class="avatar big">{{ inisial }}</div>
+          <div>
+            <div class="pname">{{ user.nama }}</div>
+            <div class="prole">{{ user.role==='admin' ? 'Admin - Semua Team' : 'Staff - ' + (user.team_nama||'') }}</div>
+          </div>
+        </div>
+        <button class="pitem" @click="tutupSheet(false); showPw=true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.8 12.2 9.7-9.7"/><path d="m16 6 3 3"/></svg>
+          <span>Ganti Password</span>
+        </button>
+        <button class="pitem" @click="tutupSheet(false); clearCache()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.36-6.36L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.36 6.36L3 16"/><path d="M3 21v-5h5"/></svg>
+          <span>Perbaiki Aplikasi (Bersihkan Cache)<small>Data tersimpan tidak hilang. Butuh internet.</small></span>
+        </button>
+        <div class="pdiv"></div>
+        <template v-if="!konfirmasiKeluar">
+          <button class="pitem danger" @click="konfirmasiKeluar=true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Keluar</span>
+          </button>
+        </template>
+        <div v-else class="pconfirm">
+          <div>Yakin mau keluar?</div>
+          <div class="prow">
+            <button class="btn ghost small" @click="konfirmasiKeluar=false">Batal</button>
+            <button class="btn red small" @click="doLogout">Ya, Keluar</button>
+          </div>
+        </div>
+        <div class="pfoot">Inputin - Pencatatan Hasil Usaha - Versi {{ APP_VERSION }}</div>
+      </div>
+    </div>
+
     <nav class="bottomnav no-print">
-      <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id"><span>{{ t.icon }}</span>{{ t.label }}</button>
+      <button v-for="t in tabs" :key="t.id" :class="{active: view===t.id}" @click="view=t.id"><span class="nav-ic" v-html="t.icon"></span>{{ t.label }}</button>
     </nav>
 
     <main class="wrap no-print">
-      <div v-if="flash" class="banner" :class="flash.type">{{ flash.text }}</div>
+      <div v-if="flash" class="banner toast" :class="flash.type" role="status">{{ flash.text }}</div>
 
       <!-- INPUT -->
       <section v-if="view==='input'">
@@ -180,6 +277,7 @@
         <div class="form-grid">
           <div>
             <div class="card">
+              <div class="card-head"><span class="step">1</span><h3>Waktu, Shift, dan Hasil</h3></div>
               <div v-if="user.role==='admin'" style="margin-bottom:14px">
                 <label class="fl" for="f-team">Team</label>
                 <select class="txt" id="f-team" v-model.number="form.team_id" @change="cekModeEdit">
@@ -203,14 +301,14 @@
               <div class="hint" v-if="form.tanpa_hasil">Hasil dianggap 0 gr. Alasan wajib ditulis di Catatan, misalnya alat rusak atau hujan seharian.</div>
               <template v-if="!form.tanpa_hasil">
                 <div style="height:14px"></div>
-                <label class="fl" for="f-hasil">Hasil Emas Shift Ini (gram)</label>
+                <label class="fl" for="f-hasil">Hasil Shift Ini (gram)</label>
                 <input class="txt big mono" id="f-hasil" inputmode="decimal" placeholder="Contoh: 12,5" v-model="form.hasilStr">
                 <div class="hint">Desimal resmi pakai koma: 12,5 gr. Titik juga diterima: 12.5 terbaca 12,5 dan 1.250,5 terbaca 1250,5. Tampilan hasil selalu format Indonesia (1.250,500 gr).</div>
               </template>
             </div>
 
             <div class="card">
-              <h3>Pembagian Hasil Shift Ini</h3>
+              <div class="card-head"><span class="step">2</span><h3>Pembagian Hasil Shift Ini</h3></div>
               <div class="chips" style="margin:0 0 12px">
                 <button type="button" class="chip" @click="pakaiSumber('kemarin')">Pakai Pembagian Terakhir</button>
                 <button type="button" class="chip" @click="pakaiSumber('template')">Pakai Template Team</button>
@@ -233,7 +331,7 @@
             </div>
 
             <div class="card">
-              <label class="fl" for="f-catatan">Catatan / Keterangan</label>
+              <div class="card-head"><span class="step">3</span><label class="fl" for="f-catatan" style="margin:0">Catatan / Keterangan</label></div>
               <textarea class="txt" id="f-catatan" v-model="form.catatan" placeholder="Tulis catatan shift ini. Catatan tampil di PDF."></textarea>
               <div class="chips">
                 <button type="button" class="chip" v-for="c in chipCatatan" :key="c" @click="tambahChip(c)">{{ c }}</button>
@@ -249,10 +347,16 @@
               <tr class="sisa"><td>Pendapatan Usaha ({{ fmtPct(sisaPersen) }}%)</td><td class="mono">{{ fmt(sisaGram) }} gr</td></tr>
               <tr class="total"><td>Total Hasil Shift</td><td class="mono">{{ fmt(totalHasilForm) }} gr</td></tr>
             </table></div>
+            <div class="alloc" aria-hidden="true"><div class="alloc-fill" :style="{width: Math.min(100,totalPersenForm)+'%', background: totalPersenForm>100 ? 'var(--red)' : 'var(--amber)'}"></div></div>
+            <div class="hint">Terbagi {{ fmtPct(totalPersenForm) }}% untuk kelompok - Pendapatan Usaha {{ fmtPct(sisaPersen) }}%.</div>
             <div v-if="totalPersenForm > 100" class="banner err" style="margin-top:12px">Total persentase {{ fmtPct(totalPersenForm) }}% melebihi 100%. Simpan ditolak, kurangi dulu persentasenya.</div>
             <button class="btn save-btn" :disabled="busy || totalPersenForm > 100" @click="simpan">{{ busy ? 'Menyimpan...' : (modeEdit ? 'Simpan Perubahan' : 'Simpan Hasil') }}</button>
             <div class="hint">Pastikan ringkasan sudah benar sebelum menyimpan.</div>
           </div>
+        </div>
+        <div class="savebar no-print">
+          <div class="sb-info">Terbagi <b class="mono">{{ fmt(totalHasilForm - sisaGram) }} gr</b><br>Sisa usaha <b class="mono">{{ fmt(sisaGram) }} gr</b></div>
+          <button class="btn" :disabled="busy || totalPersenForm > 100" @click="simpan">{{ busy ? 'Menyimpan...' : (modeEdit ? 'Simpan Perubahan' : 'Simpan Hasil') }}</button>
         </div>
       </section>
 
@@ -263,7 +367,7 @@
         <div class="card">
           <div v-if="user.role==='admin'" style="margin-bottom:12px">
             <label class="fl" for="r-team">Team</label>
-            <select class="txt" id="r-team" v-model.number="riw.team_id" @change="muatRiwayat(true)"><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
+            <select class="txt" id="r-team" v-model="riw.team_id" @change="muatRiwayat(true)"><option value="all">Semua Team (Satu Perusahaan)</option><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
           </div>
           <div class="chips" style="margin:0 0 12px">
             <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('riw', p.id); muatRiwayat(true)">{{ p.label }}</button>
@@ -282,7 +386,7 @@
           <div class="day-head"><span>{{ tglPanjang(d.tanggal) }}</span><span>Total hari: <span class="mono">{{ fmt(d.total_hasil) }} gr</span> - <span class="pu">Pendapatan Usaha {{ fmt(d.sisa) }} gr</span></span></div>
           <div class="shiftbox" v-for="s in d.shifts" :key="s.id">
             <div class="srow">
-              <span><span class="badge">Shift {{ s.shift }}</span> <b class="mono" style="margin-left:8px">{{ fmt(s.hasil_gram) }} gr</b> <span v-if="s.tanpa_hasil" class="badge amber">Tanpa Hasil</span></span>
+              <span><span class="badge">Shift {{ s.shift }}</span> <span v-if="riw.team_id==='all'" class="badge amber">{{ s.team_nama }}</span> <b class="mono" style="margin-left:8px">{{ fmt(s.hasil_gram) }} gr</b> <span v-if="s.tanpa_hasil" class="badge amber">Tanpa Hasil</span></span>
               <span class="hint" style="margin:0">Terbagi <b class="mono">{{ fmt(s.total_terbagi) }} gr</b> - Sisa <b class="mono">{{ fmt(s.sisa) }} gr</b></span>
               <button class="btn ghost small" @click="toggleExpand(s.id)">{{ expanded[s.id] ? 'Tutup Rincian' : 'Buka Rincian' }}</button>
             </div>
@@ -320,7 +424,7 @@
         <div class="card">
           <div v-if="user.role==='admin'" style="margin-bottom:12px">
             <label class="fl" for="l-team">Team</label>
-            <select class="txt" id="l-team" v-model.number="lap.team_id" @change="muatLaporan"><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
+            <select class="txt" id="l-team" v-model="lap.team_id" @change="muatLaporan"><option value="all">Semua Team (Satu Perusahaan)</option><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
           </div>
           <div class="chips" style="margin:0 0 12px">
             <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('lap', p.id); muatLaporan()">{{ p.label }}</button>
@@ -330,8 +434,9 @@
             <div><label class="fl" for="l-sampai">Sampai</label><input class="txt" type="date" id="l-sampai" v-model="lap.to" @change="muatLaporan"></div>
           </div>
           <div class="actions">
-            <button class="btn amber" @click="cetakLaporan(false)">Unduh PDF Rentang Ini</button>
-            <button class="btn ghost" @click="cetakLaporan(true)" v-if="lap.from===lap.to">PDF Harian (Rincian Per Shift)</button>
+            <button class="btn amber" :disabled="pdfState==='loading'" @click="unduhPDF(false)">{{ pdfState==='loading' ? 'Menyiapkan PDF...' : 'Unduh PDF Rentang Ini' }}</button>
+            <button class="btn ghost" :disabled="pdfState==='loading'" @click="unduhPDF(true)" v-if="lap.from===lap.to">PDF Harian (Rincian Per Shift)</button>
+            <button class="btn ghost small" @click="cetakLaporan(false)">Pratinjau Cetak</button>
           </div>
         </div>
         <div v-if="lap.loading" class="card">Memuat...</div>
@@ -362,13 +467,42 @@
             </tbody>
           </table>
           </div>
+          <div class="card" style="margin-top:16px" v-if="lap.kolomKelompok.length">
+            <h3>Terbagi Per Hari Per Kelompok</h3>
+            <div class="tscroll" v-if="lap.kolomKelompok.length <= 6">
+            <table class="data">
+              <thead><tr><th>Tanggal</th><th class="r" v-for="k in lap.kolomKelompok" :key="k">{{ k }}</th><th class="r">Total Terbagi</th><th class="r">Sisa</th></tr></thead>
+              <tbody>
+                <tr v-for="d in lapDays" :key="'m' + d.tanggal"><td>{{ tglIndo(d.tanggal) }}</td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k">{{ d.kelompok && d.kelompok[k] ? fmt(d.kelompok[k]) + ' gr' : '-' }}</td><td class="r mono">{{ fmt(d.terbagi) }} gr</td><td class="r mono">{{ fmt(d.sisa) }} gr</td></tr>
+                <tr style="background:#EFF6FF"><td><b>Total</b></td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k"><b>{{ fmt(totalKolom(k)) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.terbagi) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+              </tbody>
+            </table>
+            </div>
+            <div class="hint" v-else>Rincian per hari per kelompok tidak ditampilkan karena jumlah kelompok pada periode ini lebih dari 6. Lihat Total Per Kelompok di bawah.</div>
+          </div>
           <div class="card" style="margin-top:16px">
             <h3>Total Per Kelompok - Periode Ini</h3>
-            <table class="data"><tbody>
-              <tr v-for="k in lap.report.per_kelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
-              <tr><td><b>Pendapatan Usaha</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
-            </tbody></table>
+            <table class="data">
+              <thead><tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Total Terbagi</th></tr></thead>
+              <tbody>
+              <template v-for="k in lap.report.per_kelompok" :key="k.nama">
+                <tr style="background:#F1F5F9"><td><b>{{ k.nama }}</b> <span style="color:var(--muted);font-weight:500">(rata-rata tertimbang)</span></td><td class="r mono"><b>{{ fmtPct(k.persen_rata) }}%</b></td><td class="r mono"><b>{{ fmt(k.total) }} gr</b></td></tr>
+                <tr v-for="r in k.rincian" :key="k.nama + '-' + r.persentase"><td style="padding-left:24px;color:var(--muted2)">dengan persen</td><td class="r mono">{{ fmtPct(r.persentase) }}%</td><td class="r mono">{{ fmt(r.total) }} gr</td></tr>
+              </template>
+              <tr><td><b>Pendapatan Usaha</b> <span style="color:var(--muted);font-weight:500">(sisa)</span></td><td class="r mono">-</td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+              </tbody>
+            </table>
             <div class="hint">Catatan harian tidak diulang di sini karena sudah tampil di kolom Catatan tabel utama.</div>
+          </div>
+          <div class="card" style="margin-top:16px" v-if="lap.report.per_team">
+            <h3>Rekap Per Team - Satu Perusahaan</h3>
+            <table class="data">
+              <thead><tr><th>Team</th><th class="r">Total Hasil</th><th class="r">Terbagi</th><th class="r">Pendapatan Usaha</th><th class="r">Hari Aktif</th><th class="r">Shift</th></tr></thead>
+              <tbody>
+                <tr v-for="t in lap.report.per_team" :key="t.team_id"><td>{{ t.team_nama }}</td><td class="r mono">{{ fmt(t.hasil) }} gr</td><td class="r mono">{{ fmt(t.terbagi) }} gr</td><td class="r mono">{{ fmt(t.sisa) }} gr</td><td class="r mono">{{ t.hari_aktif }}</td><td class="r mono">{{ t.shift_tercatat }}</td></tr>
+                <tr><td><b>Total Perusahaan</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.hasil) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.terbagi) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td><td></td><td></td></tr>
+              </tbody>
+            </table>
           </div>
         </template>
       </section>
@@ -488,13 +622,36 @@
           <tr class="grand"><td colspan="4">TOTAL ({{ lap.from }} s/d {{ lap.to }})</td><td class="r mono">{{ fmt(lap.report.totals.hasil) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.terbagi) }} gr</td><td class="r mono">{{ fmt(lap.report.totals.sisa) }} gr</td><td></td></tr>
         </tbody>
       </table>
+      <div class="box" v-if="lap.kolomKelompok.length">
+        <b>Terbagi Per Hari Per Kelompok</b>
+        <table v-if="lap.kolomKelompok.length <= 6">
+          <tr><th>Tanggal</th><th class="r" v-for="k in lap.kolomKelompok" :key="k">{{ k }}</th><th class="r">Total Terbagi</th><th class="r">Sisa</th></tr>
+          <tr v-for="d in lapDays" :key="'mp' + d.tanggal"><td>{{ tglIndo(d.tanggal) }}</td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k">{{ d.kelompok && d.kelompok[k] ? fmt(d.kelompok[k]) + ' gr' : '-' }}</td><td class="r mono">{{ fmt(d.terbagi) }} gr</td><td class="r mono">{{ fmt(d.sisa) }} gr</td></tr>
+          <tr style="background:#EFF6FF"><td><b>Total</b></td><td class="r mono" v-for="k in lap.kolomKelompok" :key="k"><b>{{ fmt(totalKolom(k)) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.terbagi) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+        </table>
+        <div v-else style="color:#64748B;font-size:.85rem;margin-top:6px">Rincian per hari per kelompok tidak ditampilkan karena jumlah kelompok lebih dari 6 - lihat Total Per Kelompok.</div>
+      </div>
       <div class="box">
         <b>Total Per Kelompok - Periode Ini</b>
         <table>
-          <tr v-for="k in lap.report.per_kelompok" :key="k.nama"><td>{{ k.nama }}</td><td class="r mono">{{ fmt(k.total) }} gr</td></tr>
-          <tr><td><b>Pendapatan Usaha</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
+          <tr><th>Kelompok</th><th class="r">Persen</th><th class="r">Total Terbagi</th></tr>
+          <template v-for="k in lap.report.per_kelompok" :key="k.nama">
+            <tr style="background:#F1F5F9"><td><b>{{ k.nama }}</b> (rata-rata tertimbang)</td><td class="r mono"><b>{{ fmtPct(k.persen_rata) }}%</b></td><td class="r mono"><b>{{ fmt(k.total) }} gr</b></td></tr>
+            <tr v-for="r in k.rincian" :key="k.nama + '-' + r.persentase"><td style="padding-left:18px">dengan persen</td><td class="r mono">{{ fmtPct(r.persentase) }}%</td><td class="r mono">{{ fmt(r.total) }} gr</td></tr>
+          </template>
+          <tr><td><b>Pendapatan Usaha</b> (sisa)</td><td class="r mono">-</td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td></tr>
         </table>
         <div style="color:#64748B;font-size:.85rem;margin-top:6px">Catatan harian tidak diulang di bagian ini karena sudah tampil di kolom Catatan pada tabel utama di atas.</div>
+      </div>
+      <div class="box" v-if="lap.report.per_team">
+        <b>Rekap Per Team - Satu Perusahaan</b>
+        <table>
+          <thead><tr><th>Team</th><th class="r">Total Hasil</th><th class="r">Terbagi</th><th class="r">Pendapatan Usaha</th><th class="r">Hari Aktif</th><th class="r">Shift</th></tr></thead>
+          <tbody>
+            <tr v-for="t in lap.report.per_team" :key="t.team_id"><td>{{ t.team_nama }}</td><td class="r mono">{{ fmt(t.hasil) }} gr</td><td class="r mono">{{ fmt(t.terbagi) }} gr</td><td class="r mono">{{ fmt(t.sisa) }} gr</td><td class="r mono">{{ t.hari_aktif }}</td><td class="r mono">{{ t.shift_tercatat }}</td></tr>
+            <tr><td><b>Total Perusahaan</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.hasil) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.terbagi) }} gr</b></td><td class="r mono"><b>{{ fmt(lap.report.totals.sisa) }} gr</b></td><td></td><td></td></tr>
+          </tbody>
+        </table>
       </div>
     </template>
     <template v-if="cetakMode==='harian'">
@@ -517,6 +674,7 @@
     <div class="foot"><span>Dicetak pada {{ timestampCetak }}</span><span>Inputin - {{ cetakMode==='rentang' ? 'Format A4 Landscape' : 'Format A4 Portrait' }}</span></div>
   </div>
 </div>
+<script>/*__PDFCFG__*/</script>
 <script>/*__VUE__*/</script>
 <script>/*__APP__*/</script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}</script>

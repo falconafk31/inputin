@@ -202,3 +202,16 @@ Database dikelola Pax dari sini lewat Cloudflare API (token custom.cloudflare, i
 1. Palet warna: A (Navy + Emas, rekomendasi), B (Hijau Tua + Emas), atau C (Arang + Emas)?
 2. Nama app dan alamat web yang diinginkan? Contoh: tambang.hadesxyz.workers.dev atau nama usaha sendiri.
 3. Antrean offline untuk lokasi minim sinyal: masuk fondasi awal atau Tahap 2 saja?
+
+## Keputusan Diskusi UI/PDF (22 Okt 2026 malam, via nvidia sesi inputin-ui-pdf - menunggu persetujuan final Hades)
+- Menu profil: 3 tombol topbar (Bersihkan Cache, Ganti Password, Keluar) dibungkus jadi ikon avatar kanan atas; menu berisi header identitas (nama, role, team), Ganti Password, Bersihkan Cache (tetap tingkat pertama, label jelas), Keluar. Bersihkan Cache tetap juga ada di layar login sebagai jalur penyelamat utama.
+- PDF ringan: bundle jsPDF + font dipisah dari file utama, dilayani Worker yang sama di rute aset khusus, dimuat malas saat tombol Unduh pertama ditekan lalu di-cache service worker. Worker proxy terpisah DITOLAK (kompleksitas tanpa manfaat); generate PDF full di server DITOLAK (latensi).
+- Pagar font: teks utama min 15px, label/sekunder 14px, angka kunci 20px+, target sentuh min 44px, kontras min 4,5:1.
+
+## Koreksi Diskusi 9router (23 Okt 2026 pagi - menguji nvidia, menjadi acuan final yang disarankan)
+- Pola menu profil: BOTTOM SHEET (bukan dropdown). Back Android menutup sheet; Keluar dipisah garis + warna bahaya + konfirmasi; footer sheet menampilkan versi app.
+- Bersihkan Cache: label "Perbaiki Aplikasi (Bersihkan Cache)" + subteks "Data tersimpan tidak hilang"; DIBLOKIR saat offline (guard wajib, berlaku juga di layar login).
+- PDF client lazy: 3 aset terpisah bernama hash isi (vendor/font biner/template), hash di-embed app saat build, cache PDF terpisah immutable, handshake PDF_API_VERSION, tanpa skipWaiting otomatis. Fallback unduh pertama: info ukuran, progress, Batal, timeout 20 dtk + Coba Lagi, SRI. Font dilayani biner (bukan base64, hemat ~33%). Prefetch idle hanya admin/pimpinan (4G, tanpa saveData); staff on-demand.
+- Server-side PDF: DITUNDA (CPU Workers Free ~10ms tidak cukup); evaluasi ulang bila berbayar, butuh dokumen resmi/tautan WhatsApp, atau freeze terukur di HP target.
+- Kontras amber: teks amber di bidang terang = #B45309; teks pada tombol amber = gelap; #D97706 hanya untuk isian/ikon/garis.
+- Font final: utama 15px, label 14px, angka hasil 20px Fira Code 600 (ligatur mati), angka tabel laporan 14px, baris tabel min 44px, kolom angka rata kanan.

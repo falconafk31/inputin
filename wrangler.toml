@@ -8,3 +8,10 @@ compatibility_date = "2024-11-01"
 binding = "DB"
 database_name = "inputin-db"
 database_id = "7dc53776-ebab-417d-be8f-18d5f2942782"
+
+# Worker Previews (branch selain main): binding diarahkan ke database khusus
+# preview agar pengujian bebas tanpa menyentuh data produksi.
+[[previews.d1_databases]]
+binding = "DB"
+database_name = "inputin-db-preview"
+database_id = "fb418a18-0da5-4799-858e-40474919ab7c"
