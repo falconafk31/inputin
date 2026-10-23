@@ -259,7 +259,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.3";
+    const APP_VERSION = "3.4.4";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -445,6 +445,22 @@ createApp({
           return [d.tanggal, out];
         }));
         const gabung = (lap.kolomKelompok || []).length > 0;
+        // Baris kecil di sel Hasil Bagi: jumlah orang + jatah per orang (@), per shift bila dua shift terisi.
+        const subOrang = (d, k) => {
+          const sr = d.shift_rows || {};
+          const ambil = (sh) => {
+            const rs = (sr[sh] || []).filter((r) => r.nama === k);
+            if (!rs.length) return null;
+            const o = rs.reduce((a, r) => a + (r.jumlah_orang || 0), 0);
+            const g = rs.reduce((a, r) => a + (r.total_gram || 0), 0);
+            return { orang: o, per: o > 0 ? Math.round((g / o) * 1000) / 1000 : 0 };
+          };
+          const a = ambil("1"), b = ambil("2");
+          const perTeks = (x) => x.orang > 0 ? fmt(x.per) : "-";
+          if (a && b) return ["S1: " + a.orang + " orang @ " + perTeks(a), "S2: " + b.orang + " orang @ " + perTeks(b)];
+          const x = a || b;
+          return x ? [x.orang + " orang · @ " + perTeks(x)] : [];
+        };
         const gst = { fillColor: [219, 234, 254], fontStyle: "bold" };
         let headUtama, colStyles, body = [];
         if (gabung) {
@@ -457,7 +473,7 @@ createApp({
           for (const blok of blokLaporan.value) {
             for (const d of blok.rows) {
               body.push([String(d.no), tglSingkat(d.tanggal), d.s1 ? fmt(d.s1.hasil) : "-", d.s2 ? fmt(d.s2.hasil) : "-", fmt(d.total),
-                ...KG.flatMap((k) => { const g = (d.kelompok && d.kelompok[k]) || 0; return g ? [fmtPct(persenEf(g, d.total)) + "%" + (bedaMap.get(d.tanggal).has(k) ? "*" : ""), fmt(g)] : ["-", "-"]; }),
+                ...KG.flatMap((k) => { const g = (d.kelompok && d.kelompok[k]) || 0; if (!g) return ["-", "-"]; const subs = subOrang(d, k); return [fmtPct(persenEf(g, d.total)) + "%" + (bedaMap.get(d.tanggal).has(k) ? "*" : ""), subs.length ? { content: fmt(g), _subs: subs, styles: { cellPadding: { top: 1.8, bottom: 2.2 + subs.length * 3.2, left: 1.8, right: 1.8 } } } : fmt(g)]; }),
                 fmt(d.terbagi), fmt(d.sisa), catatanGabung(d) || "-"]);
             }
             if (blok.subtotal) {
@@ -489,8 +505,26 @@ createApp({
           colStyles = { 0: { font: "fira" }, 2: { font: "fira", halign: "right" }, 3: { font: "fira", halign: "right" }, 4: { font: "fira", halign: "right" }, 5: { font: "fira", halign: "right" }, 6: { font: "fira", halign: "right" } };
         }
         const sempit = gabung && lap.kolomKelompok.length > 4;
-        doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: headUtama, body, styles: sempit ? { ...pdfTabelStyle, fontSize: 7.5 } : pdfTabelStyle, headStyles: sempit ? { ...pdfHeadStyle, fontSize: 7.5 } : pdfHeadStyle, columnStyles: colStyles });
+        doc.autoTable({ startY: y, margin: { left: 12, right: 12 }, head: headUtama, body, styles: sempit ? { ...pdfTabelStyle, fontSize: 7.5 } : pdfTabelStyle, headStyles: sempit ? { ...pdfHeadStyle, fontSize: 7.5 } : pdfHeadStyle, columnStyles: colStyles, didDrawCell: (data) => {
+          const raw = data.cell.raw;
+          if (data.section !== "body" || !raw || typeof raw !== "object" || !raw._subs || !raw._subs.length) return;
+          doc.saveGraphicsState();
+          doc.setFont("pjs", "normal"); doc.setTextColor(100, 116, 139);
+          const avail = data.cell.width - 3.6;
+          raw._subs.forEach((txt, i) => {
+            let fs = sempit ? 5.6 : 6.3;
+            doc.setFontSize(fs);
+            while (doc.getTextWidth(txt) > avail && fs > 4.4) { fs -= 0.3; doc.setFontSize(fs); }
+            doc.text(txt, data.cell.x + data.cell.width - 1.8, data.cell.y + data.cell.height - 1.7 - (raw._subs.length - 1 - i) * 3.2, { align: "right" });
+          });
+          doc.restoreGraphicsState();
+        } });
         y = doc.lastAutoTable.finalY + 4;
+        if (gabung) {
+          doc.setFont("pjs", "normal"); doc.setFontSize(8.5); doc.setTextColor(100, 116, 139);
+          doc.text("Baris kecil di bawah Hasil Bagi: jumlah orang dan jatah per orang (@) pada hari itu, per shift bila dua shift terisi.", 12, y);
+          doc.setTextColor(15, 23, 42); y += 5;
+        }
         if (gabung && [...bedaMap.values()].some((s) => s.size)) {
           doc.setFont("pjs", "normal"); doc.setFontSize(8.5); doc.setTextColor(100, 116, 139);
           doc.text("* Persen setelan kelompok berbeda antara Shift 1 dan Shift 2 pada hari itu - rincian per shift ada di Lampiran.", 12, y);
@@ -553,12 +587,12 @@ createApp({
             const sr = d.shift_rows || {};
             const barisDari = (sh) => { const m = {}; (sr[sh] || []).forEach((r) => { m[r.nama] = r; }); return m; };
             const m1 = barisDari("1"), m2 = barisDari("2");
-            const selL = (m, n) => (n in m ? fmtPct(m[n].persentase) + "% - " + fmt(m[n].total_gram) + " gr" : "-");
+            const selL = (m, n) => (n in m ? fmtPct(m[n].persentase) + "% - " + fmt(m[n].total_gram) + " gr (" + (m[n].jumlah_orang || 0) + " orang · @ " + (m[n].jumlah_orang > 0 ? fmt(m[n].per_orang_gram) : "-") + ")" : "-");
             const lBody = [...bedaMap.get(d.tanggal)].map((n) => [n, selL(m1, n), selL(m2, n)]);
             if (y > doc.internal.pageSize.getHeight() - 45) { doc.addPage(); y = 16; }
             doc.setFont("pjs", "bold"); doc.setFontSize(9.5);
             doc.text(tglPanjang(d.tanggal) + " - Shift 1: " + fmt(d.s1 ? d.s1.hasil : 0) + " gr, Shift 2: " + fmt(d.s2 ? d.s2.hasil : 0) + " gr", 12, y + 4);
-            doc.autoTable({ startY: y + 6, margin: { left: 12, right: 12 }, head: [["Kelompok", "Shift 1 (persen - gram)", "Shift 2 (persen - gram)"]], body: lBody, styles: { ...pdfTabelStyle, fontSize: 8.5 }, headStyles: pdfHeadStyle, columnStyles: { 1: { font: "fira", halign: "right" }, 2: { font: "fira", halign: "right" } }, tableWidth: 170 });
+            doc.autoTable({ startY: y + 6, margin: { left: 12, right: 12 }, head: [["Kelompok", "Shift 1 (persen - gram - orang · @)", "Shift 2 (persen - gram - orang · @)"]], body: lBody, styles: { ...pdfTabelStyle, fontSize: 8.5 }, headStyles: pdfHeadStyle, columnStyles: { 1: { font: "fira", halign: "right" }, 2: { font: "fira", halign: "right" } }, tableWidth: 190 });
             y = doc.lastAutoTable.finalY + 7;
           }
         }

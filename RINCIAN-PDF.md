@@ -38,7 +38,7 @@ Kertas A4 landscape. Susunan dari atas ke bawah:
 | Shift 2 | Hasil Shift 2 (gram) | "-" bila shift tidak tercatat |
 | Total Pendapatan | Total hasil hari itu (Shift 1 + Shift 2) | |
 | Per kelompok: % | Persen efektif kelompok hari itu | Total kelompok hari itu dibagi total hasil hari itu; ada tanda * bila persen setelan beda antar shift |
-| Per kelompok: Hasil Bagi | Jumlah gram kelompok hari itu | |
+| Per kelompok: Hasil Bagi | Jumlah gram kelompok hari itu | Di bawah angka ada baris kecil abu-abu: jumlah orang dan jatah per orang (@) hari itu. Satu shift terisi: "4 orang · @ 0,420". Dua shift terisi: dua baris "S1: 5 orang @ 0,240" dan "S2: 6 orang @ 0,160" (jatah per orang memang per shift, tidak dirata-rata). Mode Semua Team: orang digabung lintas team, @ = total gram dibagi total orang. Baris Subtotal dan TOTAL tidak diberi baris kecil ini. Aturan disahkan Hades 23 Okt 2026 (v3.4.4) |
 | Terbagi | Total gram terbagi ke semua kelompok hari itu | |
 | Pendapatan Usaha | Sisa hari itu (Total Pendapatan - Terbagi) | |
 | Catatan | Gabungan catatan Shift 1 dan Shift 2 hari itu | Diawali label team pada mode Semua Team |
@@ -57,8 +57,8 @@ Untuk tiap hari bertanda *, lampiran memuat satu blok: judul tanggal + hasil Shi
 | Kolom | Isi |
 |---|---|
 | Kelompok | Nama kelompok yang persen setelannya berbeda |
-| Shift 1 (persen - gram) | Persen setelan Shift 1 dan gram yang diterima kelompok |
-| Shift 2 (persen - gram) | Persen setelan Shift 2 dan gram yang diterima kelompok |
+| Shift 1 (persen - gram - orang · @) | Persen setelan Shift 1, gram yang diterima kelompok, lalu jumlah orang dan jatah per orang dalam kurung: "6% - 1,680 gr (4 orang · @ 0,420)" |
+| Shift 2 (persen - gram - orang · @) | Sama untuk Shift 2 |
 
 ## PDF Harian (tombol "PDF Harian (Rincian Per Shift)")
 

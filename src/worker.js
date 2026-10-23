@@ -342,7 +342,7 @@ async function handleApi(request, env, url) {
         g.perPersen.set(r.persentase, round3((g.perPersen.get(r.persentase) || 0) + r.total_gram));
         g.shiftIds.add(h.id);
         d.kelompok[r.nama] = round3((d.kelompok[r.nama] || 0) + r.total_gram);
-        (d.shift_rows[h.shift] = d.shift_rows[h.shift] || []).push({ nama: r.nama, persentase: r.persentase, total_gram: r.total_gram });
+        (d.shift_rows[h.shift] = d.shift_rows[h.shift] || []).push({ nama: r.nama, persentase: r.persentase, total_gram: r.total_gram, jumlah_orang: r.jumlah_orang, per_orang_gram: r.per_orang_gram });
       }
       if (allTeams) {
         if (!perTeamMap.has(h.team_id)) perTeamMap.set(h.team_id, { team_id: h.team_id, team_nama: h.team_nama, hasil: 0, terbagi: 0, sisa: 0, tanggal_set: new Set(), shift_tercatat: 0 });
