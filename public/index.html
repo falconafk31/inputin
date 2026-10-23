@@ -808,7 +808,12 @@ createApp({
           form.hasilStr = d.entry.tanpa_hasil ? "" : String(d.entry.hasil_gram).replace(".", ",");
           form.catatan = d.entry.catatan || "";
           form.rows = d.entry.rows.length ? d.entry.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang))) : [barisBaru("", "", "")];
-        } else { modeEdit.value = false; editingId.value = null; await prefillTerakhir(); }
+        } else {
+          // Slot kosong: bila form sebelumnya memuat entri (Mode Edit), bersihkan hasil + catatan + mode tanpa hasil
+          // agar angka entri lama tidak terbawa ke slot baru. Isian segar yang belum tersimpan (bukan Mode Edit) dibiarkan.
+          if (modeEdit.value) { form.tanpa_hasil = false; form.hasilStr = ""; form.catatan = ""; }
+          modeEdit.value = false; editingId.value = null; await prefillTerakhir();
+        }
       } catch (e) { /* abaikan */ }
     }
     async function prefillTerakhir() {
@@ -955,7 +960,7 @@ createApp({
       return `${parts.day} ${parts.month} ${parts.year} - ${parts.hour}.${parts.minute} ${settings.zona_label}`;
     }
     function editEntry(s, tanggal) {
-      form.team_id = riw.team_id; form.tanggal = tanggal; form.shift = s.shift;
+      form.team_id = s.team_id; form.tanggal = tanggal; form.shift = s.shift;
       view.value = "input"; cekModeEdit();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -972,7 +977,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.2";
+    const APP_VERSION = "3.4.3";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
