@@ -47,10 +47,14 @@ try {
   await ev2("[...document.querySelectorAll('.bottomnav button')][2].click(); 'ok'");
   await wait(2200);
   await shot("shot-laporan.png");
+  const lapKosongTeks = await ev2("document.body.innerText.includes('Belum ada catatan di rentang ini')");
+  console.log("LAPORAN status kosong tampil:", lapKosongTeks);
   await ev2("[...document.querySelectorAll('.bottomnav button')][0].click(); 'ok'");
   await wait(1800);
   await shot("shot-input.png");
   const admTeks = await ev2("document.body.innerText.slice(0,300)");
+  const btnSembunyi = await ev2("(()=>{ const b=document.querySelector('.card.sticky .save-btn'); return b ? getComputedStyle(b).display : 'tidak ada'; })()");
+  console.log("INPUT tombol simpan kartu di HP:", btnSembunyi);
   console.log("RIWAYAT:", riwTeks.replace(/\n/g, " | ").slice(0, 220));
   console.log("ADMIN:", admTeks.replace(/\n/g, " | ").slice(0, 220));
   console.log("errors:", errs.length ? errs.join(" ;; ") : "tidak ada");

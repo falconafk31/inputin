@@ -52,7 +52,14 @@
   .step{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:8px;background:var(--navy);color:#fff;font-size:.78rem;font-weight:800;flex:none}
   label.fl{display:block;font-weight:600;margin:0 0 6px;font-size:.93rem}
   .hint{color:var(--muted);font-size:.88rem;margin-top:6px;line-height:1.45}
-  .txt{width:100%;min-height:46px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:#F8FAFC}
+  .txt{width:100%;min-height:46px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:#F8FAFC;font-size:16px}
+  .chip.on{border-color:var(--amber);background:var(--amber-soft);color:#92400E}
+  .kpi.k-sm .val{font-size:17px}
+  .rep-table th:nth-child(1),.rep-table td:nth-child(1){position:sticky;left:0;z-index:2}
+  .rep-table th:nth-child(2),.rep-table td:nth-child(2){position:sticky;left:38px;z-index:2}
+  .rep-table td:nth-child(1),.rep-table td:nth-child(2){background:#fff}
+  .rep-table th:nth-child(1),.rep-table th:nth-child(2){background:var(--navy-dark)}
+  @media (max-width:640px){ .card.sticky .save-btn{display:none} }
   .txt:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--ring);background:#fff}
   textarea.txt{min-height:84px;resize:vertical}
   .big{font-size:20px;font-weight:600}
@@ -359,7 +366,7 @@
                 <div style="height:14px"></div>
                 <label class="fl" for="f-hasil">Hasil Shift Ini (gram)</label>
                 <input class="txt big mono" id="f-hasil" inputmode="decimal" placeholder="Contoh: 12,5" v-model="form.hasilStr">
-                <div class="hint">Desimal resmi pakai koma: 12,5 gr. Titik juga diterima: 12.5 terbaca 12,5 dan 1.250,5 terbaca 1250,5. Tampilan hasil selalu format Indonesia (1.250,500 gr).</div>
+                <div class="hint">Boleh pakai koma atau titik: 12,5 atau 12.5 sama. Ribuan pakai titik: 1.250,5 terbaca 1250,5.</div>
               </template>
             </div>
 
@@ -370,7 +377,7 @@
                 <button type="button" class="chip" @click="pakaiSumber('template')">Pakai Template Team</button>
               </div>
               <div v-if="prefillInfo" class="banner info" style="margin:0 0 12px">{{ prefillInfo }}</div>
-              <div class="dist" v-for="(d, i) in form.rows" :key="i">
+              <div class="dist" v-for="(d, i) in form.rows" :key="d.uid || i">
                 <div class="dhead">
                   <input :value="d.nama" @input="d.nama=$event.target.value; prefillInfo=''" :placeholder="'Nama kelompok ' + (i+1)" :aria-label="'Nama kelompok ' + (i+1)">
                   <button type="button" class="icon-btn" @click="form.rows.splice(i,1)" aria-label="Hapus kelompok">x</button>
@@ -383,7 +390,7 @@
                 </div>
                 <div class="calc"><span>Total kelompok: <b class="mono">{{ fmt(rowCalc(d).total) }} gr</b></span><span>Per orang: <b class="mono">{{ fmt(rowCalc(d).perOrang) }} gr</b></span></div>
               </div>
-              <button type="button" class="add-btn" @click="form.rows.push({nama:'', persenStr:'', orangStr:''})">+ Tambah Kelompok</button>
+              <button type="button" class="add-btn" @click="form.rows.push(barisBaru('', '', ''))">+ Tambah Kelompok</button>
             </div>
 
             <div class="card">
@@ -399,7 +406,7 @@
             <h3>Ringkasan Shift Ini</h3>
             <div class="summary"><table>
               <tr><td>Shift</td><td>Shift {{ form.shift }}</td></tr>
-              <template v-for="(d,i) in form.rows" :key="i"><tr v-if="d.nama"><td>{{ d.nama }} ({{ fmtPct(parseID(d.persenStr)) }}%, {{ parseInt(d.orangStr)||0 }} orang)</td><td class="mono">{{ fmt(rowCalc(d).total) }} gr</td></tr></template>
+              <template v-for="(d,i) in form.rows" :key="d.uid || i"><tr v-if="d.nama"><td>{{ d.nama }} ({{ fmtPct(parseID(d.persenStr)) }}%, {{ parseInt(d.orangStr)||0 }} orang)</td><td class="mono">{{ fmt(rowCalc(d).total) }} gr</td></tr></template>
               <tr class="sisa"><td>Pendapatan Usaha ({{ fmtPct(sisaPersen) }}%)</td><td class="mono">{{ fmt(sisaGram) }} gr</td></tr>
               <tr class="total"><td>Total Hasil Shift</td><td class="mono">{{ fmt(totalHasilForm) }} gr</td></tr>
             </table></div>
@@ -423,7 +430,7 @@
         <p class="sub">Dikelompokkan per tanggal. Buka rincian untuk melihat pembagian per kelompok, catatan, edit, dan hapus.</p>
         <div class="card">
           <div class="chips" style="margin:0 0 12px">
-            <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('riw', p.id); muatRiwayat(true)">{{ p.label }}</button>
+            <button class="chip" v-for="p in presets" :key="p.id" :class="{on: presetAktif.riw===p.id}" @click="setPreset('riw', p.id); muatRiwayat(true)">{{ p.label }}</button>
             <button type="button" class="chip riw-toggle" @click="riwFilter=!riwFilter">{{ riwFilter ? 'Tutup Filter' : 'Filter' }}</button>
           </div>
           <div class="riw-detail" :class="{open: riwFilter}">
@@ -432,8 +439,8 @@
             <select class="txt" id="r-team" v-model="riw.team_id" @change="muatRiwayat(true)"><option value="all">Semua Team (Satu Perusahaan)</option><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
           </div>
           <div class="filters">
-            <div><label class="fl" for="r-dari">Dari</label><input class="txt" type="date" id="r-dari" v-model="riw.from" @change="muatRiwayat(true)"></div>
-            <div><label class="fl" for="r-sampai">Sampai</label><input class="txt" type="date" id="r-sampai" v-model="riw.to" @change="muatRiwayat(true)"></div>
+            <div><label class="fl" for="r-dari">Dari</label><input class="txt" type="date" id="r-dari" v-model="riw.from" @change="presetAktif.riw=''; muatRiwayat(true)"></div>
+            <div><label class="fl" for="r-sampai">Sampai</label><input class="txt" type="date" id="r-sampai" v-model="riw.to" @change="presetAktif.riw=''; muatRiwayat(true)"></div>
             <div><label class="fl" for="r-shift">Shift</label><select class="txt" id="r-shift" v-model="riw.shift" @change="muatRiwayat(true)"><option value="">Semua</option><option value="1">Shift 1</option><option value="2">Shift 2</option></select></div>
             <div><label class="fl" for="r-q">Cari</label><input class="txt" id="r-q" v-model="riw.q" placeholder="Kata di catatan / kelompok" @change="muatRiwayat(true)"></div>
             <div><label class="fl" for="r-per">Per Halaman</label><select class="txt" id="r-per" v-model.number="riw.per" @change="muatRiwayat(true)"><option :value="5">5 hari</option><option :value="10">10 hari</option><option :value="30">30 hari</option></select></div>
@@ -489,11 +496,11 @@
             <select class="txt" id="l-team" v-model="lap.team_id" @change="muatLaporan"><option value="all">Semua Team (Satu Perusahaan)</option><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select>
           </div>
           <div class="chips" style="margin:0 0 12px">
-            <button class="chip" v-for="p in presets" :key="p.id" @click="setPreset('lap', p.id); muatLaporan()">{{ p.label }}</button>
+            <button class="chip" v-for="p in presets" :key="p.id" :class="{on: presetAktif.lap===p.id}" @click="setPreset('lap', p.id); muatLaporan()">{{ p.label }}</button>
           </div>
           <div class="filters">
-            <div><label class="fl" for="l-dari">Dari</label><input class="txt" type="date" id="l-dari" v-model="lap.from" @change="muatLaporan"></div>
-            <div><label class="fl" for="l-sampai">Sampai</label><input class="txt" type="date" id="l-sampai" v-model="lap.to" @change="muatLaporan"></div>
+            <div><label class="fl" for="l-dari">Dari</label><input class="txt" type="date" id="l-dari" v-model="lap.from" @change="presetAktif.lap=''; muatLaporan()"></div>
+            <div><label class="fl" for="l-sampai">Sampai</label><input class="txt" type="date" id="l-sampai" v-model="lap.to" @change="presetAktif.lap=''; muatLaporan()"></div>
           </div>
           <div class="actions">
             <button class="btn amber" :disabled="pdfState==='loading'" @click="unduhPDF(false)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg></span>{{ pdfState==='loading' ? 'Menyiapkan PDF...' : 'Unduh PDF Rentang Ini' }}</button>
@@ -502,11 +509,13 @@
         </div>
         <div v-if="lap.loading" class="card">Memuat...</div>
         <template v-else-if="lap.report">
+          <div v-if="lapKosong" class="card empty-state"><span class="es-icon">🗂️</span><b>Belum ada catatan di rentang ini.</b><span>Coba ubah tanggal.</span></div>
+          <template v-else>
           <div class="kpis" style="margin-bottom:16px">
             <div class="kpi k-hijau"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span><div><div class="lbl">Total Hasil</div><div class="val mono">{{ fmt(lap.report.totals.hasil) }} gr</div></div></div>
             <div class="kpi k-teal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M10 21v-6h4v6"/></svg></span><div><div class="lbl">Pendapatan Usaha</div><div class="val mono">{{ fmt(lap.report.totals.sisa) }} gr</div></div></div>
             <div class="kpi k-biru"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span><div><div class="lbl">Rata-Rata Per Hari</div><div class="val mono">{{ fmt(rataHari) }} gr</div></div></div>
-            <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><div><div class="lbl">Hari Aktif / Shift</div><div class="val mono">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div></div>
+            <div class="kpi"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><div><div class="lbl">Hari Aktif / Shift</div><div class="val mono" style="font-size:17px">{{ lap.report.totals.hari_aktif }} hari / {{ lap.report.totals.shift_tercatat }} shift</div></div></div>
           </div>
           <div style="overflow-x:auto">
           <table class="rep-table">
@@ -572,6 +581,7 @@
             </table>
             </div>
           </div>
+          </template>
         </template>
       </section>
 
@@ -593,7 +603,8 @@
           </div>
         </div>
         <div class="card acc" :class="{open: acc.pengaturan}">
-          <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Pengaturan Usaha (tersimpan di database, berlaku ke kop dan tanda tangan PDF)</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.pengaturan=!acc.pengaturan">{{ acc.pengaturan ? 'Tutup' : 'Buka' }}</button></div>
+          <div class="acc-head"><h3><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Pengaturan Usaha</h3><button type="button" class="btn ghost small acc-toggle" @click="acc.pengaturan=!acc.pengaturan">{{ acc.pengaturan ? 'Tutup' : 'Buka' }}</button></div>
+          <p class="hint" style="margin:0 0 10px">Tersimpan di database, berlaku ke kop dan tanda tangan PDF.</p>
           <label class="fl" for="s-usaha">Nama Perusahaan</label>
           <input class="txt" id="s-usaha" v-model="settingsForm.nama_perusahaan">
           <div style="height:10px"></div>
@@ -629,7 +640,7 @@
           <div class="filters">
             <div><label class="fl">Nama</label><input class="txt" v-model="userBaru.nama"></div>
             <div><label class="fl">Username</label><input class="txt" v-model="userBaru.username"></div>
-            <div><label class="fl">Password (min 8)</label><input class="txt" type="text" v-model="userBaru.password"></div>
+            <div><label class="fl">Password (min 8)</label><input class="txt" :type="lihatPassUser ? 'text' : 'password'" v-model="userBaru.password"><label class="hint" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" v-model="lihatPassUser"> Tampilkan password</label></div>
             <div><label class="fl">Role</label><select class="txt" v-model="userBaru.role"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
             <div v-if="userBaru.role==='staff'"><label class="fl">Team</label><select class="txt" v-model.number="userBaru.team_id"><option v-for="t in teams" :key="t.id" :value="t.id">{{ t.nama }}</option></select></div>
           </div>
@@ -644,7 +655,7 @@
           </select>
           <div v-if="tplAdmin.loading" class="hint" style="margin-top:10px">Memuat template...</div>
           <template v-else>
-            <div class="dist" v-for="(r, i) in tplAdmin.rows" :key="i" style="margin-top:12px">
+            <div class="dist" v-for="(r, i) in tplAdmin.rows" :key="r.uid || i" style="margin-top:12px">
               <div class="dhead">
                 <input :value="r.nama" @input="r.nama=$event.target.value" :placeholder="'Nama kelompok ' + (i+1)" :aria-label="'Nama kelompok template ' + (i+1)">
                 <button type="button" class="icon-btn" @click="tplAdmin.rows.splice(i,1)" aria-label="Hapus kelompok template">x</button>
@@ -656,7 +667,7 @@
                 <input class="txt mono" inputmode="numeric" v-model="r.orangStr" placeholder="4"></div>
               </div>
             </div>
-            <button type="button" class="add-btn" @click="tplAdmin.rows.push({nama:'', persenStr:'', orangStr:''})">+ Tambah Kelompok</button>
+            <button type="button" class="add-btn" @click="tplAdmin.rows.push(barisBaru('', '', ''))">+ Tambah Kelompok</button>
             <div><button class="btn" style="margin-top:12px" @click="simpanTplAdmin">Simpan Template</button></div>
           </template>
         </div>
@@ -761,7 +772,9 @@ createApp({
 
     // ===== Form Input =====
     const chipCatatan = ["Hujan", "Alat rusak", "BBM habis", "Pekerja izin"];
-    const form = reactive({ team_id: null, tanggal: "", shift: 1, tanpa_hasil: false, hasilStr: "", catatan: "", rows: [{ nama: "Operator", persenStr: "6", orangStr: "6" }, { nama: "Helper", persenStr: "4", orangStr: "5" }] });
+    let uidBarisCounter = 0;
+    function barisBaru(nama, persenStr, orangStr) { return { uid: ++uidBarisCounter, nama: nama || "", persenStr: persenStr || "", orangStr: orangStr || "" }; }
+    const form = reactive({ team_id: null, tanggal: "", shift: 1, tanpa_hasil: false, hasilStr: "", catatan: "", rows: [barisBaru("Operator", "6", "6"), barisBaru("Helper", "4", "5")] });
     const modeEdit = ref(false);
     const editingId = ref(null);
     const pernahSimpan = ref(false);
@@ -794,7 +807,7 @@ createApp({
           form.tanpa_hasil = !!d.entry.tanpa_hasil;
           form.hasilStr = d.entry.tanpa_hasil ? "" : String(d.entry.hasil_gram).replace(".", ",");
           form.catatan = d.entry.catatan || "";
-          form.rows = d.entry.rows.length ? d.entry.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) })) : [{ nama: "", persenStr: "", orangStr: "" }];
+          form.rows = d.entry.rows.length ? d.entry.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang))) : [barisBaru("", "", "")];
         } else { modeEdit.value = false; editingId.value = null; await prefillTerakhir(); }
       } catch (e) { /* abaikan */ }
     }
@@ -803,7 +816,7 @@ createApp({
       try {
         const d = await api(`/api/entries/copy-source?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
         if (d.rows && d.rows.length) {
-          form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
+          form.rows = d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang)));
           prefillInfo.value = "Pembagian terisi otomatis dari " + tglPanjang(d.dari_tanggal) + " - periksa dulu sebelum menyimpan.";
         }
       } catch (e) { /* abaikan */ }
@@ -814,12 +827,12 @@ createApp({
         if (jenis === "kemarin") {
           const d = await api(`/api/entries/copy-source?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
           if (!d.rows.length) return setFlash("Belum ada data pembagian sebelumnya untuk disalin.", "err");
-          form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
+          form.rows = d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang)));
           setFlash("Pembagian disalin dari " + tglPanjang(d.dari_tanggal) + ".");
         } else {
           const d = await api(`/api/templates?team_id=${form.team_id}`);
           if (!d.rows.length) return setFlash("Template team masih kosong. Template diatur Admin di halaman Admin.", "err");
-          form.rows = d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) }));
+          form.rows = d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang)));
           setFlash("Template team dipakai.");
         }
       } catch (e) { setFlash(e.message, "err"); }
@@ -831,7 +844,7 @@ createApp({
       tplAdmin.loading = true;
       try {
         const d = await api(`/api/templates?team_id=${tplAdmin.team_id}`);
-        tplAdmin.rows = d.rows.length ? d.rows.map((r) => ({ nama: r.nama, persenStr: String(r.persentase).replace(".", ","), orangStr: String(r.jumlah_orang) })) : [{ nama: "", persenStr: "", orangStr: "" }];
+        tplAdmin.rows = d.rows.length ? d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang))) : [barisBaru("", "", "")];
       } catch (e) { setFlash(e.message, "err"); }
       tplAdmin.loading = false;
     }
@@ -895,7 +908,9 @@ createApp({
 
     // ===== Riwayat =====
     const presets = [{ id: "1", label: "1 Hari" }, { id: "7", label: "7 Hari" }, { id: "30", label: "30 Hari" }, { id: "bulan", label: "Bulan Ini" }];
+    const presetAktif = reactive({ riw: "1", lap: "1" });
     function setPreset(target, id) {
+      presetAktif[target] = id;
       const o = target === "riw" ? riw : lap; const t = today.value;
       if (id === "1") { o.from = t; o.to = t; }
       else if (id === "7") { o.from = addDays(t, -6); o.to = t; }
@@ -941,7 +956,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.4.0";
+    const APP_VERSION = "3.4.1";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -1015,6 +1030,7 @@ createApp({
       return blok;
     });
     const rataHari = computed(() => { if (!lap.report) return 0; const jumlahHari = lapDays.value.length || 1; return Math.round(lap.report.totals.hasil / jumlahHari * 1000) / 1000; });
+    const lapKosong = computed(() => !!lap.report && lap.report.totals.shift_tercatat === 0);
     function catatanGabung(d) { if (!d.catatan || !d.catatan.length) return ""; return d.catatan.map((c) => (lap.team_id === "all" && c.team_nama ? c.team_nama + " " : "") + "S" + c.shift + ": " + c.teks).join(" | "); }
     const timestampCetak = computed(() => {
       const parts = {};
@@ -1255,7 +1271,7 @@ createApp({
     // ===== Admin =====
     const adminStatus = ref([]); const teamsAll = ref([]); const users = ref([]);
     const settingsForm = reactive({ nama_perusahaan: "", nama_pimpinan: "", zona_waktu: "Asia/Jakarta" });
-    const teamBaru = ref(""); const userBaru = reactive({ nama: "", username: "", password: "", role: "staff", team_id: null });
+    const teamBaru = ref(""); const userBaru = reactive({ nama: "", username: "", password: "", role: "staff", team_id: null }); const lihatPassUser = ref(false);
     async function muatAdminStatus() { if (!user.value || user.value.role !== "admin") return; try { const d = await api("/api/admin/status"); adminStatus.value = d.status; } catch (e) {} }
     const WARNA_TEAM = [{ bg: "#DBEAFE", fg: "#1D4ED8" }, { bg: "#FEF3C7", fg: "#B45309" }, { bg: "#DCFCE7", fg: "#15803D" }, { bg: "#FCE7F3", fg: "#BE185D" }, { bg: "#E0E7FF", fg: "#4338CA" }, { bg: "#FFEDD5", fg: "#C2410C" }];
     function warnaTeam(id) { return WARNA_TEAM[Math.abs((Number(id) || 1) - 1) % WARNA_TEAM.length]; }
@@ -1375,7 +1391,7 @@ createApp({
     return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
-      presets, setPreset, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
+      presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, auditFor, auditList, lihatAudit,
       lap, muatLaporan, totalKolom, kolomTampil, nilaiKolom, lapDetail, toggleLapDetail, lapDays, blokLaporan, rataHari, catatanGabung, unduhPDF,
       adminStatus, statusRingkasan, warnaTeam, inisialTeam, langkahSelesai, langkahAktif, teamsAll, users, settingsForm, teamBaru, userBaru, simpanSettings, tambahTeam, toggleTeam, tambahUser, toggleUser,
       showPw, pwForm, pwError, gantiPassword, fmt, fmtPct, parseID, tglPanjang, tglSingkat };
