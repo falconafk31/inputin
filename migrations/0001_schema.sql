@@ -1,5 +1,5 @@
 -- Inputin - skema awal database D1 (inputin-db)
--- Dijalankan Pax lewat Cloudflare API. Perubahan skema berikutnya = file migrasi baru.
+-- Perubahan skema berikutnya = file migrasi baru di folder ini, file ini tidak diubah.
 
 CREATE TABLE IF NOT EXISTS teams (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
