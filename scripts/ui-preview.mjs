@@ -73,7 +73,7 @@ try {
   await ev2("document.querySelector('.topbar .avatar').click(); 'ok'");
   await wait(500);
   const sheetIsi = await ev2("document.querySelector('.psheet') ? document.querySelector('.psheet').innerText : ''");
-  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.4.3"), sheetIsi.slice(0, 90));
+  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.4.4"), sheetIsi.slice(0, 90));
   await ev2("document.querySelector('.sheet-bg').dispatchEvent(new MouseEvent('click',{bubbles:true})); 'ok'");
   await wait(400);
   cek("sheet profil tertutup lagi", (await ev2("!!document.querySelector('.psheet')")) === false);
@@ -87,8 +87,9 @@ try {
   cek("font dasar 15px (paket final)", baseSize === "15px", baseSize);
   await ev2(`document.querySelector('input.big').value='100'; document.querySelector('input.big').dispatchEvent(new Event('input',{bubbles:true})); 'ok'`);
   await wait(600);
-  const ringkasan = await ev2("document.body.innerText.includes('90,000')");
-  cek("ringkasan tetap benar 90,000", ringkasan === true);
+  // Data-independen: hitung terbagi + sisa yang diharapkan dari persen baris form yang sedang tampil, lalu cocokkan dengan teks halaman.
+  const ringkasan = await ev2(`(()=>{ const r3=(x)=>Math.round(x*1000)/1000; const pcts=[...document.querySelectorAll('input[id^="pct"]')].map(el=>parseFloat(String(el.value).replace(',','.'))||0); const terbagi=r3(pcts.reduce((a,p)=>a+r3(p),0)); const sisa=r3(100-terbagi); const fmtID=(n)=>n.toLocaleString('id-ID',{minimumFractionDigits:3,maximumFractionDigits:3}); const teks=document.body.innerText; return teks.includes(fmtID(terbagi)) && teks.includes(fmtID(sisa)); })()`);
+  cek("ringkasan konsisten dengan persen baris form (terbagi + sisa = 100)", ringkasan === true);
   cek("stepper langkah form tampil (3 titik)", (await ev2("document.querySelectorAll('.stepper .dot').length")) === 3);
   cek("bilah alokasi persen v2 tampil", (await ev2("!!document.querySelector('.alloc-fill')")) === true);
   cek("bilah simpan sticky HP v2 tampil", (await ev2("getComputedStyle(document.querySelector('.savebar')).display")) === "flex");
