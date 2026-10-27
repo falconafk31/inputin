@@ -179,47 +179,65 @@ async function handleApi(request, env, url) {
     const from = url.searchParams.get("from"), to = url.searchParams.get("to");
     if (!validTanggal(from) || !validTanggal(to)) return err("Rentang tanggal tidak valid.", 400);
     const shiftFilter = url.searchParams.get("shift");
-    const q = (url.searchParams.get("q") || "").toLowerCase();
+    const shiftNum = shiftFilter === "1" || shiftFilter === "2" ? parseInt(shiftFilter, 10) : null;
+    const qRaw = (url.searchParams.get("q") || "").trim();
+    const qLike = qRaw ? "%" + qRaw.replace(/[\\%_]/g, (c) => "\\" + c) + "%" : null;
     const perHari = Math.min(30, Math.max(1, parseInt(url.searchParams.get("per") || "10", 10)));
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
     const allTeams = teamId === "ALL";
-    const headsQuery = `SELECT r.*, u2.nama AS updated_by_nama, u1.nama AS created_by_nama, t.nama AS team_nama
-       FROM shift_results r JOIN teams t ON t.id = r.team_id
-       LEFT JOIN users u1 ON u1.id = r.created_by LEFT JOIN users u2 ON u2.id = r.updated_by
-       WHERE ${allTeams ? "" : "r.team_id = ? AND "}r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL
-       ORDER BY r.tanggal DESC, r.shift ASC`;
-    const { results: heads } = allTeams
-      ? await db.prepare(headsQuery).bind(from, to).all()
-      : await db.prepare(headsQuery).bind(teamId, from, to).all();
-    // Perbaikan batas D1 (maks 100 parameter per query): daftar IN sepanjang jumlah entri
-    // gagal begitu entri dalam rentang melewati 100. JOIN memakai filter yang sama
-    // seperti query heads sehingga hasilnya identik, tapi hanya butuh 2-3 parameter.
+    // Keputusan filter ringan untuk 5000+ baris: kondisi filter disusun SEKALI dan
+    // dipakai identik oleh semua query di bawah (halaman tanggal, hitung total,
+    // heads, rows), sehingga database yang menyaring dan memotong halaman,
+    // bukan memori Worker. LIKE di SQLite hanya case-insensitive untuk ASCII.
+    const conds = [];
+    const condBinds = [];
+    if (!allTeams) { conds.push("r.team_id = ?"); condBinds.push(teamId); }
+    conds.push("r.deleted_at IS NULL");
+    if (shiftNum) { conds.push("r.shift = ?"); condBinds.push(shiftNum); }
+    if (qLike) { conds.push("(r.catatan LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM distribution_rows d2 WHERE d2.result_id = r.id AND d2.nama LIKE ? ESCAPE '\\'))"); condBinds.push(qLike, qLike); }
+    const rangeWhere = `${conds.join(" AND ")} AND r.tanggal BETWEEN ? AND ?`;
+    const rangeBinds = [...condBinds, from, to];
+    // 1. Halaman tanggal saja (bukan semua entri dalam rentang)
+    const { results: dateRows } = await db.prepare(
+      `SELECT DISTINCT r.tanggal FROM shift_results r WHERE ${rangeWhere} ORDER BY r.tanggal DESC LIMIT ? OFFSET ?`
+    ).bind(...rangeBinds, perHari, (page - 1) * perHari).all();
+    const pageDates = (dateRows || []).map((d) => d.tanggal);
+    // 2. Total halaman dari COUNT dengan WHERE identik
+    const cnt = await db.prepare(
+      `SELECT COUNT(DISTINCT r.tanggal) AS n FROM shift_results r WHERE ${rangeWhere}`
+    ).bind(...rangeBinds).first();
+    const totalHari = cnt ? cnt.n : 0;
+    const totalPage = Math.max(1, Math.ceil(totalHari / perHari));
+    // 3. Heads + rows hanya untuk tanggal di halaman ini. Halaman adalah irisan
+    // berurutan daftar tanggal distinct, jadi BETWEEN ujung halaman mencakup
+    // tepat tanggal-tanggal halaman itu (tanggal tanpa entri tidak menghasilkan baris).
+    let heads = [];
     const rowsByResult = {};
-    if ((heads || []).length) {
-      const rowsQuery = `SELECT d.result_id, d.nama, d.persentase, d.jumlah_orang, d.total_gram, d.per_orang_gram FROM distribution_rows d JOIN shift_results r ON r.id = d.result_id WHERE ${allTeams ? "" : "r.team_id = ? AND "}r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY d.urutan, d.id`;
-      const { results: allRows } = allTeams
-        ? await db.prepare(rowsQuery).bind(from, to).all()
-        : await db.prepare(rowsQuery).bind(teamId, from, to).all();
+    if (pageDates.length) {
+      const lo = pageDates[pageDates.length - 1], hi = pageDates[0];
+      const headsQuery = `SELECT r.*, u2.nama AS updated_by_nama, u1.nama AS created_by_nama, t.nama AS team_nama
+         FROM shift_results r JOIN teams t ON t.id = r.team_id
+         LEFT JOIN users u1 ON u1.id = r.created_by LEFT JOIN users u2 ON u2.id = r.updated_by
+         WHERE ${rangeWhere} AND r.tanggal BETWEEN ? AND ?
+         ORDER BY r.tanggal DESC, r.shift ASC, r.team_id ASC`;
+      ({ results: heads } = await db.prepare(headsQuery).bind(...rangeBinds, lo, hi).all());
+      const rowsQuery = `SELECT d.result_id, d.nama, d.persentase, d.jumlah_orang, d.total_gram, d.per_orang_gram FROM distribution_rows d JOIN shift_results r ON r.id = d.result_id WHERE ${rangeWhere} AND r.tanggal BETWEEN ? AND ? ORDER BY d.urutan, d.id`;
+      const { results: allRows } = await db.prepare(rowsQuery).bind(...rangeBinds, lo, hi).all();
       for (const r of allRows || []) (rowsByResult[r.result_id] = rowsByResult[r.result_id] || []).push(r);
     }
     const byDate = new Map();
     for (const h of heads || []) {
       const e = serializeEntry(h, rowsByResult[h.id] || []);
-      if (shiftFilter && String(e.shift) !== String(shiftFilter)) continue;
-      if (q && !(e.catatan.toLowerCase().includes(q) || e.rows.some((r) => r.nama.toLowerCase().includes(q)))) continue;
       if (!byDate.has(e.tanggal)) byDate.set(e.tanggal, []);
       byDate.get(e.tanggal).push(e);
     }
-    const allDates = [...byDate.keys()];
-    const totalHari = allDates.length;
-    const slice = allDates.slice((page - 1) * perHari, page * perHari);
-    const days = slice.map((tanggal) => {
+    const days = pageDates.filter((t) => byDate.has(t)).map((tanggal) => {
       const shifts = byDate.get(tanggal);
       const totalHasil = round3(shifts.reduce((a, s) => a + s.hasil_gram, 0));
       const totalTerbagi = round3(shifts.reduce((a, s) => a + s.total_terbagi, 0));
       return { tanggal, shifts, total_hasil: totalHasil, total_terbagi: totalTerbagi, sisa: round3(totalHasil - totalTerbagi) };
     });
-    return json({ ok: true, days, page, per: perHari, total_hari: totalHari, total_page: Math.max(1, Math.ceil(totalHari / perHari)) });
+    return json({ ok: true, days, page, per: perHari, total_hari: totalHari, total_page: totalPage });
   }
 
   if (path === "/api/entries/one" && method === "GET") {
@@ -309,61 +327,86 @@ async function handleApi(request, env, url) {
     const from = url.searchParams.get("from"), to = url.searchParams.get("to");
     if (!teamId || !validTanggal(from) || !validTanggal(to)) return err("Parameter laporan tidak valid.", 400);
     const allTeams = teamId === "ALL";
-    const { results: heads } = allTeams
-      ? await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(from, to).all()
-      : await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.team_id = ? AND r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(teamId, from, to).all();
-    // Perbaikan batas D1 (maks 100 parameter per query): daftar IN sepanjang jumlah entri
-    // gagal begitu entri dalam rentang melewati 100. JOIN memakai filter yang sama
-    // seperti query heads sehingga hasilnya identik, tapi hanya butuh 2-3 parameter.
-    const rowsByResult = {};
-    if ((heads || []).length) {
-      const rowsQuery = `SELECT d.result_id, d.nama, d.persentase, d.jumlah_orang, d.total_gram, d.per_orang_gram FROM distribution_rows d JOIN shift_results r ON r.id = d.result_id WHERE ${allTeams ? "" : "r.team_id = ? AND "}r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY d.urutan, d.id`;
-      const { results: allRows } = allTeams
-        ? await db.prepare(rowsQuery).bind(from, to).all()
-        : await db.prepare(rowsQuery).bind(teamId, from, to).all();
-      for (const r of allRows || []) (rowsByResult[r.result_id] = rowsByResult[r.result_id] || []).push(r);
-    }
+    // Agregat ringan untuk 5000+ baris: semua penjumlahan memakai miligram
+    // integer. Nilai tersimpan sudah 3 desimal (round3 saat simpan), jadi
+    // penjumlahan integer eksak dan bebas urutan float, dan hasilnya sama
+    // persis dengan akumulasi round3 lama. Rentang lebih dari 366 hari
+    // dipecah per bulan di server supaya satu potongan tidak memuat ribuan baris.
+    const mg = (x) => Math.round((Number(x) || 0) * 1000);
+    const dariMg = (m) => m / 1000;
+    const ambilSlice = async (f, t) => {
+      const { results: hs } = allTeams
+        ? await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(f, t).all()
+        : await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.team_id = ? AND r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(teamId, f, t).all();
+      const rowsBy = {};
+      if ((hs || []).length) {
+        const rowsQuery = `SELECT d.result_id, d.nama, d.persentase, d.jumlah_orang, d.total_gram, d.per_orang_gram FROM distribution_rows d JOIN shift_results r ON r.id = d.result_id WHERE ${allTeams ? "" : "r.team_id = ? AND "}r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY d.urutan, d.id`;
+        const { results: allRows } = allTeams
+          ? await db.prepare(rowsQuery).bind(f, t).all()
+          : await db.prepare(rowsQuery).bind(teamId, f, t).all();
+        for (const r of allRows || []) (rowsBy[r.result_id] = rowsBy[r.result_id] || []).push(r);
+      }
+      return { heads: hs || [], rowsBy };
+    };
+    const potongBulan = (f, t) => {
+      const out = [];
+      let y = Number(f.slice(0, 4)), m = Number(f.slice(5, 7));
+      const ey = Number(t.slice(0, 4)), em = Number(t.slice(5, 7));
+      while (y < ey || (y === ey && m <= em)) {
+        const awal = (y === Number(f.slice(0, 4)) && m === Number(f.slice(5, 7))) ? f : `${y}-${String(m).padStart(2, "0")}-01`;
+        const akhirBulan = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+        out.push([awal, akhirBulan > t ? t : akhirBulan]);
+        m++; if (m > 12) { m = 1; y++; }
+      }
+      return out;
+    };
+    const rentangHari = Math.round((new Date(to + "T00:00:00Z") - new Date(from + "T00:00:00Z")) / 86400000);
+    const slices = rentangHari > 366 ? potongBulan(from, to) : [[from, to]];
     const dayMap = new Map();
     const perKelompokMap = new Map();
     const perTeamMap = new Map();
-    let totHasil = 0, totTerbagi = 0, shiftCount = 0;
-    for (const h of heads || []) {
-      const rows = rowsByResult[h.id] || [];
-      const terbagi = round3(rows.reduce((a, r) => a + r.total_gram, 0));
-      if (!dayMap.has(h.tanggal)) dayMap.set(h.tanggal, { tanggal: h.tanggal, s1: null, s2: null, total: 0, terbagi: 0, sisa: 0, catatan: [], kelompok: {}, shift_rows: {} });
-      const d = dayMap.get(h.tanggal);
-      const key = h.shift === 1 ? "s1" : "s2";
-      if (!d[key]) d[key] = { hasil: 0, terbagi: 0, tanpa_hasil: false, id: h.id };
-      d[key].hasil = round3(d[key].hasil + h.hasil_gram); d[key].terbagi = round3(d[key].terbagi + terbagi);
-      if (h.tanpa_hasil) d[key].tanpa_hasil = true;
-      d.total = round3(d.total + h.hasil_gram); d.terbagi = round3(d.terbagi + terbagi); d.sisa = round3(d.total - d.terbagi);
-      if (h.catatan) d.catatan.push({ shift: h.shift, teks: h.catatan, team_nama: h.team_nama });
-      totHasil = round3(totHasil + h.hasil_gram); totTerbagi = round3(totTerbagi + terbagi); shiftCount++;
-      for (const r of rows) {
-        let g = perKelompokMap.get(r.nama);
-        if (!g) { g = { nama: r.nama, total: 0, perPersen: new Map(), shiftIds: new Set() }; perKelompokMap.set(r.nama, g); }
-        g.total = round3(g.total + r.total_gram);
-        g.perPersen.set(r.persentase, round3((g.perPersen.get(r.persentase) || 0) + r.total_gram));
-        g.shiftIds.add(h.id);
-        d.kelompok[r.nama] = round3((d.kelompok[r.nama] || 0) + r.total_gram);
-        (d.shift_rows[h.shift] = d.shift_rows[h.shift] || []).push({ nama: r.nama, persentase: r.persentase, total_gram: r.total_gram, jumlah_orang: r.jumlah_orang, per_orang_gram: r.per_orang_gram });
-      }
-      if (allTeams) {
-        if (!perTeamMap.has(h.team_id)) perTeamMap.set(h.team_id, { team_id: h.team_id, team_nama: h.team_nama, hasil: 0, terbagi: 0, sisa: 0, tanggal_set: new Set(), shift_tercatat: 0 });
-        const pt = perTeamMap.get(h.team_id);
-        pt.hasil = round3(pt.hasil + h.hasil_gram); pt.terbagi = round3(pt.terbagi + terbagi); pt.sisa = round3(pt.hasil - pt.terbagi);
-        pt.tanggal_set.add(h.tanggal); pt.shift_tercatat++;
+    const hasilById = new Map();
+    let totHasilMg = 0, totTerbagiMg = 0, shiftCount = 0;
+    for (const [sf, st] of slices) {
+      const { heads, rowsBy } = await ambilSlice(sf, st);
+      for (const h of heads) {
+        hasilById.set(h.id, h.hasil_gram);
+        const rows = rowsBy[h.id] || [];
+        const terbagiMg = rows.reduce((a, r) => a + mg(r.total_gram), 0);
+        if (!dayMap.has(h.tanggal)) dayMap.set(h.tanggal, { tanggal: h.tanggal, s1: null, s2: null, totalMg: 0, terbagiMg: 0, catatan: [], kelompokMg: {}, shift_rows: {} });
+        const d = dayMap.get(h.tanggal);
+        const key = h.shift === 1 ? "s1" : "s2";
+        if (!d[key]) d[key] = { hasil: 0, terbagi: 0, tanpa_hasil: false, id: h.id };
+        d[key].hasil = dariMg(mg(d[key].hasil) + mg(h.hasil_gram)); d[key].terbagi = dariMg(mg(d[key].terbagi) + terbagiMg);
+        if (h.tanpa_hasil) d[key].tanpa_hasil = true;
+        d.totalMg += mg(h.hasil_gram); d.terbagiMg += terbagiMg;
+        if (h.catatan) d.catatan.push({ shift: h.shift, teks: h.catatan, team_nama: h.team_nama });
+        totHasilMg += mg(h.hasil_gram); totTerbagiMg += terbagiMg; shiftCount++;
+        for (const r of rows) {
+          let g = perKelompokMap.get(r.nama);
+          if (!g) { g = { nama: r.nama, totalMg: 0, perPersenMg: new Map(), shiftIds: new Set() }; perKelompokMap.set(r.nama, g); }
+          g.totalMg += mg(r.total_gram);
+          g.perPersenMg.set(r.persentase, (g.perPersenMg.get(r.persentase) || 0) + mg(r.total_gram));
+          g.shiftIds.add(h.id);
+          d.kelompokMg[r.nama] = (d.kelompokMg[r.nama] || 0) + mg(r.total_gram);
+          (d.shift_rows[h.shift] = d.shift_rows[h.shift] || []).push({ nama: r.nama, persentase: r.persentase, total_gram: r.total_gram, jumlah_orang: r.jumlah_orang, per_orang_gram: r.per_orang_gram });
+        }
+        if (allTeams) {
+          if (!perTeamMap.has(h.team_id)) perTeamMap.set(h.team_id, { team_id: h.team_id, team_nama: h.team_nama, hasilMg: 0, terbagiMg: 0, tanggal_set: new Set(), shift_tercatat: 0 });
+          const pt = perTeamMap.get(h.team_id);
+          pt.hasilMg += mg(h.hasil_gram); pt.terbagiMg += terbagiMg;
+          pt.tanggal_set.add(h.tanggal); pt.shift_tercatat++;
+        }
       }
     }
-    const days = [...dayMap.values()];
-    const hasilById = new Map((heads || []).map((h) => [h.id, h.hasil_gram]));
+    const days = [...dayMap.values()].map((d) => ({ tanggal: d.tanggal, s1: d.s1, s2: d.s2, total: dariMg(d.totalMg), terbagi: dariMg(d.terbagiMg), sisa: dariMg(d.totalMg - d.terbagiMg), catatan: d.catatan, kelompok: Object.fromEntries(Object.entries(d.kelompokMg).map(([k, v]) => [k, dariMg(v)])), shift_rows: d.shift_rows }));
     const perKelompok = [...perKelompokMap.values()].map((g) => {
-      const basis = [...g.shiftIds].reduce((a, id) => a + (hasilById.get(id) || 0), 0);
-      const rata = basis > 0 ? Math.round((g.total / basis) * 100 * 1000) / 1000 : 0;
-      return { nama: g.nama, total: g.total, persen_rata: rata, rincian: [...g.perPersen.entries()].map(([persentase, total]) => ({ persentase, total })).sort((a, b) => a.persentase - b.persentase) };
+      const basisMg = [...g.shiftIds].reduce((a, id) => a + mg(hasilById.get(id) || 0), 0);
+      const rata = basisMg > 0 ? Math.round((g.totalMg / basisMg) * 100 * 1000) / 1000 : 0;
+      return { nama: g.nama, total: dariMg(g.totalMg), persen_rata: rata, rincian: [...g.perPersenMg.entries()].map(([persentase, totalMg]) => ({ persentase, total: dariMg(totalMg) })).sort((a, b) => a.persentase - b.persentase) };
     });
-    const resp = { ok: true, days, totals: { hasil: totHasil, terbagi: totTerbagi, sisa: round3(totHasil - totTerbagi), hari_aktif: days.length, shift_tercatat: shiftCount }, per_kelompok: perKelompok, kelompok_kolom: perKelompok.slice().sort((a, b) => b.total - a.total).map((g) => g.nama) };
-    if (allTeams) resp.per_team = [...perTeamMap.values()].map((pt) => ({ team_id: pt.team_id, team_nama: pt.team_nama, hasil: pt.hasil, terbagi: pt.terbagi, sisa: pt.sisa, hari_aktif: pt.tanggal_set.size, shift_tercatat: pt.shift_tercatat }));
+    const resp = { ok: true, days, totals: { hasil: dariMg(totHasilMg), terbagi: dariMg(totTerbagiMg), sisa: dariMg(totHasilMg - totTerbagiMg), hari_aktif: days.length, shift_tercatat: shiftCount }, per_kelompok: perKelompok, kelompok_kolom: perKelompok.slice().sort((a, b) => b.total - a.total).map((g) => g.nama) };
+    if (allTeams) resp.per_team = [...perTeamMap.values()].map((pt) => ({ team_id: pt.team_id, team_nama: pt.team_nama, hasil: dariMg(pt.hasilMg), terbagi: dariMg(pt.terbagiMg), sisa: dariMg(pt.hasilMg - pt.terbagiMg), hari_aktif: pt.tanggal_set.size, shift_tercatat: pt.shift_tercatat }));
     return json(resp);
   }
 

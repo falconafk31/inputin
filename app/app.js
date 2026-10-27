@@ -260,14 +260,17 @@ createApp({
     const expanded = reactive({});
     const toggleExpand = (id) => { expanded[id] = !expanded[id]; };
     const halamanList = computed(() => { const out = []; const max = riw.total_page; for (let i = 1; i <= max; i++) { if (max <= 7 || i === 1 || i === max || Math.abs(i - riw.page) <= 1) out.push(i); } return out; });
+    let riwAbort = null;
     async function muatRiwayat(resetPage = false) {
       if (!riw.team_id || !riw.from || !riw.to) return;
       if (resetPage) riw.page = 1;
+      if (riwAbort) riwAbort.abort();
+      riwAbort = new AbortController();
       riw.loading = true;
       try {
-        const d = await api(`/api/entries?team_id=${riw.team_id}&from=${riw.from}&to=${riw.to}&shift=${riw.shift}&q=${encodeURIComponent(riw.q)}&per=${riw.per}&page=${riw.page}`);
+        const d = await api(`/api/entries?team_id=${riw.team_id}&from=${riw.from}&to=${riw.to}&shift=${riw.shift}&q=${encodeURIComponent(riw.q)}&per=${riw.per}&page=${riw.page}`, { signal: riwAbort.signal });
         riw.days = d.days; riw.total_hari = d.total_hari; riw.total_page = d.total_page; riw.page = d.page;
-      } catch (e) { setFlash(e.message, "err"); }
+      } catch (e) { if (e.name !== "AbortError") setFlash(e.message, "err"); }
       riw.loading = false;
     }
     function formatWaktu(iso) {
@@ -303,7 +306,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.7.1";
+    const APP_VERSION = "3.8.0";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -337,11 +340,14 @@ createApp({
 
     // ===== Laporan + cetak =====
     const lap = reactive({ team_id: null, from: "", to: "", report: null, loading: false, kolomKelompok: [] });
+    let lapAbort = null;
     async function muatLaporan() {
       if (!lap.team_id || !lap.from || !lap.to) return;
+      if (lapAbort) lapAbort.abort();
+      lapAbort = new AbortController();
       lap.loading = true;
-      try { const d = await api(`/api/report?team_id=${lap.team_id}&from=${lap.from}&to=${lap.to}`); lap.report = d; lap.kolomKelompok = d.kelompok_kolom || []; }
-      catch (e) { setFlash(e.message, "err"); }
+      try { const d = await api(`/api/report?team_id=${lap.team_id}&from=${lap.from}&to=${lap.to}`, { signal: lapAbort.signal }); lap.report = d; lap.kolomKelompok = d.kelompok_kolom || []; }
+      catch (e) { if (e.name !== "AbortError") setFlash(e.message, "err"); }
       lap.loading = false;
     }
 
@@ -356,11 +362,14 @@ createApp({
       if (graf.mode === "12bulan") { const [y, m] = t.split("-").map(Number); const awal = new Date(y, m - 12, 1); const p = (x) => String(x).padStart(2, "0"); return [awal.getFullYear() + "-" + p(awal.getMonth() + 1) + "-01", t]; }
       return [t.slice(0, 4) + "-01-01", t];
     }
+    let grafAbort = null;
     async function muatGrafik() {
       if (!lap.team_id) return;
       const [f, tt] = rentangGrafik(); graf.from = f; graf.to = tt; graf.loading = true;
-      try { graf.report = await api(`/api/report?team_id=${lap.team_id}&from=${f}&to=${tt}`); }
-      catch (e) { setFlash(e.message, "err"); }
+      if (grafAbort) grafAbort.abort();
+      grafAbort = new AbortController();
+      try { graf.report = await api(`/api/report?team_id=${lap.team_id}&from=${f}&to=${tt}`, { signal: grafAbort.signal }); }
+      catch (e) { if (e.name !== "AbortError") setFlash(e.message, "err"); }
       graf.loading = false;
     }
     function bukaTabGrafik() { lapTab.value = "grafik"; if (!graf.report && !graf.loading) muatGrafik(); }
