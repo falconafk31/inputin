@@ -191,13 +191,15 @@ async function handleApi(request, env, url) {
     const { results: heads } = allTeams
       ? await db.prepare(headsQuery).bind(from, to).all()
       : await db.prepare(headsQuery).bind(teamId, from, to).all();
-    const ids = (heads || []).map((h) => h.id);
+    // Perbaikan batas D1 (maks 100 parameter per query): daftar IN sepanjang jumlah entri
+    // gagal begitu entri dalam rentang melewati 100. JOIN memakai filter yang sama
+    // seperti query heads sehingga hasilnya identik, tapi hanya butuh 2-3 parameter.
     const rowsByResult = {};
-    if (ids.length) {
-      const placeholders = ids.map(() => "?").join(",");
-      const { results: allRows } = await db.prepare(
-        `SELECT result_id, nama, persentase, jumlah_orang, total_gram, per_orang_gram FROM distribution_rows WHERE result_id IN (${placeholders}) ORDER BY urutan, id`
-      ).bind(...ids).all();
+    if ((heads || []).length) {
+      const rowsQuery = `SELECT d.result_id, d.nama, d.persentase, d.jumlah_orang, d.total_gram, d.per_orang_gram FROM distribution_rows d JOIN shift_results r ON r.id = d.result_id WHERE ${allTeams ? "" : "r.team_id = ? AND "}r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY d.urutan, d.id`;
+      const { results: allRows } = allTeams
+        ? await db.prepare(rowsQuery).bind(from, to).all()
+        : await db.prepare(rowsQuery).bind(teamId, from, to).all();
       for (const r of allRows || []) (rowsByResult[r.result_id] = rowsByResult[r.result_id] || []).push(r);
     }
     const byDate = new Map();
@@ -310,13 +312,15 @@ async function handleApi(request, env, url) {
     const { results: heads } = allTeams
       ? await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(from, to).all()
       : await db.prepare("SELECT r.*, t.nama AS team_nama FROM shift_results r JOIN teams t ON t.id = r.team_id WHERE r.team_id = ? AND r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY r.tanggal ASC, r.shift ASC").bind(teamId, from, to).all();
-    const ids = (heads || []).map((h) => h.id);
+    // Perbaikan batas D1 (maks 100 parameter per query): daftar IN sepanjang jumlah entri
+    // gagal begitu entri dalam rentang melewati 100. JOIN memakai filter yang sama
+    // seperti query heads sehingga hasilnya identik, tapi hanya butuh 2-3 parameter.
     const rowsByResult = {};
-    if (ids.length) {
-      const placeholders = ids.map(() => "?").join(",");
-      const { results: allRows } = await db.prepare(
-        `SELECT result_id, nama, persentase, jumlah_orang, total_gram, per_orang_gram FROM distribution_rows WHERE result_id IN (${placeholders}) ORDER BY urutan, id`
-      ).bind(...ids).all();
+    if ((heads || []).length) {
+      const rowsQuery = `SELECT d.result_id, d.nama, d.persentase, d.jumlah_orang, d.total_gram, d.per_orang_gram FROM distribution_rows d JOIN shift_results r ON r.id = d.result_id WHERE ${allTeams ? "" : "r.team_id = ? AND "}r.tanggal BETWEEN ? AND ? AND r.deleted_at IS NULL ORDER BY d.urutan, d.id`;
+      const { results: allRows } = allTeams
+        ? await db.prepare(rowsQuery).bind(from, to).all()
+        : await db.prepare(rowsQuery).bind(teamId, from, to).all();
       for (const r of allRows || []) (rowsByResult[r.result_id] = rowsByResult[r.result_id] || []).push(r);
     }
     const dayMap = new Map();
