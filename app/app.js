@@ -30,6 +30,7 @@ const ZONA_LABEL = { "Asia/Jakarta": "WIB", "Asia/Makassar": "WITA", "Asia/Jayap
 createApp({
   setup() {
     const user = ref(null);
+    const sesiDicek = ref(false);
     const busy = ref(false);
     const flash = ref(null);
     const view = ref("input");
@@ -82,8 +83,13 @@ createApp({
     function tambahChip(c) { form.catatan = form.catatan ? (form.catatan.replace(/[.\s]+$/, "") + ". " + c + ".") : (c + "."); }
     async function cekModeEdit() {
       if (!form.team_id || !form.tanggal) return;
+      // Penjaga slot: bila team/tanggal/shift diganti cepat, beberapa panggilan
+      // bisa pulang tak berurutan; hanya jawaban untuk slot yang masih tampil
+      // yang boleh mengisi form, supaya form tidak menampilkan data slot lain.
+      const team = form.team_id, tanggal = form.tanggal, shift = form.shift;
       try {
-        const d = await api(`/api/entries/one?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
+        const d = await api(`/api/entries/one?team_id=${team}&tanggal=${tanggal}&shift=${shift}`);
+        if (form.team_id !== team || form.tanggal !== tanggal || form.shift !== shift) return;
         if (d.entry) {
           prefillInfo.value = "";
           modeEdit.value = true; editingId.value = d.entry.id;
@@ -102,8 +108,10 @@ createApp({
     }
     async function prefillTerakhir() {
       prefillInfo.value = "";
+      const team = form.team_id, tanggal = form.tanggal, shift = form.shift;
       try {
-        const d = await api(`/api/entries/copy-source?team_id=${form.team_id}&tanggal=${form.tanggal}&shift=${form.shift}`);
+        const d = await api(`/api/entries/copy-source?team_id=${team}&tanggal=${tanggal}&shift=${shift}`);
+        if (form.team_id !== team || form.tanggal !== tanggal || form.shift !== shift) return;
         if (d.rows && d.rows.length) {
           form.rows = d.rows.map((r) => barisBaru(r.nama, String(r.persentase).replace(".", ","), String(r.jumlah_orang)));
           prefillInfo.value = "Pembagian terisi otomatis dari " + tglPanjang(d.dari_tanggal) + " - periksa dulu sebelum menyimpan.";
@@ -143,6 +151,20 @@ createApp({
         setFlash("Template pembagian tersimpan untuk team ini.");
       } catch (e) { setFlash(e.message, "err"); }
     }
+    // ===== Sesi tersimpan: supaya aplikasi benar-benar bisa offline =====
+    // Sesi server tetap di cookie HttpOnly; yang disimpan di sini hanya salinan
+    // profil user (bukan rahasia) sebagai penanda "ada sesi aktif", beserta
+    // bootstrap terakhir (team + pengaturan + tanggal) agar tampilan bisa
+    // dimuat tanpa jaringan. Validasi sebenarnya tetap ke server saat online.
+    const SESI_KEY = "inputin-sesi-v1";
+    const BOOTSTRAP_KEY = "inputin-bootstrap-v1";
+    function simpanSesiLocal(u) { try { localStorage.setItem(SESI_KEY, JSON.stringify({ user: u })); } catch (e) {} }
+    function bacaSesiLocal() { try { const d = JSON.parse(localStorage.getItem(SESI_KEY) || "null"); return d && d.user ? d.user : null; } catch (e) { return null; } }
+    function hapusSesiLocal() { try { localStorage.removeItem(SESI_KEY); } catch (e) {} }
+    function simpanBootstrapLocal(b) { try { localStorage.setItem(BOOTSTRAP_KEY, JSON.stringify({ settings: b.settings, teams: b.teams, today: b.today })); } catch (e) {} }
+    function bacaBootstrapLocal() { try { const d = JSON.parse(localStorage.getItem(BOOTSTRAP_KEY) || "null"); return d && d.teams ? d : null; } catch (e) { return null; } }
+    function hariIniZona(zona) { try { return new Intl.DateTimeFormat("en-CA", { timeZone: zona || "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); } catch (e) { const n = new Date(); const p = (x) => String(x).padStart(2, "0"); return n.getFullYear() + "-" + p(n.getMonth() + 1) + "-" + p(n.getDate()); } }
+
     // ===== Antrian simpan offline (tersimpan di HP, terkirim otomatis saat ada sinyal) =====
     const ANTRI_KEY = "inputin-antrian-v1";
     const antrian = ref([]);
@@ -306,7 +328,7 @@ createApp({
       catch (e) { setFlash(e.message, "err"); }
     }
 
-    const APP_VERSION = "3.8.0";
+    const APP_VERSION = "3.8.1";
     // ===== Muat malas bundle PDF (aset berhash, hanya saat pertama unduh) =====
     const pdfState = ref("idle");
     function muatScript(url, integrity) {
@@ -884,11 +906,11 @@ createApp({
     }
     async function doLogin() {
       busy.value = true; loginError.value = "";
-      try { const d = await api("/api/login", { method: "POST", body: JSON.stringify(loginForm) }); user.value = d.user; await muatBootstrap(true); }
+      try { const d = await api("/api/login", { method: "POST", body: JSON.stringify(loginForm) }); user.value = d.user; simpanSesiLocal(d.user); await muatBootstrap(true); }
       catch (e) { loginError.value = e.message; }
       busy.value = false;
     }
-    async function doLogout() { try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {} user.value = null; location.replace("/"); }
+    async function doLogout() { try { await api("/api/logout", { method: "POST", body: "{}" }); } catch (e) {} hapusSesiLocal(); user.value = null; location.replace("/"); }
     // ===== Sheet profil =====
     const sheetOpen = ref(false); const konfirmasiKeluar = ref(false);
     const inisial = computed(() => { const n = (user.value && user.value.nama ? user.value.nama : "?").trim().split(/\s+/); return ((n[0] || "?")[0] + (n.length > 1 ? n[1][0] : "")).toUpperCase(); });
@@ -931,8 +953,7 @@ createApp({
       } catch (e) {}
       location.replace("/?v=" + Date.now());
     }
-    async function muatBootstrap(resetTanggal = true) {
-      const b = await api("/api/bootstrap");
+    function terapkanBootstrap(b, resetTanggal = true) {
       Object.assign(settings, b.settings);
       teams.value = b.teams; today.value = b.today;
       const defaultTeam = user.value.role === "staff" ? user.value.team_id : (teams.value[0] ? teams.value[0].id : null);
@@ -946,21 +967,61 @@ createApp({
         riw.from = addDays(b.today, -29); riw.to = b.today;
         lap.from = b.today; lap.to = b.today;
       }
+    }
+    async function muatBootstrap(resetTanggal = true) {
+      const b = await api("/api/bootstrap");
+      simpanBootstrapLocal(b);
+      terapkanBootstrap(b, resetTanggal);
       await cekModeEdit(); await muatRiwayat(true); await muatLaporan(); await muatAdmin();
       muatAntrian(); kirimAntrian();
       if (user.value && user.value.role === "admin") jadwalPrefetchPDF();
+    }
+    function muatBootstrapOffline() {
+      // Tanpa jaringan: pakai bootstrap terakhir yang tersimpan; tanggal hari ini
+      // dihitung dari jam HP di zona usaha supaya tidak basi. Pemuat data jaringan
+      // dilewati supaya tidak muncul pesan error; antrian lokal tetap dimuat.
+      const b = bacaBootstrapLocal();
+      const pakai = b || { settings: { zona_waktu: "Asia/Jakarta", zona_label: "WIB" }, teams: [], today: "" };
+      pakai.today = hariIniZona(pakai.settings.zona_waktu);
+      terapkanBootstrap(pakai, true);
+      muatAntrian();
+    }
+    async function validasiSesiLatar() {
+      // Dipanggil setelah masuk dari sesi tersimpan: bila online, pastikan cookie
+      // sesi masih berlaku; bila offline (gagal jaringan), biarkan sesi lokal
+      // tetap berjalan. Hanya 401/403 yang mengeluarkan user ke form login.
+      let res;
+      try { res = await fetch("/api/me"); } catch (e) { return; }
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) { hapusSesiLocal(); user.value = null; }
+        return;
+      }
+      try { const d = await res.json(); if (d && d.user) { user.value = d.user; simpanSesiLocal(d.user); await muatBootstrap(false); } } catch (e) {}
     }
     onMounted(async () => {
       const fieldSel = "input, textarea, select";
       document.addEventListener("focusin", (e) => { if (e.target.closest && e.target.closest(fieldSel)) document.body.classList.add("kb"); });
       document.addEventListener("focusout", () => { setTimeout(() => { const a = document.activeElement; if (!a || !a.closest || !a.closest(fieldSel)) document.body.classList.remove("kb"); }, 60); });
-      window.addEventListener("online", () => { kirimAntrian(); });
-      try { const d = await api("/api/me"); user.value = d.user; await muatBootstrap(true); }
-      catch (e) { user.value = null; }
+      window.addEventListener("online", () => { kirimAntrian(); if (user.value) validasiSesiLatar(); });
+      // Urutan awal: bila ada sesi tersimpan, langsung masuk dari cache (online
+      // maupun offline) dan validasi ke server di latar; form login hanya muncul
+      // bila tidak ada sesi tersimpan sama sekali. Layar "Memuat..." tampil
+      // selama pengecekan awal supaya form login tidak berkedip.
+      const lokal = bacaSesiLocal();
+      if (lokal) {
+        user.value = lokal;
+        muatBootstrapOffline();
+        sesiDicek.value = true;
+        validasiSesiLatar();
+      } else {
+        try { const d = await api("/api/me"); user.value = d.user; simpanSesiLocal(d.user); await muatBootstrap(true); }
+        catch (e) { user.value = null; }
+        sesiDicek.value = true;
+      }
     });
     watch(view, (v) => { if (v === "riwayat") muatRiwayat(); if (v === "laporan") muatLaporan(); if (v === "admin") muatAdmin(); });
 
-    return { user, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
+    return { user, sesiDicek, busy, flash, view, tabs, loginForm, loginError, doLogin, doLogout, clearCache, settings, teams, today,
       APP_VERSION, pdfState, sheetOpen, konfirmasiKeluar, bukaSheet, tutupSheet, inisial,
       form, modeEdit, prefillInfo, acc, peringatanForm, antrianTampil, kirimAntrian, buangAntrian, cobaLagiAntrian, chipCatatan, tambahChip, rowCalc, totalHasilForm, totalPersenForm, sisaGram, sisaPersen, cekModeEdit, pakaiSumber, tplAdmin, muatTplAdmin, simpanTplAdmin, simpan, teamLabelAktif,
       presets, setPreset, presetAktif, barisBaru, lapKosong, lihatPassUser, riw, riwFilter, muatRiwayat, expanded, toggleExpand, halamanList, formatWaktu, editEntry, hapusTarget, mintaHapus, konfirmasiHapus, hapusBarisTarget, mintaHapusBaris, konfirmasiHapusBaris, ubahTarget, konfirmasiUbah, auditFor, auditList, lihatAudit,

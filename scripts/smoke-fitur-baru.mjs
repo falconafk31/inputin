@@ -65,13 +65,14 @@ try {
     } catch (e) { await send("Fetch.failRequest", { requestId, errorReason: "Failed" }); }
   });
   const ev2 = async (expr) => { const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description || "eval error"); return r.result?.result?.value; };
+  const tunggu = async (sel, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await ev2(`!!document.querySelector("${sel}")`)) return true; await wait(200); } throw new Error("tunggu timeout: " + sel); };
   await send("Page.navigate", { url: ORIGIN + "/" });
   await wait(3000);
   const b64 = Buffer.from(JSON.stringify({ username: "admin", password: PASS })).toString("base64");
   const loginRes = await ev2(`fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:atob('${b64}')}).then(r=>r.status)`);
   cek("login admin preview", loginRes === 200, "status " + loginRes);
   await ev2("location.reload(); 'ok'");
-  await wait(3500);
+  await tunggu(".topbar"); await wait(500);
 
   // === A. Matriks Lainnya di layar ===
   await ev2("[...document.querySelectorAll('.bottomnav button')][2].click(); 'ok'");
