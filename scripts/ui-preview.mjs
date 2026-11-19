@@ -57,6 +57,7 @@ try {
   await send("Page.navigate", { url: ORIGIN + "/" });
   await wait(3500);
   const ev2 = async (expr) => { const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description || "eval error"); return r.result?.result?.value; };
+  const tunggu = async (sel, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await ev2(`!!document.querySelector("${sel}")`)) return true; await wait(200); } throw new Error("tunggu timeout: " + sel); };
   cek("halaman login tampil (redesign)", (await ev2("!!document.querySelector('.login-card')")) === true);
   const shotLogin = await send("Page.captureScreenshot", { format: "png" });
   fs.writeFileSync(new URL("../smoke-test/ui-v2-login.png", import.meta.url), Buffer.from(shotLogin.result.data, "base64"));
@@ -65,7 +66,7 @@ try {
   const loginRes = await ev2(`fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:atob('${b64}')}).then(r=>r.status)`);
   cek("login API dari halaman (untuk masuk sesi uji)", loginRes === 200, "status " + loginRes);
   await ev2("location.reload(); 'ok'");
-  await wait(3000);
+  await tunggu("input.big");
   cek("login staff masuk form Input", (await ev2("!!document.querySelector('input.big')")) === true);
   const dbg = await ev2("JSON.stringify({topnavBtns:document.querySelectorAll('.topnav button').length, bottomBtns:document.querySelectorAll('.bottomnav button').length, inputs:document.querySelectorAll('input').length, big:!!document.querySelector('input.big'), sections:[...document.querySelectorAll('section')].length, innerW:innerWidth, appLen:document.querySelector('#app').innerHTML.length})");
   console.log('DEBUG', dbg);
@@ -73,7 +74,7 @@ try {
   await ev2("document.querySelector('.topbar .avatar').click(); 'ok'");
   await wait(500);
   const sheetIsi = await ev2("document.querySelector('.psheet') ? document.querySelector('.psheet').innerText : ''");
-  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.7.1"), sheetIsi.slice(0, 90));
+  cek("sheet profil berisi Ganti Password + Perbaiki Aplikasi + versi", sheetIsi.includes("Ganti Password") && sheetIsi.includes("Perbaiki Aplikasi (Bersihkan Cache)") && sheetIsi.includes("Versi 3.8.1"), sheetIsi.slice(0, 90));
   await ev2("document.querySelector('.sheet-bg').dispatchEvent(new MouseEvent('click',{bubbles:true})); 'ok'");
   await wait(400);
   cek("sheet profil tertutup lagi", (await ev2("!!document.querySelector('.psheet')")) === false);

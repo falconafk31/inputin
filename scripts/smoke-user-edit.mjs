@@ -93,10 +93,11 @@ try {
   await send("Page.navigate", { url: ORIGIN + "/" });
   await wait(3500);
   const ev2 = async (expr) => { const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description || "eval error"); return r.result?.result?.value; };
+  const tunggu = async (sel, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await ev2(`!!document.querySelector("${sel}")`)) return true; await wait(200); } throw new Error("tunggu timeout: " + sel); };
   const b64 = Buffer.from(JSON.stringify({ username: "admin", password: PASS })).toString("base64");
   await ev2(`fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:atob('${b64}')}).then(r=>r.status)`);
   await ev2("location.reload(); 'ok'");
-  await wait(3000);
+  await tunggu(".dist .inp-edit svg"); await wait(300);
   // Ikon pensil di form Input (kartu kelompok pertama: nama + persen + orang = 3 ikon)
   const pensil = await ev2("document.querySelectorAll('.dist .inp-edit svg').length");
   cek("ikon pensil tampil di field kelompok (nama, persen, orang)", pensil >= 3, "jumlah " + pensil);
